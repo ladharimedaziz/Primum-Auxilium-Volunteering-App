@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Primum Auxilium">
 <style>body{margin:0}[hidden]{display:none!important}</style>
-<script>window.PA_CLOUD = {"url": "https://ygzshcrssyayfegeegsw.supabase.co", "key": "sb_publishable_84cH_gE_7x7F0QVGtQpQRg_a7ojlpik"};
+<script>window.PA_CLOUD = {"url": "https://ygzshcrssyayfegeegsw.supabase.co", "key": "sb_publishable_84cH_gE_7x7F0QVGtQpQRg_a7ojlpik", "vapid": "BP72eMUBGb-9A6MtnLwki2EzARQoz2pInRomziZNSebuqY6OO_hL_c_b-4QfgIraFyyqKLNPNN-1G6v1INMsPHY"};
 if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
 </head><body><link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,9 +87,9 @@ nav.tabwrap{margin-top:6px}
 .brand-meta{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--sunk);color:var(--muted);white-space:nowrap}
 .chip .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-.tabs{display:flex;gap:4px;margin-top:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);position:relative}
+.tabs{display:flex;gap:4px;margin-top:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:none;scrollbar-width:none;border-bottom:1px solid var(--line);position:relative}
 .tabs::-webkit-scrollbar{display:none}
-.tab{appearance:none;border:0;background:none;padding:10px 14px 12px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;position:relative;transition:color .2s}
+.tab{flex:0 0 auto;appearance:none;border:0;background:none;padding:10px 14px 12px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;position:relative;transition:color .2s}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink)}
 .tab-ink{position:absolute;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--accent);transition:left .35s cubic-bezier(.3,1.3,.5,1),width .35s cubic-bezier(.3,1.3,.5,1)}
@@ -673,6 +673,12 @@ pre.ann{transition:box-shadow .3s,transform .3s var(--spring)}pre.ann:hover{box-
 .notice-panel.bye{animation:noticeOut .38s ease-in both}@keyframes noticeOut{to{opacity:0;transform:translateY(-10px) scale(.96);height:0;margin:0;padding:0}}
 .nmev.lead .edate{background:var(--navy);color:#fff}.nmev.out{opacity:.7}
 .tab .badge{animation:pop .4s var(--spring)}
+
+.gate-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.code-in{letter-spacing:.04em}
+.adm-box{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.adm-code{font-size:17px;letter-spacing:.04em;word-break:break-all;animation:pop .45s var(--spring)}
+.inbox-seg .badge{margin-left:4px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -716,8 +722,8 @@ const RANKS = [
 ];
 const TONES = ["teal", "violet", "rose", "blue", "brass", "grey"];
 const REPORT_KINDS = ["Event report", "Weekly summary", "Incident", "Audit"];
-const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, settings: { ...DEFAULTS } };
-const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints"];
+const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, settings: { ...DEFAULTS } };
+const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews"];
 let db = null, downloads = null, mode = "loading";
 const DESKTOP = !!window.PA_DESKTOP;
 let view = "dashboard";
@@ -797,7 +803,7 @@ function weeksLeft() { return Math.max(1, daysBetween(todayISO(), S.settings.yea
 
 /* ---------- persistence ---------- */
 const LKEY = "primum-auxilium-v1";
-function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, settings: S.settings }); }
+function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, settings: S.settings }); }
 async function put(coll, id, obj) {
   if (!allowed(coll, id)) { toast("View only"); return false; }
   if (mode === "cloud") return cloudPut(coll, id, obj);
@@ -880,7 +886,9 @@ async function cloudPut(coll, id, obj) {
   try {
     if (coll === "accounts") await cloudAccount(id, obj);
     else {
+      const prevEv = coll === "events" ? S.events[id] : null;
       await rpc("pa_put", { token: tok(), coll, id, data: obj });
+      if (coll === "events" && role() !== "volunteer") evPush(prevEv, obj, id);
       if (coll === "config") S.settings = obj; else S[coll][id] = obj;
       // A renamed volunteer keeps signing in with their new name.
       if (coll === "volunteers" && role() === "head") {
@@ -902,8 +910,8 @@ async function cloudBoot() {
   mode = "cloud";
   try { cloudReady = !!(await rpc("pa_status")).ready; }
   catch { $("#view").innerHTML = `<div class="gate"><div class="gate-card panel"><img class="gate-crest" src="${crestSrc()}" alt=""><h2>Can't connect</h2><p class="muted gate-sub">Check your internet connection, then try again.</p><button class="btn primary big" onclick="location.reload()">Try again</button></div></div>`; return; }
-  let x = null; try { x = JSON.parse(sessionStorage.getItem(SKEY)); } catch {}
-  if (x && x.token && Date.now() - x.t < IDLE) { session = x; try { await cloudPull(true); } catch { session = null; } if (session && !S.accounts[session.id]) session = null; }
+  let x = null; try { x = JSON.parse(localStorage.getItem(SKEY)); } catch {}
+  if (x && x.token) { session = x; try { await cloudPull(true); } catch { session = null; } if (session && !S.accounts[session.id]) session = null; }
   saveSession(); render(true);
   setInterval(() => { if (session && !document.hidden) cloudPull(false); }, 15e3);
   document.addEventListener("visibilitychange", () => { if (!document.hidden && session) cloudPull(false); });
@@ -946,7 +954,7 @@ async function boot() {
   } else {
     mode = "local";
     const saved = store.get(LKEY);
-    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
+    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, logs: saved.logs || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
     else if (!DESKTOP) seedLocal();
     loadSession(); render(true);
   }
@@ -986,25 +994,26 @@ function renderBrandMeta() {
 }
 function moveInk() {
   const t = $(`.tab[data-view="${view}"]`), ink = $("#tabInk");
-  if (!t) return; ink.style.left = t.offsetLeft + 10 + "px"; ink.style.width = t.offsetWidth - 20 + "px";
+  if (!t) return; try { const nv = t.parentElement; if (nv && (t.offsetLeft < nv.scrollLeft || t.offsetLeft + t.offsetWidth > nv.scrollLeft + nv.clientWidth)) nv.scrollTo({ left: Math.max(0, t.offsetLeft - 24), behavior: "smooth" }); } catch {} ink.style.left = t.offsetLeft + 10 + "px"; ink.style.width = t.offsetWidth - 20 + "px";
 }
 
 
 /* ---------- sign-in ---------- */
 const TABS = {
-  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["handbook", "Handbook"], ["settings", "Settings"]],
+  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["review", "Review"], ["handbook", "Handbook"], ["settings", "Settings"]],
   admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["handbook", "Handbook"]],
-  council: [["cevents", "Events"]],
-  volunteer: [["me", "My hours"], ["vevents", "Events"], ["vcerts", "Certificates"], ["handbook", "Handbook"], ["complain", "Complaints"]]
+  council: [["cevents", "Events"], ["ccerts", "Certificates"]],
+  volunteer: [["me", "My hours"], ["vevents", "Events"], ["vcerts", "Certificates"], ["handbook", "Handbook"], ["complain", "Questions & complaints"]]
 };
 let session = null, lastAct = Date.now(), fails = 0, lockUntil = 0;
-const SKEY = "pa-session", IDLE = 20 * 60e3;
+// Sign-ins last until "Sign out" (kept on this device, survives closing the tab).
+const SKEY = "pa-session";
 const me = () => session && S.accounts[session.id];
 const role = () => me()?.role || null;
 const accName = a => a.role === "volunteer" ? (S.volunteers[a.vid]?.name || "Removed volunteer") : a.role === "head" ? (headVol()?.name || a.name) : a.name;
 const myVol = () => { const a = me(); if (!a) return null; const id = a.role === "head" ? headVol()?.id : a.vid; return id && S.volunteers[id] ? { ...S.volunteers[id], id } : null; };
 const perm = () => me()?.perm || null;
-const tabsFor = () => role() === "council" ? [...TABS.council, ...(perm() === "pr" ? [["pr", "Announcements"]] : [])] : TABS[role()] || [];
+const tabsFor = () => role() === "council" ? [...TABS.council, ["inbox", "Inbox"], ["review", "Review"], ...(perm() === "pr" ? [["pr", "Announcements"]] : [])] : TABS[role()] || [];
 // Student Council 2026–27. The Head of Volunteers is Dan's own account, so he is not listed.
 const COUNCIL = [["Fayez Sankari", "President"], ["Abel Varghese", "Vice President"], ["Murad Samarah", "VP's Aide"], ["Suhaib Mohammad", "Newspaper Manager"],
   ["Waleed Osama", "Head of Academics"], ["Sameer Haroun", "Head of Finance"], ["Mohammad Thaer", "Head of Media"], ["Ragheb Haroun", "Head of PR & Communication", "pr"],
@@ -1018,6 +1027,9 @@ function allowed(coll, id) {
   const r = role();
   if (r === "head" || ui.sys || mode === "loading") return true;
   if (coll === "complaints") return r === "volunteer" && !S.complaints[id];
+  if (coll === "queries") return (r === "volunteer" && !S.queries[id]) || (r === "council" && !!S.queries[id]);
+  if (coll === "reviews") return r === "volunteer" && !S.reviews[id] && myVol()?.rank === "supervisory";
+  if (coll === "logs") { const e = S.events[id], v = myVol(); return r === "volunteer" && !!e && !!v && (e.leads || []).includes(v.id) && e.status !== "done"; }
   if (coll === "events") return r === "council" && (!S.events[id] || canEditEv(S.events[id]));
   if (coll === "accounts") return !!session && id === session.id;
   return false;
@@ -1036,24 +1048,48 @@ async function checkSecret(a, pw, pre = "") {
   if (mode === "cloud") { ui.oldPw = pw; return true; } return !!a[pre + "hash"] && (await pbk(pw, a[pre + "salt"], a[pre + "iter"] || 150000)) === a[pre + "hash"]; }
 function genKey() { const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", r = crypto.getRandomValues(new Uint8Array(16)); return [...r].map(x => A[x % A.length]).join("").match(/.{4}/g).join("-"); }
 function genPassword() { const W = ["Falcon", "Cedar", "Harbor", "Summit", "Ember", "Atlas", "Orbit", "Coral", "Maple", "Pioneer", "Nova", "Delta", "Oasis", "Dune", "Palm", "Comet"], r = crypto.getRandomValues(new Uint16Array(3)); return `${W[r[0] % W.length]}-${W[r[1] % W.length]}-${String(r[2] % 10000).padStart(4, "0")}`; }
-function saveSession() { try { session ? sessionStorage.setItem(SKEY, JSON.stringify(session)) : sessionStorage.removeItem(SKEY); } catch {} }
-function loadSession() { try { const x = JSON.parse(sessionStorage.getItem(SKEY)); if (x && S.accounts[x.id] && Date.now() - x.t < IDLE) session = x; } catch {} }
+function saveSession() { try { session ? localStorage.setItem(SKEY, JSON.stringify(session)) : localStorage.removeItem(SKEY); } catch {} }
+function loadSession() { try { const x = JSON.parse(localStorage.getItem(SKEY)); if (x && S.accounts[x.id]) session = x; } catch {} }
 function startSession(id, token) { session = { id, t: Date.now(), ...(token ? { token } : {}) }; lastAct = Date.now(); saveSession(); ui.thread = null; view = tabsFor()[0][0]; }
 function signOut(idle) {
-  if (mode === "cloud") { if (tok()) rpc("pa_logout", { token: tok() }).catch(() => {}); cloudWipe(); }
+  if (mode === "cloud") { const t = tok(); if (t) pushDrop(t).finally(() => rpc("pa_logout", { token: t }).catch(() => {})); cloudWipe(); }
   session = null; saveSession(); closeOverlay(); ui.gate = null; ui.thread = null; render(false); if (idle) toast("Signed out after 20 minutes idle"); }
 ["pointerdown", "keydown"].forEach(t => addEventListener(t, () => { const n = Date.now(); if (session && n - lastAct > 10e3) { session.t = n; saveSession(); } lastAct = n; }, { passive: true }));
-setInterval(() => { if (session && Date.now() - lastAct > IDLE) signOut(true); }, 30e3);
 async function trySignIn(name, pw) {
   if (mode === "cloud") return cloudSignIn(name, pw);
   if (Date.now() < lockUntil) return `Too many attempts. Wait ${Math.ceil((lockUntil - Date.now()) / 1000)} s.`;
   const n = normName(name);
   for (const [id, a] of Object.entries(S.accounts)) {
+    if (a.role === "admin") continue;
     if (normName(accName(a)) !== n && !(a.role === "head" && normName(a.name) === n)) continue;
     if (await checkSecret(a, pw)) { fails = 0; startSession(id); return ""; }
   }
   if (++fails >= 5) { fails = 0; lockUntil = Date.now() + 30e3; }
   return "Name or password incorrect.";
+}
+
+// Administration has no password: the Head makes a one-time code and reads it out or sends it.
+const ADM_ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+const sha = async t => b64(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)));
+async function makeAdminCode() {
+  if (mode === "cloud") return rpc("pa_admin_code", { token: tok() });
+  const r = crypto.getRandomValues(new Uint8Array(24)), c = [...r].map(x => ADM_ALPHA[x % ADM_ALPHA.length]).join("");
+  ui.sys = true;
+  try { await put("accounts", "administration", { role: "admin", name: "Administration", codeHash: await sha(c), codeExp: Date.now() + 120e3, created: S.accounts.administration?.created || new Date().toISOString() }); }
+  finally { ui.sys = false; }
+  return c.match(/.{6}/g).join("-");
+}
+async function adminSignIn(code) {
+  const c = String(code || "").replace(/[^A-Za-z0-9]/g, "");
+  if (mode === "cloud") {
+    try { const r = await rpc("pa_admin_login", { code: c }); session = { id: r.id, t: Date.now(), token: r.token }; await cloudPull(true); startSession(r.id, r.token); return ""; }
+    catch (e) { return e.code === "throttle" ? "Too many attempts. Wait 15 minutes." : e.code === "code" ? "Code incorrect." : "Can't reach the server."; }
+  }
+  if (Date.now() < lockUntil) return "Too many attempts. Wait a moment.";
+  const a = S.accounts.administration;
+  if (!a || !a.codeHash || Date.now() > a.codeExp || (await sha(c)) !== a.codeHash) { if (++fails >= 5) { fails = 0; lockUntil = Date.now() + 30e3; } return "Code incorrect."; }
+  ui.sys = true; try { await put("accounts", "administration", { ...a, codeHash: null, codeExp: 0 }); } finally { ui.sys = false; }
+  fails = 0; startSession("administration"); return "";
 }
 const crestSrc = () => $("#crestImg").src;
 function gateHTML() {
@@ -1071,6 +1107,11 @@ function gateHTML() {
       <div class="gerr" id="gErr" role="alert"></div>
       <button class="btn primary big" type="submit">Create account</button></form>
       <p class="muted gate-note">Volunteer and administration accounts are added from inside the app.</p>`);
+  if (ui.gate === "admin") return card("School administration", "Enter the access code from the Head of Volunteers.", `<form id="admCodeForm" class="stack-form">
+      <label class="field">Access code<input type="text" id="aCode" required autocomplete="one-time-code" autocapitalize="off" spellcheck="false" class="num code-in" placeholder="xxxxxx-xxxxxx-xxxxxx-xxxxxx" autofocus maxlength="40"></label>
+      <div class="gerr" id="gErr" role="alert"></div>
+      <button class="btn primary big" type="submit">Sign in</button></form>
+      <button class="linkbtn" data-act="gate-back">Back to sign in</button>`);
   if (ui.gate === "recover") return card("Reset Head password", "", `<form id="recForm" class="stack-form">
       <label class="field">Recovery key<input type="text" id="rKey" required autocomplete="off" class="num" placeholder="XXXX-XXXX-XXXX-XXXX" autofocus></label>
       <label class="field">New password<input type="password" id="rPw" required minlength="8" autocomplete="new-password"></label>
@@ -1084,7 +1125,7 @@ function gateHTML() {
       <div class="gerr" id="gErr" role="alert"></div>
       <button class="btn primary big" type="submit">Sign in</button></form>
       <p class="muted gate-note">No account? Ask the Head of Volunteers.</p>
-      <button class="linkbtn" data-act="gate-recover">Head password lost</button>`);
+      <div class="gate-links"><button class="linkbtn" data-act="gate-admin">School administration</button><button class="linkbtn" data-act="gate-recover">Head password lost</button></div>`);
 }
 function renderGate() {
   document.body.classList.add("gated"); document.body.classList.remove("ro");
@@ -1144,6 +1185,12 @@ function renderGate() {
     try { await put("accounts", h[0], { ...h[1], ...(await makeSecret(pw)), ...(await makeSecret(key.replace(/-/g, ""), "r")) }); } finally { ui.sys = false; }
     startSession(h[0]); ui.newKey = key; ui.gate = "key"; render(false);
   });
+  $("#admCodeForm")?.addEventListener("submit", async e => {
+    e.preventDefault(); busy(e.target, true);
+    const m = await adminSignIn($("#aCode").value);
+    if (m) { busy(e.target, false); $("#aCode").value = ""; return err(m); }
+    ui.gate = null; swap(() => render(true));
+  });
   $("#keyOk")?.addEventListener("change", e => { $("#keyDone").disabled = !e.target.checked; });
 }
 /* ---------- volunteer alerts: selections show up the next time they open the app ---------- */
@@ -1160,9 +1207,11 @@ function notices() {
     if (st && seen[id] !== key) out.push({ id, e, st, key, changed: !!seen[id] && seen[id].split("|")[0] === st });
     else if (!st && seen[id]) out.push({ id, e, st: "out", key: "" });
   }
+  for (const [id, q] of Object.entries(S.queries)) if (q.vid === v.id && q.reply && seen["q:" + id] !== q.reply.length + "") out.push({ id: "q:" + id, e: { title: q.subject, date: (q.answeredAt || q.created).slice(0, 10) }, st: "ans", key: q.reply.length + "" });
   return out.sort((a, b) => a.e.date.localeCompare(b.e.date));
 }
-const noticeLine = n => ({ lead: `★ You're <b>shift lead</b> for`, in: "You're <b>selected</b> for", wait: "You're on the <b>waitlist</b> for", out: "You're <b>no longer on</b>" }[n.st] + ` <b>${esc(n.e.title)}</b>` + (n.changed ? " · details changed" : ""));
+const noticeWhen = n => n.st === "ans" ? "See Questions & complaints" : [fmtDate(n.e.date, { weekday: "long" }), n.e.start && n.e.end ? `${n.e.start}–${n.e.end}` : n.e.start, n.e.location].filter(Boolean).join(" · ");
+const noticeLine = n => n.st === "ans" ? `💬 Your question <b>${esc(n.e.title)}</b> was answered` : ({ lead: `★ You're <b>shift lead</b> for`, in: "You're <b>selected</b> for", wait: "You're on the <b>waitlist</b> for", out: "You're <b>no longer on</b>" }[n.st] + ` <b>${esc(n.e.title)}</b>` + (n.changed ? " · details changed" : ""));
 function ackNotices() {
   const seen = getSeen();
   notices().forEach(n => { if (n.st === "out") delete seen[n.id]; else seen[n.id] = n.key; });
@@ -1172,7 +1221,7 @@ function ackNotices() {
 function noticePanel() {
   const ns = notices(); if (!ns.length) return "";
   return `<section class="panel notice-panel" style="--i:0"><div class="panel-head"><h2><span class="bell">🔔</span> New for you</h2><button class="btn small primary" data-act="notice-ok">Got it</button></div>
-    <div class="mini-events">${ns.map(n => `<div class="mev nmev ${n.st}"><div class="edate"><span>${fmtDate(n.e.date, { month: "short" })}</span><b>${parse(n.e.date).getDate()}</b></div><div style="min-width:0;flex:1"><div style="font-size:14px">${noticeLine(n)}</div><div class="muted" style="font-size:13px">${esc([fmtDate(n.e.date, { weekday: "long" }), n.e.start && n.e.end ? `${n.e.start}–${n.e.end}` : n.e.start, n.e.location].filter(Boolean).join(" · "))}</div></div></div>`).join("")}</div></section>`;
+    <div class="mini-events">${ns.map(n => `<div class="mev nmev ${n.st}"><div class="edate"><span>${fmtDate(n.e.date, { month: "short" })}</span><b>${parse(n.e.date).getDate()}</b></div><div style="min-width:0;flex:1"><div style="font-size:14px">${noticeLine(n)}</div><div class="muted" style="font-size:13px">${esc(noticeWhen(n))}</div></div></div>`).join("")}</div></section>`;
 }
 // Called after every draw: a fresh selection pops a toast and buzzes the phone once.
 function alertNew() {
@@ -1182,12 +1231,12 @@ function alertNew() {
   ui.noticeSig = sig;
   if (!fresh.length) return;
   const n = fresh[0];
-  toast(n.st === "out" ? `Update: you're no longer on ${n.e.title}` : n.changed ? `🔔 Updated: ${n.e.title} · ${fmtDate(n.e.date)}${n.e.start ? " " + n.e.start : ""}` : `🔔 ${n.st === "lead" ? "Shift lead" : n.st === "wait" ? "Waitlisted" : "Selected"}: ${n.e.title} · ${fmtDate(n.e.date)}`);
+  toast(n.st === "ans" ? `💬 Answer: ${n.e.title}` : n.st === "out" ? `Update: you're no longer on ${n.e.title}` : n.changed ? `🔔 Updated: ${n.e.title} · ${fmtDate(n.e.date)}${n.e.start ? " " + n.e.start : ""}` : `🔔 ${n.st === "lead" ? "Shift lead" : n.st === "wait" ? "Waitlisted" : "Selected"}: ${n.e.title} · ${fmtDate(n.e.date)}`);
   try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch {}
 }
 function renderTabs(soft) {
-  const nav = $("#tabs"), list = tabsFor(), nNew = Object.values(S.complaints).filter(c => (c.status || "new") === "new").length, nAl = notices().length;
-  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
+  const nav = $("#tabs"), list = tabsFor(), nNew = newCp() + openQ(), nAl = notices().length;
+  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "review" && rvPending() ? `<span class="badge num">${rvPending()}</span>` : ""}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
   if (nav.dataset.sig === html) return;
   nav.dataset.sig = html; nav.innerHTML = html;
   if (soft) moveInk();
@@ -1225,7 +1274,7 @@ function refresh() {
   else if (view === "events") { const r = $("#eventList"); if (r) r.innerHTML = eventCards(); }
   else if (view === "certs") { el.innerHTML = VIEWS.certs(); after.certs(); }
   else if (view === "inbox" || view === "me" || view === "vevents" || view === "vcerts") { el.innerHTML = VIEWS[view](); after[view] && after[view](); ringIn(el, false); }
-  else if (view === "complain") { const r = $("#cpSent"); if (r) r.innerHTML = cpSent(); }
+  else if (view === "complain") { const r = $("#cpSent"); if (r) r.innerHTML = cpSent(); const q = $("#qList"); if (q) q.innerHTML = qList(); }
   else if (view === "cevents" || view === "pr") el.innerHTML = VIEWS[view]();
   else if (view === "settings") { const r = $("#statusList"); const ac = $("#acctBox"); if (ac) { ac.innerHTML = acctBox(); bindAcct(); } if (r) r.innerHTML = statusRows(); const i = $("#dataInfo"); if (i) i.innerHTML = dataInfo(); }
   el.classList.remove("enter");
@@ -1510,6 +1559,7 @@ after.log = () => {
 /* Reports */
 VIEWS.reports = () => `
   <div class="toolbar"><div style="flex:1"><h2 style="font-size:22px">Reports</h2><div class="muted" style="font-size:14px">Event reports · weekly summaries · incidents · audits</div></div>
+    <button class="btn" data-act="month-open">Monthly report</button>
     <button class="btn" data-act="weekly">Weekly message</button>
     <button class="btn" data-act="new-report" data-audit="1">Draft audit summary</button>
     <button class="btn primary" data-act="new-report">+ New report</button></div>
@@ -1682,7 +1732,7 @@ VIEWS.me = () => {
 };
 function mineEventRow(e, v) {
   const { confirmed, waitlist } = eventRoster(e), inC = confirmed.includes(v.id), inW = waitlist.includes(v.id), inL = (e.leads || []).includes(v.id);
-  return `<div class="mev"><div class="edate"><span>${fmtDate(e.date, { month: "short" })}</span><b>${parse(e.date).getDate()}</b></div><div style="min-width:0;flex:1"><b>${esc(e.title)}</b><div class="muted" style="font-size:13px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location, evHours(e) ? fmtH(evHours(e)) + " h" : ""].filter(Boolean).join(" · "))}</div></div>${inL ? `<span class="tag lead">★ Shift lead</span>` : inC ? `<span class="tag ok">Confirmed</span>` : inW ? `<span class="tag warn">Waitlist</span>` : e.external ? `<span class="tag ext">External</span>` : ""}</div>`;
+  return `<div class="mev"><div class="edate"><span>${fmtDate(e.date, { month: "short" })}</span><b>${parse(e.date).getDate()}</b></div><div style="min-width:0;flex:1"><b>${esc(e.title)}</b><div class="muted" style="font-size:13px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location, evHours(e) ? fmtH(evHours(e)) + " h" : ""].filter(Boolean).join(" · "))}</div></div>${inL ? `<span class="tag lead">★ Shift lead</span>` : inC ? `<span class="tag ok">Confirmed</span>` : inW ? `<span class="tag warn">Waitlist</span>` : e.external ? `<span class="tag ext">External</span>` : ""}${inL || inC ? `<button class="btn small ghost" data-act="ics" data-id="${e.id}" title="Add to calendar" aria-label="Add to calendar">📅</button>` : ""}${inL && e.status !== "done" && e.date <= todayISO() ? `<button class="btn small primary" data-act="open-log" data-id="${e.id}">${S.logs[e.id] ? "Edit log" : "Write log"}</button>` : ""}</div>`;
 }
 after.me = () => {
   $("#pwForm")?.addEventListener("submit", async e => {
@@ -1704,13 +1754,16 @@ VIEWS.vevents = () => {
 VIEWS.vcerts = () => {
   const v = myVol(); if (!v) return "";
   const earned = earnedOn(v.id);
-  const evs = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => e.status === "done" && eventAttendees(e.id).some(x => x.vid === v.id)).sort((a, b) => b.date.localeCompare(a.date));
+  const evs = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => e.status === "done" && ((e.attended || []).includes(v.id) || eventAttendees(e.id).some(x => x.vid === v.id))).sort((a, b) => b.date.localeCompare(a.date));
   const items = evs.map((e, i) => {
-    const mine = (e.pdfs || []).filter(p => p.vid === v.id);
-    const own = e.external ? "" : e.photo ? `<div class="attach"><canvas width="320" height="226" data-evc="${e.id}" data-vid="${v.id}" aria-label="Certificate preview"></canvas><div class="attach-info"><span class="fname">${esc(e.title)}</span><span class="muted" style="font-size:12.5px">${fmtLong(e.date)}</span>${downloads ? `<button class="btn small" data-act="evc-one" data-ev="${e.id}" data-vid="${v.id}">Download PDF</button>` : ""}</div></div>` : `<div class="muted" style="font-size:13px">Certificate in preparation</div>`;
-    return `<article class="panel vcert" style="--i:${i + 1}"><div class="msg-head"><b>${esc(e.title)}</b>${e.external ? `<span class="tag ext">${esc(e.organizer || "External")}</span>` : ""}<span class="muted">${fmtLong(e.date)}</span></div>${own}${mine.map(p => `<div class="fileatt"><span class="file-ic">PDF</span><span class="fmeta"><span class="fname">${esc(p.name)}</span><span class="muted">${fmtSize(p.size || 0)}</span></span><span class="fbtns">${downloads ? `<button class="btn small" data-act="pdf-get" data-ev="${e.id}" data-pid="${p.id}">Download</button>` : ""}</span></div>`).join("")}${e.external && !mine.length ? `<div class="muted" style="font-size:13px">Awaiting organizer certificate</div>` : ""}</article>`;
+    const held = (e.withheld || []).includes(v.id), mine = held ? [] : (e.pdfs || []).filter(p => p.vid === v.id);
+    const own = held ? `<div class="muted" style="font-size:13px">Certificate on hold. Ask the Head of Volunteers.</div>` : e.external ? "" : e.photo ? `<div class="attach"><canvas width="320" height="226" data-evc="${e.id}" data-vid="${v.id}" aria-label="Certificate preview"></canvas><div class="attach-info"><span class="fname">${esc(e.title)}</span><span class="muted" style="font-size:12.5px">${fmtLong(e.date)}</span>${downloads ? `<button class="btn small" data-act="evc-one" data-ev="${e.id}" data-vid="${v.id}">Download PDF</button>` : ""}</div></div>` : `<div class="muted" style="font-size:13px">Certificate in preparation</div>`;
+    const mates = (e.attended || []).filter(x => x !== v.id && S.volunteers[x] && !(e.withheld || []).includes(x) && (e.external ? (e.pdfs || []).some(p => p.vid === x) : e.photo));
+    const colleagues = mates.length ? `<details class="mates"><summary>Colleagues' certificates · ${mates.length}</summary><div class="mini-events">${mates.map(x => { const p = (e.pdfs || []).find(q => q.vid === x); return `<div class="mev"><div style="flex:1;min-width:0"><b>${esc(S.volunteers[x].name)}</b> <span class="muted" style="font-size:12.5px">${cls(S.volunteers[x])}</span></div>${downloads ? (e.external ? `<button class="btn small" data-act="pdf-get" data-ev="${e.id}" data-pid="${p.id}">Download</button>` : `<button class="btn small" data-act="evc-one" data-ev="${e.id}" data-vid="${x}">Download PDF</button>`) : ""}</div>`; }).join("")}</div></details>` : "";
+    return `<article class="panel vcert" style="--i:${i + 1}"><div class="msg-head"><b>${esc(e.title)}</b>${e.external ? `<span class="tag ext">${esc(e.organizer || "External")}</span>` : ""}<span class="muted">${fmtLong(e.date)}</span></div>${own}${mine.map(p => `<div class="fileatt"><span class="file-ic">PDF</span><span class="fmeta"><span class="fname">${esc(p.name)}</span><span class="muted">${fmtSize(p.size || 0)}</span></span><span class="fbtns">${downloads ? `<button class="btn small" data-act="pdf-get" data-ev="${e.id}" data-pid="${p.id}">Download</button>` : ""}</span></div>`).join("")}${e.external && !held && !mine.length ? `<div class="muted" style="font-size:13px">Awaiting organizer certificate</div>` : ""}${colleagues}</article>`;
   }).join("");
-  return `<div class="st"><section class="panel" style="--i:0"><div class="panel-head"><h2>${S.settings.goal}-hour certificate</h2></div>${earned ? `<div class="attach"><canvas width="320" height="226" data-cert="${v.id}" aria-label="Certificate"></canvas><div class="attach-info"><span class="fname">Certificate of Service</span><span class="muted" style="font-size:12.5px">Awarded ${fmtLong(earned)}</span>${downloads ? `<button class="btn small primary" data-act="my-cert">Download PDF</button>` : ""}</div></div>` : `<div class="muted" style="font-size:14px">Unlocks at ${S.settings.goal} hours.</div>`}</section>
+  const svc = v.certHold ? `<div class="muted" style="font-size:14px">Certificate on hold. Ask the Head of Volunteers.</div>` : earned ? `<div class="attach"><canvas width="320" height="226" data-cert="${v.id}" aria-label="Certificate"></canvas><div class="attach-info"><span class="fname">Certificate of Service</span><span class="muted" style="font-size:12.5px">Awarded ${fmtLong(earned)}</span>${downloads ? `<button class="btn small primary" data-act="my-cert">Download PDF</button>` : ""}</div></div>` : `<div class="muted" style="font-size:14px">Unlocks at ${S.settings.goal} hours.</div>`;
+  return `<div class="st"><section class="panel" style="--i:0"><div class="panel-head"><h2>${S.settings.goal}-hour certificate</h2></div>${svc}</section>
     <div class="eyebrow sec-title">Event certificates</div>${items || `<div class="panel empty">None yet.</div>`}</div>`;
 };
 after.vcerts = () => { document.querySelectorAll("canvas[data-cert]").forEach(c => drawCert(c, c.dataset.cert)); document.querySelectorAll("canvas[data-evc]").forEach(c => drawEventCert(c, c.dataset.evc, c.dataset.vid)); };
@@ -1720,7 +1773,14 @@ const CP_KINDS = ["Complaint", "Feedback", "Problem", "Idea"];
 const cpFrom = c => c.anon ? "Anonymous" : c.vid && S.volunteers[c.vid] ? `${S.volunteers[c.vid].name} · ${cls(S.volunteers[c.vid])}` : (c.name || "Unknown");
 const CP_ST = { new: ["New", "warn"], review: ["In review", "blue"], resolved: ["Resolved", "ok"] };
 VIEWS.complain = () => `<div class="logwrap st">
-  <section class="panel" style="--i:0"><div class="panel-head"><h2>New complaint</h2><span class="muted" style="font-size:13px">Head of Volunteers only</span></div>
+  <section class="panel" style="--i:0"><div class="panel-head"><h2>Ask a question</h2><span class="muted" style="font-size:13px">Answered by the Head of Volunteers or the Student Council</span></div>
+    <form id="qAskForm" class="stack-form">
+      <label class="field">Question<input type="text" id="qSub" required maxlength="120" placeholder="e.g. What do I wear to the open house?"></label>
+      <label class="field">Details (optional)<textarea id="qBody" rows="3" maxlength="3000"></textarea></label>
+      <div style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit">Ask</button></div>
+    </form></section>
+  <section class="panel" style="--i:1"><div class="panel-head"><h2>Questions</h2></div><div id="qList">${qList()}</div></section>
+  <section class="panel" style="--i:0"><div class="panel-head"><h2>New complaint</h2><span class="muted" style="font-size:13px">Head of Volunteers and Student Council</span></div>
     <form id="cpForm" class="stack-form">
       <div class="seg cpk" role="group" aria-label="Type">${CP_KINDS.map((k, i) => `<button type="button" data-cpk="${k}" aria-pressed="${i === 0}">${k}</button>`).join("")}</div>
       <label class="field">Subject<input type="text" id="cpSub" required maxlength="100"></label>
@@ -1731,11 +1791,24 @@ VIEWS.complain = () => `<div class="logwrap st">
     </form></section>
   <section class="panel" style="--i:1"><div class="panel-head"><h2>Sent</h2></div><div id="cpSent">${cpSent()}</div></section>
 </div>`;
+function qList() {
+  const v = myVol(), qs = Object.entries(S.queries).map(([id, q]) => ({ id, ...q }));
+  const mine = qs.filter(q => v && q.vid === v.id).sort((a, b) => b.created.localeCompare(a.created)), shared = qs.filter(q => q.public && !(v && q.vid === v.id) && q.reply);
+  const item = (q, own) => `<div class="cp-sent"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>${esc(q.subject)}</b>${own ? `<span class="pill t-${q.reply ? "ok" : "warn"}">${q.reply ? "Answered" : "Waiting"}</span>` : ""}</div>${q.reply ? `<div class="cp-reply"><span class="eyebrow">Answer${q.answeredBy ? " · " + esc(q.answeredBy) : ""}</span>${esc(q.reply)}</div>` : ""}</div>`;
+  return (mine.length ? `<div class="eyebrow" style="margin-bottom:6px">Yours</div>${mine.map(q => item(q, true)).join("")}` : "") +
+    (shared.length ? `<div class="eyebrow" style="margin:12px 0 6px">Answered for everyone</div>${shared.map(q => item(q, false)).join("")}` : "") ||
+    `<div class="muted" style="font-size:14px">No questions yet.</div>`;
+}
 function cpSent() {
   const v = myVol(), list = Object.values(S.complaints).filter(c => v && c.vid === v.id && !c.anon).sort((a, b) => b.created.localeCompare(a.created));
   return list.length ? list.map(c => { const [l, t] = CP_ST[c.status || "new"]; return `<div class="cp-sent"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>${esc(c.subject)}</b><span class="pill t-${t}">${l}</span></div><div class="muted" style="font-size:12.5px">${esc(c.kind || "Complaint")} · ${fmtLong(c.created.slice(0, 10))}</div>${c.reply ? `<div class="cp-reply"><span class="eyebrow">Reply</span>${esc(c.reply)}</div>` : ""}</div>`; }).join("") : `<div class="muted" style="font-size:14px">Nothing sent.</div>`;
 }
 after.complain = () => {
+  $("#qAskForm").addEventListener("submit", async e => {
+    e.preventDefault(); const sub = $("#qSub").value.trim(); if (!sub) return $("#qSub").focus();
+    const v = myVol(), ok = await put("queries", uid(), { subject: sub, body: $("#qBody").value.trim(), status: "open", vid: v ? v.id : null, name: v ? v.name : accName(me()), created: new Date().toISOString() });
+    if (ok !== false) { e.target.reset(); pushSend([{ staff: true, title: "New question", body: sub, tag: "q" }]); toast("Question sent"); }
+  });
   let kind = CP_KINDS[0];
   document.querySelectorAll("[data-cpk]").forEach(b => b.addEventListener("click", () => { kind = b.dataset.cpk; document.querySelectorAll("[data-cpk]").forEach(x => x.setAttribute("aria-pressed", x === b)); }));
   $("#cpForm").addEventListener("submit", async e => {
@@ -1743,14 +1816,19 @@ after.complain = () => {
     if (!sub) return $("#cpSub").focus(); if (!body) return $("#cpBody").focus();
     const anon = $("#cpAnon").checked, v = myVol();
     const ok = await put("complaints", uid(), { kind, subject: sub, body, anon, ...(anon ? {} : { vid: v ? v.id : null, name: v ? v.name : accName(me()) }), status: "new", created: new Date().toISOString() });
-    if (ok !== false) { e.target.reset(); toast("Sent to the Head of Volunteers"); }
+    if (ok !== false) { e.target.reset(); pushSend([{ staff: true, title: anon ? "New anonymous complaint" : "New complaint", body: sub, tag: "cp" }]); toast("Sent to the Head of Volunteers and Student Council"); }
   });
 };
+const openQ = () => Object.values(S.queries).filter(q => (q.status || "open") === "open").length;
+const newCp = () => Object.values(S.complaints).filter(c => (c.status || "new") === "new").length;
 VIEWS.inbox = () => {
+  const tab = ui.inboxTab === "q" ? "q" : "cp";
+  const seg = `<div class="seg inbox-seg" role="group" aria-label="Inbox"><button data-act="inbox-tab" data-k="cp" aria-pressed="${tab === "cp"}">Complaints${newCp() ? ` <span class="badge num">${newCp()}</span>` : ""}</button><button data-act="inbox-tab" data-k="q" aria-pressed="${tab === "q"}">Questions${openQ() ? ` <span class="badge num">${openQ()}</span>` : ""}</button></div>`;
+  if (tab === "q") return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Inbox</h2><div class="muted" style="font-size:14px">Questions from volunteers · answered by the Head of Volunteers and the Student Council</div></div>${seg}</div>${queryBoard()}`;
   const all = Object.entries(S.complaints).map(([id, c]) => ({ id, ...c })).sort((a, b) => b.created.localeCompare(a.created));
-  return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Inbox</h2><div class="muted" style="font-size:14px">Complaints and feedback · visible to the Head of Volunteers only</div></div></div>
+  return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Inbox</h2><div class="muted" style="font-size:14px">Complaints and feedback · Head of Volunteers and Student Council${role() === "council" ? " · view only" : ""}</div></div>${seg}</div>
   <div class="board st">${Object.entries(CP_ST).map(([k, [l, t]], ci) => { const cs = all.filter(c => (c.status || "new") === k); return `<section class="bcol" style="--i:${ci}" data-col="${k}"><div class="bcol-head"><span class="pill t-${t}">${l}</span><span class="num muted">${cs.length}</span></div>
-    ${cs.map(c => `<button class="bcard ${k === "new" ? "unread" : ""}" data-act="open-cp" data-id="${c.id}" draggable="true" data-drag="${c.id}"><span class="bc-top"><span class="tag">${esc(c.kind || "Complaint")}</span><span class="muted num">${fmtDate(c.created.slice(0, 10))}</span></span><b>${esc(c.subject)}</b><span class="clip">${esc(c.body)}</span><span class="bc-from">${c.anon ? "Anonymous" : esc(cpFrom(c))}</span></button>`).join("") || `<div class="bempty">Empty</div>`}</section>`; }).join("")}</div>`;
+    ${cs.map(c => `<button class="bcard ${k === "new" ? "unread" : ""}" data-act="open-cp" data-id="${c.id}" ${role() === "head" ? `draggable="true" data-drag="${c.id}"` : ""}><span class="bc-top"><span class="tag">${esc(c.kind || "Complaint")}</span><span class="muted num">${fmtDate(c.created.slice(0, 10))}</span></span><b>${esc(c.subject)}</b><span class="clip">${esc(c.body)}</span><span class="bc-from">${c.anon ? "Anonymous" : esc(cpFrom(c))}</span></button>`).join("") || `<div class="bempty">Empty</div>`}</section>`; }).join("")}</div>`;
 };
 after.inbox = () => {
   document.querySelectorAll("[data-drag]").forEach(c => c.addEventListener("dragstart", e => { e.dataTransfer.setData("text/cp", c.dataset.drag); c.classList.add("dragging"); }));
@@ -1766,12 +1844,31 @@ function cpModal() {
   return `<div class="modal" role="dialog" aria-label="Complaint"><div class="bc-top"><span class="tag">${esc(c.kind || "Complaint")}</span><span class="muted">${new Date(c.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span></div>
     <h2 style="margin-top:8px">${esc(c.subject)}</h2><div class="muted" style="font-size:13.5px;margin:4px 0 12px">From ${esc(cpFrom(c))}</div>
     <div class="report-body cp-body">${esc(c.body)}</div>
+    ${role() !== "head" ? `${c.reply ? `<div class="cp-reply" style="margin-top:12px"><span class="eyebrow">Reply</span>${esc(c.reply)}</div>` : ""}<div class="actions"><button type="button" class="btn ghost" data-close>Close</button></div></div>` : `
     <div class="seg" role="group" aria-label="Status" style="margin:16px 0 4px">${Object.entries(CP_ST).map(([k, [l]]) => `<button type="button" data-act="cp-status" data-k="${k}" aria-pressed="${(c.status || "new") === k}">${l}</button>`).join("")}</div>
     <form id="cpReplyForm" class="stack-form" style="margin-top:12px">
       ${c.anon ? "" : `<label class="field">Reply · shown to the sender<textarea id="cpReply" rows="3" maxlength="2000">${esc(c.reply || "")}</textarea></label>`}
       <label class="field">Private note<textarea id="cpNote" rows="2" maxlength="2000">${esc(c.note || "")}</textarea></label>
       ${ui.confirm === "cp" ? `<div class="confirm"><span style="flex:1">Delete permanently?</span><button type="button" class="btn small" data-act="cp-keep">Keep</button><button type="button" class="btn small danger solid" data-act="cp-del">Delete</button></div>` : ""}
       <div class="actions">${ui.confirm !== "cp" ? `<button type="button" class="btn danger" data-act="cp-ask-del" style="margin-right:auto">Delete</button>` : ""}<button type="button" class="btn ghost" data-close>Close</button><button class="btn primary" type="submit">Save</button></div>
+    </form></div>`}`;
+}
+const Q_ST = { open: ["Open", "warn"], answered: ["Answered", "ok"] };
+function queryBoard() {
+  const all = Object.entries(S.queries).map(([id, q]) => ({ id, ...q })).sort((a, b) => b.created.localeCompare(a.created));
+  return `<div class="board q-board st">${Object.entries(Q_ST).map(([k, [l, t]], ci) => { const qs = all.filter(q => (q.status || "open") === k); return `<section class="bcol" style="--i:${ci}"><div class="bcol-head"><span class="pill t-${t}">${l}</span><span class="num muted">${qs.length}</span></div>
+    ${qs.map(q => `<button class="bcard ${k === "open" ? "unread" : ""}" data-act="open-q" data-id="${q.id}"><span class="bc-top"><span class="tag">Question</span>${q.public ? `<span class="tag ok">Shared</span>` : ""}<span class="muted num">${fmtDate(q.created.slice(0, 10))}</span></span><b>${esc(q.subject)}</b><span class="clip">${esc(q.body)}</span><span class="bc-from">${esc(q.name || "Volunteer")}${q.answeredBy ? ` · answered by ${esc(q.answeredBy)}` : ""}</span></button>`).join("") || `<div class="bempty">Empty</div>`}</section>`; }).join("")}</div>`;
+}
+function qModal() {
+  const q = S.queries[ui.qId]; if (!q) return "";
+  return `<div class="modal" role="dialog" aria-label="Question"><div class="bc-top"><span class="tag">Question</span><span class="muted">${new Date(q.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span></div>
+    <h2 style="margin-top:8px">${esc(q.subject)}</h2><div class="muted" style="font-size:13.5px;margin:4px 0 12px">From ${esc(q.name || "Volunteer")}</div>
+    <div class="report-body cp-body">${esc(q.body)}</div>
+    <form id="qForm" class="stack-form" style="margin-top:14px">
+      <label class="field">Answer · shown to ${esc(firstName(q.name || "the volunteer"))}<textarea id="qReply" rows="4" maxlength="3000">${esc(q.reply || "")}</textarea></label>
+      <label class="checkrow"><input type="checkbox" id="qPublic" ${q.public ? "checked" : ""}><span><b>Share with everyone</b><small>Shows in every volunteer's answered questions, without the asker's name</small></span></label>
+      ${ui.confirm === "q" ? `<div class="confirm"><span style="flex:1">Delete this question?</span><button type="button" class="btn small" data-act="q-keep">Keep</button><button type="button" class="btn small danger solid" data-act="q-del">Delete</button></div>` : ""}
+      <div class="actions">${role() === "head" && ui.confirm !== "q" ? `<button type="button" class="btn danger" data-act="q-ask-del" style="margin-right:auto">Delete</button>` : ""}<button type="button" class="btn ghost" data-close>Close</button><button class="btn primary" type="submit">Send answer</button></div>
     </form></div>`;
 }
 
@@ -1785,7 +1882,7 @@ const HB_VOL = `<header class="hb-head"><img src="CREST" alt=""><div><div class=
 <li><h3>Outside school</h3><ul><li>Only with approval from the school and the Head.</li><li>Formal dress and your ID.</li><li>Be at the meeting point on time.</li><li>Respect local customs. You represent MEIS.</li><li>The organizer gives your certificate.</li></ul></li>
 <li><h3>If something goes wrong</h3><ul><li>Stay calm. Never argue in public.</li><li>Tell your supervisor.</li><li>Safety problem: tell the Head straight away.</li></ul></li>
 <li><h3>Getting promoted</h3><div class="pills4"><span>On time</span><span>Calm</span><span>Takes initiative</span><span>Follows the rules</span></div></li>
-<li><h3>Speak up</h3><p>Use <b>Complaints</b> in this app any time. Only the Head of Volunteers reads it, and nobody can punish you for speaking up.</p></li>
+<li><h3>Speak up</h3><p>Use <b>Questions & complaints</b> in this app any time. The Head of Volunteers and the Student Council read them, and nobody can punish you for speaking up.</p></li>
 </ol>
 <footer class="hb-foot">Volunteering with Primum Auxilium means following this handbook.<div class="hb-credit"><img src="MEISL" alt=""><span>Sponsored by Middle East International School<br>Under the supervision of the Ministry of Education</span><img src="MOEL" alt="" class="moe"></div></footer>`;
 const HB_SUP = `<header class="hb-head"><img src="CREST" alt=""><div><div class="eyebrow">Primum Auxilium · MEIS · Supervisory only</div><h2>Supervisory Handbook</h2><div class="muted">Read with the Volunteer Handbook</div></div></header>
@@ -1827,11 +1924,15 @@ function councilRows() {
     return `<div class="srow">${who}<span style="display:flex;gap:6px;align-items:center">${ui.scMake === i ? `<input type="text" id="scMakePw" value="${genPassword()}" style="width:170px" aria-label="Password"><button class="btn small primary" data-act="sc-save" data-i="${i}">Save</button>` : `<span class="tag">No sign-in</span><button class="btn small primary" data-act="sc-make" data-i="${i}">Create sign-in</button>`}</span></div>`;
   }).join("");
 }
+function admBoxHTML() {
+  if (ui.admCode && Date.now() - (ui.admAt || 0) < 170e3) return `<div class="keybox num adm-code" id="admCodeText">${esc(ui.admCode)}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="admcode-copy">Copy</button><button class="btn small ghost" data-act="adm-gen">New code</button></div>`;
+  ui.admCode = null; return `<button class="btn primary" data-act="adm-gen">Generate access code</button>`;
+}
 function acctBox() {
   const vn = Object.values(S.accounts).filter(a => a.role === "volunteer").length;
-  return `<div class="eyebrow" style="margin-bottom:6px">Administration</div>
-    ${accRows("admin")}
-    <form id="admForm" class="grid2" style="margin-top:10px;align-items:end"><label class="field">Name<input type="text" id="admName" maxlength="80" required></label><label class="field">Password<input type="text" id="admPw" value="${genPassword()}" required minlength="6"></label><div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn" type="submit">Add administration account</button></div></form>
+  return `<div class="eyebrow" style="margin-bottom:6px">School administration</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:8px">Administration signs in with a one-time access code. Generate one, then read it out or send it.</div>
+    <div id="admCodeBox" class="adm-box">${admBoxHTML()}</div>
     <div class="eyebrow" style="margin:18px 0 6px">Student Council ${s_year()}</div>
     <div class="muted" style="font-size:12.5px;margin-bottom:6px">Council members post events. Events tools: edit any council event and see the team calendar. PR tools: ready-to-post announcements and recaps.</div>
     <div class="slist">${councilRows()}</div>
@@ -1843,13 +1944,6 @@ function acctBox() {
     <form id="headPwForm" class="grid2" style="align-items:end"><label class="field">Current<input type="password" id="hpOld" required autocomplete="current-password"></label><label class="field">New<input type="password" id="hpNew" required minlength="8" autocomplete="new-password"></label><div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn" type="submit">Change password</button></div></form>`;
 }
 function bindAcct() {
-  $("#admForm")?.addEventListener("submit", async e => {
-    e.preventDefault(); const name = $("#admName").value.trim(), pw = $("#admPw").value;
-    if (!name || pw.length < 6) return toast("Name and a 6+ character password required.");
-    if (Object.values(S.accounts).some(a => normName(accName(a)) === normName(name))) return toast("That name already has an account.");
-    await put("accounts", uid(), { role: "admin", name, ...(await makeSecret(pw)), created: new Date().toISOString() });
-    toast(`${name} added · password ${pw}`);
-  });
   $("#scAccForm")?.addEventListener("submit", async e => {
     e.preventDefault(); const name = $("#scName").value.trim(), pw = $("#scPw").value;
     if (!name || pw.length < 6) return toast("Name and a 6+ character password required.");
@@ -1878,7 +1972,7 @@ function renderOverlay() {
   else if (ui.modal) host.innerHTML = `<div class="overlay" data-close>${ui.modal()}</div>`;
   else { host.innerHTML = ""; return; }
   document.body.style.overflow = "hidden";
-  if (role() !== "head" && !host.querySelector("#scForm")) host.querySelectorAll(".drawer input,.drawer select,.drawer textarea,.modal form input,.modal form select,.modal form textarea,.modal form button[type=submit]").forEach(x => { if (!x.closest("#impForm")) x.disabled = true; });
+  if (role() !== "head" && !host.querySelector("#scForm, #logForm, #monthForm")) host.querySelectorAll(".drawer input,.drawer select,.drawer textarea,.modal form input,.modal form select,.modal form textarea,.modal form button[type=submit]").forEach(x => { if (!x.closest("#impForm")) x.disabled = true; });
   host.querySelector("[autofocus]")?.focus();
   bindOverlay();
 }
@@ -1976,6 +2070,14 @@ function reportModal(id, audit) {
 }
 
 function bindOverlay() {
+  $("#qForm")?.addEventListener("submit", async e => {
+    e.preventDefault(); const q = S.queries[ui.qId]; if (!q) return;
+    const reply = $("#qReply").value.trim(); if (!reply) return $("#qReply").focus();
+    const ok = await put("queries", ui.qId, { ...q, reply, public: $("#qPublic").checked, status: "answered", answeredBy: accName(me()), answeredAt: new Date().toISOString() });
+    if (ok === false) return;
+    if (q.vid && !q.reply) pushSend([{ vids: [q.vid], title: "Your question was answered", body: q.subject, tag: "q" + ui.qId }]);
+    closeOverlay(); toast("Answer sent");
+  });
   $("#cpReplyForm")?.addEventListener("submit", async e => {
     e.preventDefault(); const c = S.complaints[ui.cpId]; if (!c) return;
     await put("complaints", ui.cpId, { ...c, ...(c.anon ? {} : { reply: $("#cpReply").value.trim() }), note: $("#cpNote").value.trim(), status: c.status === "new" ? "review" : c.status });
@@ -2199,7 +2301,7 @@ function importModal() {
 }
 
 /* ---------- desktop updates ---------- */
-function backupJSON() { return JSON.stringify({ app: "primum-auxilium", version: 2, exportedAt: new Date().toISOString(), volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, settings: S.settings }, null, 1); }
+function backupJSON() { return JSON.stringify({ app: "primum-auxilium", version: 2, exportedAt: new Date().toISOString(), volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, settings: S.settings }, null, 1); }
 function updBox() {
   const u = ui.upd || { state: "idle" }, keep = `<div class="muted" style="font-size:13px">Data is kept. A backup is saved before installing.</div>`;
   const btn = (label, primary) => `<button class="btn ${primary ? "primary" : ""}" data-act="upd-check">${label}</button>`;
@@ -2254,7 +2356,7 @@ async function restore() {
     ev.pdfs = kept;
   }
   const withAcc = mode !== "cloud" && Object.values(b.accounts || {}).some(a => a.role === "head");
-  for (const c of ["entries", "reports", "events", "volunteers", ...(withAcc ? ["accounts"] : []), ...(b.complaints ? ["complaints"] : [])]) {
+  for (const c of ["entries", "reports", "events", "volunteers", ...(withAcc ? ["accounts"] : []), ...(b.complaints ? ["complaints"] : []), ...(b.queries ? ["queries"] : []), ...(b.reviews ? ["reviews"] : []), ...(b.logs ? ["logs"] : [])]) {
     for (const id of Object.keys(S[c])) if (!(b[c] || {})[id]) await del(c, id);
     for (const [id, doc] of Object.entries(b[c] || {})) await put(c, id, doc);
   }
@@ -2443,7 +2545,7 @@ async function drawEventCert(canvas, evId, vid) {
   await fontsReady; await crestReady; const photo = await loadImg(ev.photo);
   const W = 1600, H = 1131, ctx = canvas.getContext("2d"), k = canvas.width / W; ctx.setTransform(k, 0, 0, k, 0, 0);
   const D = "'Cinzel', Georgia, serif", B = "'Atkinson Hyperlegible', system-ui, sans-serif", M = "'IBM Plex Mono', monospace";
-  const hrs = eventAttendees(evId).find(x => x.vid === vid)?.h || 0, head = headVol();
+  const hrs = eventAttendees(evId).find(x => x.vid === vid)?.h || evHours(ev) || 0, head = headVol();
   ctx.fillStyle = CERT.paper; ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = CERT.green; ctx.lineWidth = 16; ctx.strokeRect(36, 36, W - 72, H - 72);
   ctx.strokeStyle = CERT.silver; ctx.lineWidth = 3; ctx.strokeRect(56, 56, W - 112, H - 112);
@@ -2470,7 +2572,7 @@ async function drawEventCert(canvas, evId, vid) {
   ctx.fillStyle = CERT.ink; ctx.fillText(ev.title, W / 2, 656);
   ctx.fillStyle = CERT.ink; ctx.font = `400 29px ${B}`;
   ctx.fillText([`on ${fmtDate(ev.date, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`, ev.location ? `at ${ev.location}` : ""].filter(Boolean).join(" "), W / 2, 712);
-  ctx.fillText(`contributing ${fmtH(hrs)} hour${hrs === 1 ? "" : "s"} of volunteer service.`, W / 2, 754);
+  ctx.fillText(`contributing ${fmtH(hrs)} hour${hrs === 1 ? "" : "s"} of volunteer service at ${SCHOOL}.`, W / 2, 754);
   const sx = W / 2, sy = 880;
   ctx.fillStyle = CERT.silver; ctx.beginPath(); for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2, rr = i % 2 ? 80 : 90; ctx.lineTo(sx + Math.cos(a) * rr, sy + Math.sin(a) * rr); } ctx.closePath(); ctx.fill();
   ctx.save(); ctx.beginPath(); ctx.arc(sx, sy, 72, 0, Math.PI * 2); ctx.clip();
@@ -2610,6 +2712,7 @@ function eventCards() {
       <div class="ehead"><div class="edate"><span>${fmtDate(e.date, { month: "short" })}</span><b>${parse(e.date).getDate()}</b></div>
         <div style="flex:1;min-width:0"><h3>${esc(e.title)}${e.external ? ` <span class="tag ext" style="vertical-align:3px">External</span>` : ""}${e.council ? ` <span class="tag sc" style="vertical-align:3px">Student Council</span>` : ""}</h3><div class="muted" style="font-size:13.5px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location, e.hours ? fmtH(e.hours) + " h" : ""].filter(Boolean).join(" · "))}</div></div>
         <button class="btn small ghost" data-act="edit-event" data-id="${e.id}">Edit</button></div>
+      ${logBlock(e)}
       ${isDone ? `<div class="muted" style="font-size:14px">Attendance recorded: <b style="color:var(--ink)">${att.length} volunteer${att.length === 1 ? "" : "s"}, ${fmtH(att.reduce((t, x) => t + Number(x.hours || 0), 0))} h</b>${e.supervisor ? `, signed off by ${esc(e.supervisor)}` : ""}.</div>
         <div class="chips">${leadsOf(e).map(id => leadChip(e.id, id, true)).join("")}${att.filter(x => S.volunteers[x.volunteerId] && !leadsOf(e).includes(x.volunteerId)).map(x => vchip(e.id, x.volunteerId, false, true)).join("")}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">${e.external ? `<span class="tag ext">External${e.organizer ? " · " + esc(e.organizer) : ""}</span>` : e.photo ? `<img src="${e.photo}" alt="" style="height:40px;width:auto;max-width:120px;border-radius:6px;object-fit:contain">` : `<span class="muted" style="font-size:13px">Photo needed for certificates</span>`}<button class="btn primary" data-act="goto-thread" data-id="${e.id}">Certificates thread</button></div>` : `
@@ -2670,7 +2773,7 @@ function eventModal(id) {
 }
 function attendanceModal(id) {
   const e = S.events[id], { confirmed, waitlist } = eventRoster(e);
-  const row = (vid, on, lead) => { const v = S.volunteers[vid]; return `<div class="attrow" data-att="${vid}"><input type="checkbox" ${on ? "checked" : ""} aria-label="${esc(v.name)} attended"><span>${lead ? "★ " : ""}${esc(v.name)} <span class="muted" style="font-size:12px">${cls(v)}${lead ? " · shift lead" : on ? "" : " · waitlist"}</span></span><input type="number" min="0" max="24" step="0.25" value="${evHours(e) || ""}" aria-label="Hours for ${esc(v.name)}"></div>`; };
+  const row = (vid, on, lead) => { const v = S.volunteers[vid], lg = S.logs[id]?.people?.[vid]; if (lg) on = lg.status !== "absent"; return `<div class="attrow" data-att="${vid}"><input type="checkbox" ${on ? "checked" : ""} aria-label="${esc(v.name)} attended"><span>${lead ? "★ " : ""}${esc(v.name)} <span class="muted" style="font-size:12px">${cls(v)}${lead ? " · shift lead" : on ? "" : " · waitlist"}${lg && lg.status !== "present" ? " · " + LOGST[lg.status] + (lg.note ? ": " + esc(lg.note) : "") : ""}</span></span><input type="number" min="0" max="24" step="0.25" value="${evHours(e) || ""}" aria-label="Hours for ${esc(v.name)}"></div>`; };
   return `<div class="modal" role="dialog" aria-label="Record attendance"><h2>Who came to ${esc(e.title)}?</h2>
     <form id="attForm" class="stack-form">
       <div class="att-sum"><span><b class="num">${fmtH(evHours(e))} h</b> each${e.start && e.end ? ` · ${e.start}–${e.end}` : ""}</span><span class="muted">Logged on ${fmtLong(e.date)} · adjust for early leavers</span></div>
@@ -2882,6 +2985,7 @@ async function drawCert(canvas, vid) {
   ctx.fillStyle = CERT.ink; ctx.font = `400 31px ${B}`;
   ctx.fillText(`completed ${fmtH(h)} hours of volunteer service during the ${s.yearStart.slice(0, 4)}–${s.yearEnd.slice(2, 4)} school year,`, W / 2, 662);
   ctx.fillText(`meeting the ${s.goal}-hour requirement on ${fmtLong(earned)}.`, W / 2, 706);
+  ctx.fillText(`at ${SCHOOL}.`, W / 2, 750);
   // seal: navy over slate, silver rim, like the shield
   const sx = W / 2, sy = 875;
   ctx.fillStyle = CERT.silver; ctx.beginPath(); for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2, r = i % 2 ? 80 : 90; ctx.lineTo(sx + Math.cos(a) * r, sy + Math.sin(a) * r); } ctx.closePath(); ctx.fill();
@@ -3019,6 +3123,16 @@ document.addEventListener("click", async e => {
     case "sc-ask-del": ui.confirm = "sc"; ui.modal = () => councilModal(ui.eventId); renderOverlay(); break;
     case "sc-keep": ui.confirm = null; ui.modal = () => councilModal(ui.eventId); renderOverlay(); break;
     case "ev-remove": { const ev = S.events[id]; await put("events", id, { ...ev, signups: (ev.signups || []).filter(x => x !== a.dataset.vid) }); break; }
+    case "ics": icsDownload(id); break;
+    case "open-log": ui.eventId = id; ui.modal = () => logModal(id); renderOverlay(); break;
+    case "log-copy": { const e = S.events[ui.eventId], f = logRead(); const t = logText(e, f.summary, f.people); try { await navigator.clipboard.writeText(t); toast("Copied · paste it in Discord"); } catch { toast("Copy blocked by the browser"); } break; }
+    case "log-copy-saved": { const e = S.events[id], l = S.logs[id]; if (!e || !l) break; try { await navigator.clipboard.writeText(logText(e, l.summary, l.people)); toast("Copied · paste it in Discord"); } catch { toast("Copy blocked by the browser"); } break; }
+    case "month-open": ui.modal = monthModal; renderOverlay(); break;
+    case "push-on": pushOn(); break;
+    case "push-off": pushOff(); break;
+    case "rv-ask": break;
+    case "rv-up": reviewDecide(id, "upheld"); break;
+    case "rv-no": reviewDecide(id, "dismissed"); break;
     case "attendance": ui.eventId = id; ui.modal = () => attendanceModal(id); renderOverlay(); break;
     case "open-cert": ui.drawer = null; ui.certId = id; ui.modal = certModal; renderOverlay(); drawCert($("#certCanvas"), id); break;
     case "cert-pdf": certDownload(ui.certId, "pdf", a); break;
@@ -3054,13 +3168,26 @@ document.addEventListener("click", async e => {
     case "notice-ok": { const p = a.closest(".notice-panel"); ackNotices(); if (p && !reduced()) { p.classList.add("bye"); setTimeout(() => { p.remove(); renderTabs(true); }, 380); } else { p && p.remove(); renderTabs(true); } break; }
     case "callup-copy": { const t = callupText(S.events[id]); try { await navigator.clipboard.writeText(t); toast("Call-up copied · paste it in the group chat"); } catch { toast("Copy blocked by the browser"); } break; }
     case "sign-out": signOut(); break;
+    case "gate-admin": ui.gate = "admin"; renderGate(); break;
+    case "adm-gen": {
+      a.disabled = true;
+      try { ui.admCode = await makeAdminCode(); ui.admAt = Date.now(); const bx = $("#admCodeBox"); if (bx) bx.innerHTML = admBoxHTML(); }
+      catch { toast("Couldn't make a code. Try again."); }
+      a.disabled = false; break;
+    }
+    case "admcode-copy": try { await navigator.clipboard.writeText(ui.admCode); toast("Copied"); } catch {} break;
     case "gate-recover": ui.gate = "recover"; renderGate(); break;
     case "gate-back": ui.gate = null; renderGate(); break;
     case "key-copy": try { await navigator.clipboard.writeText(ui.newKey); toast("Copied"); } catch { const r = document.createRange(); r.selectNodeContents($("#keyText")); getSelection().removeAllRanges(); getSelection().addRange(r); } break;
     case "key-save": try { await downloads.save({ filename: "primum-auxilium-recovery-key.txt", data: `Primum Auxilium · Head of Volunteers recovery key\n\n${ui.newKey}\n\nCreated ${new Date().toLocaleString()}\n` }); } catch {} break;
     case "key-done": ui.gate = null; ui.newKey = null; swap(() => render(true)); break;
     case "hb": ui.hb = a.dataset.k; swap(() => render(true)); break;
-    case "open-cp": { ui.cpId = id; ui.confirm = null; ui.modal = cpModal; const c = S.complaints[id]; renderOverlay(); if (c && (c.status || "new") === "new") put("complaints", id, { ...c, status: "review" }); break; }
+    case "open-cp": { ui.cpId = id; ui.confirm = null; ui.modal = cpModal; const c = S.complaints[id]; renderOverlay(); if (role() === "head" && c && (c.status || "new") === "new") put("complaints", id, { ...c, status: "review" }); break; }
+    case "inbox-tab": ui.inboxTab = a.dataset.k; swap(() => render(true), a.dataset.k === "q" ? "fwd" : "back"); break;
+    case "open-q": ui.qId = id; ui.confirm = null; ui.modal = qModal; renderOverlay(); break;
+    case "q-ask-del": ui.confirm = "q"; renderOverlay(); break;
+    case "q-keep": ui.confirm = null; renderOverlay(); break;
+    case "q-del": await del("queries", ui.qId); closeOverlay(); toast("Deleted"); break;
     case "cp-status": { const c = S.complaints[ui.cpId]; await put("complaints", ui.cpId, { ...c, status: a.dataset.k }); renderOverlay(); break; }
     case "cp-ask-del": ui.confirm = "cp"; renderOverlay(); break;
     case "cp-keep": ui.confirm = null; renderOverlay(); break;
@@ -3151,6 +3278,254 @@ document.addEventListener("keydown", e => {
   document.addEventListener("click", e => { const b = e.target.closest('[data-act$="copy"]'); if (!b) return; const t = b.textContent; b.classList.add("done"); b.textContent = "Copied ✓"; setTimeout(() => { b.textContent = t; b.classList.remove("done"); }, 1400); }, true);
   // Overlays: new content in drawers and modals slides in each time it is redrawn.
   new MutationObserver(() => { const m = document.querySelector("#overlayHost .modal,#overlayHost .drawer"); if (m && !m.dataset.seen) { m.dataset.seen = 1; m.querySelectorAll(".attrow,.ap,.field,.srow").forEach((x, i) => { x.style.setProperty("--k", Math.min(i, 14)); x.classList.add("in-k"); }); } }).observe($("#overlayHost"), { childList: true });
+})();
+
+
+/* ---------- push, event logs, calendar, monthly report, reviews ---------- */
+const SCHOOL = "Middle East International School - Al Wurud";
+const LOGST = { present: "Present", late: "Late", early: "Left early", absent: "Absent" };
+function pushSend(msgs) {
+  if (mode !== "cloud" || !tok() || role() === "admin" || !msgs.length) return;
+  fetch(`${CLOUD.url}/functions/v1/notify`, { method: "POST", headers: { apikey: CLOUD.key, ...(CLOUD.key.startsWith("eyJ") ? { Authorization: "Bearer " + CLOUD.key } : {}), "Content-Type": "application/json" }, body: JSON.stringify({ token: tok(), msgs }) }).catch(() => {});
+}
+const pushCan = () => mode === "cloud" && !!CLOUD.vapid && !!tok() && role() !== "admin";
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const standalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const urlB64 = t => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - t.length % 4) % 4)), c => c.charCodeAt(0));
+async function pushSub() { try { const reg = await navigator.serviceWorker.ready; return await reg.pushManager.getSubscription(); } catch { return null; } }
+async function pushCheck() { ui.pushOn = !!(pushSupported() && await pushSub()); refresh(); }
+async function pushOn() {
+  try {
+    if (await Notification.requestPermission() !== "granted") return toast("Notifications are blocked. Allow them in your browser settings.");
+    const reg = await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(CLOUD.vapid) });
+    const j = sub.toJSON();
+    await rpc("pa_push_sub", { token: tok(), endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth });
+    ui.pushOn = true; refresh(); toast("Notifications on");
+  } catch { toast("Couldn't turn notifications on. Try again."); }
+}
+async function pushOff() {
+  try { const sub = await pushSub(); if (sub) { await rpc("pa_push_unsub", { token: tok(), endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe(); } ui.pushOn = false; refresh(); toast("Notifications off"); }
+  catch { toast("Couldn't turn notifications off."); }
+}
+async function pushDrop(t) {
+  ui.pushOn = undefined;
+  try { if (!CLOUD.vapid || !pushSupported()) return; const sub = await pushSub(); if (sub) { await rpc("pa_push_unsub", { token: t, endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe(); } } catch {}
+}
+function pushBox() {
+  if (!pushCan()) return "";
+  const who = role() === "volunteer" ? "when you are selected for an event, made a shift lead, or a question of yours is answered" : "when a volunteer asks a question or files a complaint, or a shift lead sends an event log";
+  let body;
+  if (!pushSupported()) body = isIOS() && !standalone() ? `<div class="muted" style="font-size:13.5px">On iPhone, tap Share, then <b>Add to Home Screen</b>, and open the app from there to turn notifications on.</div>` : "";
+  else {
+    if (ui.pushOn === undefined) { ui.pushOn = null; pushCheck(); }
+    body = ui.pushOn ? `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="tag ok">On for this device</span><button class="btn small" data-act="push-off">Turn off</button></div>` : `<button class="btn primary" data-act="push-on">Turn on notifications</button>`;
+  }
+  return body ? `<section class="panel pushbox" style="margin-top:14px"><div class="panel-head"><h2>Phone notifications</h2></div><div class="muted" style="font-size:13.5px;margin-bottom:10px">Get a buzz ${who}.</div>${body}</section>` : "";
+}
+(() => {
+  const me0 = VIEWS.me, st0 = VIEWS.settings, ce0 = VIEWS.cevents;
+  VIEWS.me = () => { const h = me0(), m = '<section class="panel" style="--i:6"><div class="panel-head"><h2>Password'; return h.includes(m) ? h.replace(m, pushBox() + m) : h + pushBox(); };
+  VIEWS.settings = () => st0() + pushBox();
+  VIEWS.cevents = () => ce0() + pushBox();
+})();
+
+// Tell volunteers when a change to an event affects them.
+function evPush(prev, e, id) {
+  if (!e || e.status === "done" || (e.date || "") < todayISO()) return;
+  const st = (ev, vid) => { if (!ev) return ""; const r = eventRoster(ev); return (ev.leads || []).includes(vid) ? "lead" : r.confirmed.includes(vid) ? "in" : r.waitlist.includes(vid) ? "wait" : ""; };
+  const ids = new Set([...(prev?.signups || []), ...(prev?.leads || []), ...(e.signups || []), ...(e.leads || [])]);
+  const moved = prev && (prev.date !== e.date || (prev.start || "") !== (e.start || "") || (prev.location || "") !== (e.location || ""));
+  const txt = { lead: "You're a shift lead", in: "You're selected", wait: "You're on the waitlist", out: "You're no longer on this event", upd: "Details changed" };
+  const by = {};
+  ids.forEach(v => {
+    if (!S.volunteers[v]) return;
+    const a = st(prev, v), b = st(e, v);
+    const k = a !== b ? (b || "out") : (b && moved ? "upd" : "");
+    if (k) (by[k] = by[k] || []).push(v);
+  });
+  const when = [fmtDate(e.date, { weekday: "short", month: "short", day: "numeric" }), e.start, e.location].filter(Boolean).join(" · ");
+  pushSend(Object.entries(by).map(([k, vids]) => ({ vids, title: e.title, body: `${txt[k]} · ${when}`, tag: "ev" + id })));
+}
+
+// Shift-lead event log
+const RGROUP = v => v.rank === "probationary" ? 2 : v.rank === "supervisory" || v.rank === "logistics" ? 0 : 1;
+const RGROUPS = ["Senior volunteers", "Volunteers", "Probationary volunteers"];
+const logTeam = e => [...new Set([...leadsOf(e), ...eventRoster(e).confirmed])].filter(id => S.volunteers[id]);
+function logText(e, summary, people) {
+  const g = [[], [], []], notes = [];
+  logTeam(e).forEach(id => {
+    const v = S.volunteers[id], p = people[id] || { status: "present" };
+    if (p.status === "absent") return;
+    g[RGROUP(v)].push(v.name + (p.status === "late" ? " (late)" : p.status === "early" ? " (left early)" : ""));
+    if (p.note) notes.push(`- ${v.name}: ${p.note}`);
+  });
+  return [`Event Name: ${e.title}`, `Event log: ${summary || ""}`, `Senior Volunteers involved: ${g[0].join(", ")}`, `Volunteers involved: ${g[1].join(", ")}`, `Probationary volunteers involved: ${g[2].join(", ")}`,
+    ...(notes.length ? ["Notes:", ...notes] : [])].join("\n");
+}
+function logModal(id) {
+  const e = S.events[id], l = S.logs[id] || {}, ids = logTeam(e);
+  const grp = RGROUPS.map((n, gi) => {
+    const rows = ids.filter(x => RGROUP(S.volunteers[x]) === gi);
+    return rows.length ? `<div class="eyebrow" style="margin-top:6px">${n}</div>${rows.map(x => { const v = S.volunteers[x], p = l.people?.[x] || {}; return `<div class="lgrow" data-lg="${x}" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:8px 0"><span>${leadsOf(e).includes(x) ? "★ " : ""}${esc(v.name)} <span class="muted" style="font-size:12px">${cls(v)}</span></span><select aria-label="Status for ${esc(v.name)}">${Object.entries(LOGST).map(([k, t]) => `<option value="${k}" ${(p.status || "present") === k ? "selected" : ""}>${t}</option>`).join("")}</select><input type="text" style="grid-column:1/-1" maxlength="200" placeholder="Note (optional)" value="${esc(p.note || "")}" aria-label="Note for ${esc(v.name)}"></div>`; }).join("")}` : "";
+  }).join("");
+  return `<div class="modal wide" role="dialog" aria-label="Event log"><h2>Event log · ${esc(e.title)}</h2>
+    <form id="logForm" class="stack-form">
+      <div class="att-sum"><span>Everyone selected is already on the list. Just confirm how it went.</span><span class="muted">${fmtLong(e.date)}</span></div>
+      <label class="field">How did it go?<textarea id="lgSum" rows="4" maxlength="3000" placeholder="A few lines on what happened">${esc(l.summary || "")}</textarea></label>
+      ${grp || `<div class="muted">No one is selected yet.</div>`}
+      <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button type="button" class="btn" data-act="log-copy">Copy for Discord</button><button class="btn primary" type="submit">Save log</button></div>
+    </form></div>`;
+}
+function logRead() {
+  const people = {}; document.querySelectorAll("#logForm .lgrow").forEach(r => { people[r.dataset.lg] = { status: r.querySelector("select").value, note: r.querySelector("input").value.trim() }; });
+  return { summary: $("#lgSum").value.trim(), people };
+}
+function logBlock(e) {
+  const l = S.logs[e.id]; if (!l) return "";
+  const c = { late: 0, early: 0, absent: 0 }; Object.values(l.people || {}).forEach(p => { if (c[p.status] !== undefined) c[p.status]++; });
+  const flags = Object.entries(l.people || {}).filter(([, p]) => p.status !== "present" || p.note).map(([v, p]) => `<div style="font-size:13px"><b>${esc(S.volunteers[v]?.name || "")}</b> · ${LOGST[p.status] || ""}${p.note ? ` · ${esc(p.note)}` : ""}</div>`).join("");
+  return `<details class="evlog"><summary>Shift lead log · ${esc(l.byName || "")}${c.absent + c.late + c.early ? ` · ${[c.late && c.late + " late", c.early && c.early + " left early", c.absent && c.absent + " absent"].filter(Boolean).join(", ")}` : ""}</summary>
+    <div style="margin-top:8px">${l.summary ? `<div style="font-size:14px;white-space:pre-wrap">${esc(l.summary)}</div>` : ""}${flags}${role() === "head" ? `<div style="margin-top:8px"><button class="btn small" data-act="log-copy-saved" data-id="${e.id}">Copy for Discord</button></div>` : ""}</div></details>`;
+}
+
+// Add to calendar
+function icsDownload(id) {
+  const e = S.events[id]; if (!e) return;
+  const d = e.date.replace(/-/g, ""), t = x => x ? x.replace(":", "") + "00" : "", esc2 = x => String(x || "").replace(/[\\;,]/g, m => "\\" + m).replace(/\n/g, "\\n");
+  const when = e.start ? [`DTSTART:${d}T${t(e.start)}`, `DTEND:${d}T${t(e.end || e.start)}`] : [`DTSTART;VALUE=DATE:${d}`];
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Primum Auxilium//EN", "BEGIN:VEVENT", `UID:${id}@primum-auxilium`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`, ...when,
+    `SUMMARY:${esc2(e.title)}`, ...(e.location ? [`LOCATION:${esc2(e.location)}`] : []), `DESCRIPTION:${esc2(["Primum Auxilium volunteering", e.notes].filter(Boolean).join("\n"))}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  downloads.save({ filename: `${e.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.ics`, data: new Blob([ics], { type: "text/calendar" }) }).then(() => toast("Opens in your calendar app"));
+}
+
+// Monthly report
+function monthModal() {
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); const def = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  return `<div class="modal" role="dialog" aria-label="Monthly report"><h2>Monthly report</h2><form id="monthForm" class="stack-form">
+    <label class="field">Month<input type="month" id="mrMonth" value="${def}" required></label>
+    <div class="muted" style="font-size:13.5px">A PDF with hours, events, top volunteers and the shift-lead logs for that month.</div>
+    <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn primary" type="submit">Download PDF</button></div></form></div>`;
+}
+async function monthPDF(ym) {
+  const { jsPDF } = await loadJsPDF(), pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const A = x => String(x || "").replace(/[–—]/g, "-").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[^\x20-\xFF]/g, "");
+  const M = 16, W = 210, H = 297; let y = 20;
+  const need = n => { if (y + n > H - 22) { pdf.addPage(); y = 20; } };
+  const T = (txt, size = 10.5, bold = false, gap = 5.5, x = M, col = [30, 38, 56]) => { pdf.setFont("helvetica", bold ? "bold" : "normal"); pdf.setFontSize(size); pdf.setTextColor(...col); pdf.splitTextToSize(A(txt), W - M - x).forEach(l => { need(gap); pdf.text(l, x, y); y += gap; }); };
+  const label = new Date(ym + "-01T12:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  try { pdf.addImage(crestSrc(), "PNG", M, 12, 18, 18); } catch {}
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.setTextColor(35, 50, 83); pdf.text("Primum Auxilium", M + 24, 20);
+  pdf.setFont("helvetica", "normal"); pdf.setFontSize(10.5); pdf.setTextColor(90, 100, 120); pdf.text(A(SCHOOL), M + 24, 26); pdf.text(`Monthly report - ${A(label)}`, M + 24, 31.5);
+  y = 42;
+  const ents = entries().filter(x => (x.date || "").startsWith(ym) && S.volunteers[x.volunteerId]), tot = ents.reduce((t, x) => t + (Number(x.hours) || 0), 0);
+  const by = {}; ents.forEach(x => { by[x.volunteerId] = (by[x.volunteerId] || 0) + (Number(x.hours) || 0); });
+  const evs = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => (e.date || "").startsWith(ym)).sort((a, b) => a.date.localeCompare(b.date));
+  const all = vols().filter(v => !v.head), met = all.filter(v => isDone(v)).length;
+  T("Summary", 13, true, 7); 
+  [[`${fmtH(tot)} h`, "volunteer hours logged"], [`${Object.keys(by).length}`, "volunteers active"], [`${evs.length}`, "events"], [`${met} of ${all.length}`, `volunteers have reached the ${S.settings.goal}-hour goal so far`],
+    [`${all.filter(v => (v.joined || "").startsWith(ym)).length}`, "new volunteers"]].forEach(([n, t]) => { need(7); pdf.setFont("helvetica", "bold"); pdf.setFontSize(12); pdf.setTextColor(35, 50, 83); pdf.text(A(n), M, y); pdf.setFont("helvetica", "normal"); pdf.setFontSize(10.5); pdf.setTextColor(60, 70, 90); pdf.text(A(t), M + 34, y); y += 6.5; });
+  y += 4; T("Events", 13, true, 7);
+  if (!evs.length) T("No events this month.", 10.5, false, 6);
+  evs.forEach(e => {
+    const att = ents.filter(x => x.eventId === e.id), h = att.reduce((t, x) => t + (Number(x.hours) || 0), 0);
+    T(`${fmtDate(e.date, { day: "numeric", month: "short" })}  ${e.title}${e.external ? " (external)" : ""}`, 10.5, true, 5.5);
+    T(`${att.length ? `${att.length} volunteers, ${fmtH(h)} h` : e.status === "done" ? "Attendance not recorded" : `${eventRoster(e).confirmed.length} signed up`}${e.location ? ` - ${e.location}` : ""}`, 10, false, 5, M + 4, [90, 100, 120]);
+    const l = S.logs[e.id]; if (l && l.summary) T(`Lead log (${l.byName || "shift lead"}): ${l.summary.slice(0, 400)}`, 9.5, false, 4.8, M + 4, [60, 70, 90]);
+    y += 1.5;
+  });
+  y += 3; T("Top volunteers this month", 13, true, 7);
+  const top = Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  if (!top.length) T("No hours logged this month.", 10.5, false, 6);
+  top.forEach(([id, h], i) => T(`${i + 1}.  ${S.volunteers[id].name} (${cls(S.volunteers[id])})  -  ${fmtH(h)} h`, 10.5, false, 5.8));
+  const pages = pdf.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) { pdf.setPage(p); pdf.setDrawColor(200, 205, 215); pdf.line(M, H - 17, W - M, H - 17); pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(110, 118, 135);
+    pdf.text("Sponsored by Middle East International School. Under the supervision of the Ministry of Education.", M, H - 12); pdf.text(`${p} / ${pages}`, W - M, H - 12, { align: "right" }); }
+  await downloads.save({ filename: `primum-auxilium-report-${ym}.pdf`, data: pdf.output("arraybuffer") });
+}
+
+// Review section: requests to hold back a certificate, and the log notes behind them
+const rvList = () => Object.entries(S.reviews).map(([id, r]) => ({ id, ...r })).sort((a, b) => (a.status === "pending" ? 0 : 1) - (b.status === "pending" ? 0 : 1) || (b.created || "").localeCompare(a.created || ""));
+const rvPending = () => Object.values(S.reviews).filter(r => r.status === "pending").length;
+async function reviewDecide(id, st) {
+  const r = S.reviews[id]; if (!r || role() !== "head") return;
+  const was = r.status;
+  if (await put("reviews", id, { ...r, status: st, decided: new Date().toISOString() }) === false) return;
+  const hold = st === "upheld";
+  if (r.eventId && S.events[r.eventId]) { const ev = S.events[r.eventId], w = new Set(ev.withheld || []); hold ? w.add(r.vid) : w.delete(r.vid); await put("events", r.eventId, { ...ev, withheld: [...w] }); }
+  else if (!r.eventId && S.volunteers[r.vid]) await put("volunteers", r.vid, { ...S.volunteers[r.vid], certHold: hold });
+  toast(hold ? "Certificate held back" : was === "upheld" ? "Certificate restored" : "Request dismissed");
+}
+VIEWS.review = () => {
+  const list = rvList(), head = role() === "head";
+  const flags = Object.entries(S.logs).flatMap(([evId, l]) => Object.entries(l.people || {}).filter(([, p]) => p.status && p.status !== "present").map(([vid, p]) => ({ evId, vid, p, l }))).filter(f => S.events[f.evId]).sort((a, b) => (S.events[b.evId].date || "").localeCompare(S.events[a.evId].date || ""));
+  const tagOf = { pending: ["Pending", "warn"], upheld: ["Certificate held", "danger"], dismissed: ["Dismissed", "ok"] };
+  return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Review</h2><div class="muted" style="font-size:14px">Certificate requests from supervisory volunteers and notes from event logs${head ? "" : " · view only, the Head of Volunteers decides"}</div></div></div>
+  <div class="eyebrow sec-title" style="margin-top:6px">Requests</div>
+  <div class="st">${list.length ? list.map((r, i) => { const v = S.volunteers[r.vid], ev = r.eventId && S.events[r.eventId], t = tagOf[r.status] || tagOf.pending; return `<article class="panel" style="--i:${i};margin-bottom:12px"><div class="panel-head"><h2>${esc(v ? v.name : "Removed volunteer")} <span class="muted" style="font-size:13px">${v ? cls(v) : ""}</span></h2><span class="tag ${t[1]}">${t[0]}</span></div>
+    <div class="muted" style="font-size:13px">${ev ? esc(ev.title) + " certificate" : "Service certificate"} · asked by ${esc(r.byName || "a supervisory volunteer")} · ${r.created ? fmtDate(r.created.slice(0, 10)) : ""}</div>
+    <div class="report-body" style="margin:10px 0">${esc(r.reason)}</div>
+    ${head ? `<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">${r.status === "upheld" ? `<button class="btn small" data-act="rv-no" data-id="${r.id}">Restore certificate</button>` : `<button class="btn small" data-act="rv-no" data-id="${r.id}">${r.status === "pending" ? "Dismiss" : "Dismissed"}</button><button class="btn small danger solid" data-act="rv-up" data-id="${r.id}">Hold certificate</button>`}</div>` : ""}</article>`; }).join("") : `<div class="panel empty">No requests.</div>`}</div>
+  <div class="eyebrow sec-title">From event logs</div>
+  <section class="panel">${flags.length ? `<div class="mini-events">${flags.map(f => `<div class="mev"><div style="min-width:0;flex:1"><b>${esc(S.volunteers[f.vid]?.name || "Removed volunteer")}</b> <span class="tag">${LOGST[f.p.status] || ""}</span><div class="muted" style="font-size:13px">${esc(S.events[f.evId].title)} · ${fmtDate(S.events[f.evId].date)}${f.l.byName ? ` · by ${esc(f.l.byName)}` : ""}${f.p.note ? ` · ${esc(f.p.note)}` : ""}</div></div></div>`).join("")}</div>` : `<div class="muted" style="font-size:14px">Nothing flagged.</div>`}</section>`;
+};
+after.review = () => {};
+(() => {
+  const cp0 = VIEWS.complain;
+  VIEWS.complain = () => {
+    const h = cp0(), v = myVol();
+    if (!v || v.rank !== "supervisory") return h;
+    const done = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => e.status === "done").sort((a, b) => b.date.localeCompare(a.date)).slice(0, 40);
+    const box = `<section class="panel" style="--i:0;margin-bottom:14px"><div class="panel-head"><h2>Certificate review request</h2><span class="muted" style="font-size:13px">Supervisory only · the Head of Volunteers decides</span></div>
+      <form id="rvForm" class="stack-form"><div class="grid2"><label class="field">Volunteer<select id="rvVol" required><option value="">Choose…</option>${sortVols(vols().filter(x => x.id !== v.id && !x.head)).map(x => `<option value="${x.id}">${cls(x)} · ${esc(x.name)}</option>`).join("")}</select></label>
+      <label class="field">Certificate<select id="rvEv"><option value="">Service certificate</option>${done.map(e => `<option value="${e.id}">${esc(e.title)} · ${fmtDate(e.date)}</option>`).join("")}</select></label></div>
+      <label class="field">What happened<textarea id="rvWhy" rows="3" required maxlength="2000" placeholder="Explain why this volunteer should not receive it"></textarea></label>
+      <div style="display:flex;justify-content:flex-end"><button class="btn" type="submit">Send for review</button></div></form>
+      ${Object.entries(S.reviews).filter(([, r]) => r.by === v.id).map(([, r]) => `<div class="muted" style="font-size:13px;margin-top:6px">${esc(S.volunteers[r.vid]?.name || "")} · ${r.status === "pending" ? "waiting for the Head" : "reviewed"}</div>`).join("")}</section>`;
+    return h.replace('<div class="logwrap st">', '<div class="logwrap st">' + box);
+  };
+})();
+
+// Council certificates: every event's certificates, view only
+VIEWS.ccerts = () => {
+  const evs = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => e.status === "done").sort((a, b) => b.date.localeCompare(a.date));
+  return `<div class="toolbar"><div style="flex:1"><h2 style="font-size:22px">Certificates</h2><div class="muted" style="font-size:14px">Every volunteer who attended an event</div></div></div>
+  <div class="st">${evs.length ? evs.map((e, i) => { const ids = (e.attended || []).filter(x => S.volunteers[x] && !(e.withheld || []).includes(x));
+    return `<article class="panel" style="--i:${i};margin-bottom:12px"><div class="msg-head"><b>${esc(e.title)}</b>${e.external ? `<span class="tag ext">${esc(e.organizer || "External")}</span>` : ""}<span class="muted">${fmtLong(e.date)}</span></div>
+    <div class="mini-events">${ids.length ? ids.map(x => { const p = (e.pdfs || []).find(q => q.vid === x); return `<div class="mev"><div style="flex:1;min-width:0"><b>${esc(S.volunteers[x].name)}</b> <span class="muted" style="font-size:12.5px">${cls(S.volunteers[x])}</span></div>${downloads ? (e.external ? (p ? `<button class="btn small" data-act="pdf-get" data-ev="${e.id}" data-pid="${p.id}">Download</button>` : `<span class="muted" style="font-size:12.5px">Awaiting</span>`) : e.photo ? `<button class="btn small" data-act="evc-one" data-ev="${e.id}" data-vid="${x}">Download PDF</button>` : "") : ""}</div>`; }).join("") : `<div class="muted" style="font-size:14px">No attendance recorded.</div>`}</div></article>`; }).join("") : `<div class="panel empty">No finished events yet.</div>`}</div>`;
+};
+
+// Overlay and page forms
+(() => {
+  const bo0 = bindOverlay;
+  bindOverlay = function () {
+    bo0();
+    $("#logForm")?.addEventListener("submit", async e => {
+      e.preventDefault(); const id = ui.eventId, ev = S.events[id], f = logRead(); if (!ev) return;
+      const by = myVol(), ok = await put("logs", id, { eventId: id, summary: f.summary, by: by ? by.id : null, byName: by ? by.name : accName(me()), at: new Date().toISOString(), people: f.people });
+      if (ok === false) return;
+      closeOverlay(); toast("Log saved. Thank you!");
+      const bad = Object.values(f.people).filter(p => p.status !== "present").length;
+      pushSend([{ staff: true, title: "Event log in", body: `${ev.title}${bad ? ` · ${bad} flagged` : ""}`, tag: "log" + id }]);
+    });
+    $("#monthForm")?.addEventListener("submit", async e => {
+      e.preventDefault(); const ym = $("#mrMonth").value; if (!ym) return;
+      const b = e.target.querySelector("button[type=submit]"); b.disabled = true;
+      try { await monthPDF(ym); closeOverlay(); } catch { toast("Couldn't make the report. Check your connection."); b.disabled = false; }
+    });
+  };
+})();
+(() => {
+  const af0 = after.complain;
+  after.complain = () => {
+    af0 && af0();
+    $("#rvForm")?.addEventListener("submit", async e => {
+      e.preventDefault(); const vid = $("#rvVol").value, why = $("#rvWhy").value.trim(); if (!vid || !why) return;
+      const me1 = myVol(), ok = await put("reviews", uid(), { vid, eventId: $("#rvEv").value || null, reason: why, status: "pending", by: me1 ? me1.id : null, byName: me1 ? me1.name : "", created: new Date().toISOString() });
+      if (ok !== false) { e.target.reset(); toast("Sent to the Head of Volunteers"); pushSend([{ staff: true, title: "Certificate review request", body: `${S.volunteers[vid]?.name || "A volunteer"} · from ${me1 ? me1.name : "a supervisor"}`, tag: "rv" }]); }
+    });
+  };
 })();
 
 addEventListener("resize", moveInk);

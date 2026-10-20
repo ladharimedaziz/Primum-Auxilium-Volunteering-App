@@ -600,6 +600,59 @@ header.band{view-transition-name:band}.tabbar{view-transition-name:tabs}
 .hb-credit img{height:48px;width:auto}
 .hb-credit img.moe{height:40px}
 @media print{.credits{display:flex!important}}
+
+/* staffing */
+.vchip.lead{background:var(--navy);color:#fff}.vchip.lead small{opacity:.75}.vchip.lead .star{color:#E9C46A}
+.vchip.lead .iconbtn{color:#fff}
+.tag.sc{background:var(--teal-soft);color:var(--teal)}.tag.lead{background:var(--navy);color:#fff}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.leads{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:var(--sunk)}
+.leads-head,.staff-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.staff-head{justify-content:space-between}
+.ap-list{display:flex;flex-direction:column;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:4px 10px}
+.attrow.ap{cursor:pointer;grid-template-columns:auto 1fr auto}
+body.ro .staff-head,body.ro [data-act="ev-unlead"],body.ro [data-act="ev-auto"]{display:none!important}
+
+pre.ann{white-space:pre-wrap;font:14px/1.55 var(--f-body);background:var(--sunk);border-radius:12px;padding:12px 14px;margin:0 0 10px}
+.ann-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.ann-photo{display:block;max-width:100%;max-height:220px;border-radius:12px;margin-bottom:10px;object-fit:cover}
+.srow .tag{white-space:nowrap}
+
+/* ---------- motion v4: every control ---------- */
+button,.btn,.chip,.iconbtn,.linkbtn,.tab,.seg button,label.btn,.tag,.vchip{transition:transform .22s var(--spring),box-shadow .25s,background-color .25s,color .2s,opacity .2s,border-color .2s}
+button:not(:disabled):active,.btn:not(:disabled):active,label.btn:active,.chip.out:active{transform:scale(.94)}
+.btn:not(:disabled):hover,label.btn:hover{transform:translateY(-1px)}
+.btn.primary:not(:disabled):hover{box-shadow:0 8px 20px -8px color-mix(in srgb,var(--accent) 70%,transparent)}
+.iconbtn:hover{transform:rotate(90deg) scale(1.1)}
+.linkbtn:hover{letter-spacing:.01em}
+.seg button[aria-pressed=true]{animation:segIn .35s var(--spring)}
+@keyframes segIn{from{transform:scale(.9)}}
+input,select,textarea{transition:border-color .2s,box-shadow .25s,background-color .25s,transform .2s}
+input:focus,select:focus,textarea:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent)}
+.field:focus-within{color:var(--accent)}
+.flash{animation:flash .6s var(--ease)}
+@keyframes flash{30%{background-color:color-mix(in srgb,var(--accent) 14%,var(--surface))}}
+.tick input[type=checkbox],input[type=checkbox].tick{animation:tickPop .4s var(--spring)}
+.tick{animation:rowTick .5s var(--ease)}
+@keyframes tickPop{40%{transform:scale(1.35)}}
+@keyframes rowTick{30%{background-color:color-mix(in srgb,var(--ok) 10%,transparent)}}
+.pulse{animation:pulse .7s var(--spring)}
+@keyframes pulse{30%{transform:scale(.95)}60%{transform:scale(1.04);box-shadow:0 0 0 8px color-mix(in srgb,var(--accent) 18%,transparent)}}
+[data-act$="copy"].done{background:var(--ok)!important;color:#fff!important;border-color:var(--ok)!important}
+.in-k{animation:rise .45s var(--ease) both;animation-delay:calc(var(--k,0) * 28ms)}
+.enter .srow,.enter .mev,.enter .attrow,.enter .e,.enter .cp-sent,.enter .vchip{animation:rise .5s var(--ease) both}
+.enter .ecard,.enter .vcert,.enter pre.ann{animation:rise .55s var(--spring) both;animation-delay:calc(var(--i,0) * 50ms)}
+.srow,.mev,.e,.cp-sent{transition:background-color .25s,transform .25s var(--spring)}
+.srow:hover,.mev:hover,.e:hover{background-color:color-mix(in srgb,var(--accent) 5%,transparent)}
+.mev:hover{transform:translateX(3px)}
+.leads{transition:box-shadow .3s}.leads:hover{box-shadow:inset 0 0 0 1px var(--line)}
+.vchip.lead .star{display:inline-block;animation:spinIn .7s var(--spring) both}
+@keyframes spinIn{from{transform:rotate(-180deg) scale(0)}}
+.tag{display:inline-block}.tag.warn{animation:nudge 2.4s 1s ease-in-out infinite}
+@keyframes nudge{0%,90%,100%{transform:none}93%{transform:translateX(-2px)}96%{transform:translateX(2px)}}
+pre.ann{transition:box-shadow .3s,transform .3s var(--spring)}pre.ann:hover{box-shadow:inset 0 0 0 1px var(--line);transform:translateY(-1px)}
+.ann-photo{animation:rise .6s var(--ease) both}
+.gate-card .btn.primary{position:relative;overflow:hidden}
+@media (prefers-reduced-motion: reduce){.flash,.tick,.pulse,.in-k,.tag.warn,.vchip.lead .star{animation:none!important}}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -769,18 +822,22 @@ const tok = () => session && session.token;
 function cloudWipe() { COLLS.forEach(c => { S[c] = {}; }); S.settings = { ...DEFAULTS }; cloudSince = null; }
 function cloudApply(r, full) {
   if (full) cloudWipe();
+  const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  let changed = full;
   for (const { c, i, d } of r.docs || []) {
-    if (c === "config") { if (i === "settings") S.settings = { ...DEFAULTS, ...(d || {}) }; continue; }
-    if (!S[c]) continue;
+    if (c === "config") { if (i === "settings") { const n = { ...DEFAULTS, ...(d || {}) }; if (!same(n, S.settings)) { S.settings = n; changed = true; } } continue; }
+    if (!S[c] || same(S[c][i], d)) continue;
     if (d) S[c][i] = d; else delete S[c][i];
+    changed = true;
   }
-  S.accounts = r.accounts || {};
+  if (!same(r.accounts || {}, S.accounts)) { S.accounts = r.accounts || {}; changed = true; }
   cloudSince = r.now;
+  return changed;
 }
 async function cloudPull(full) {
   if (!tok() || (cloudBusy && !full)) return;
   cloudBusy = true;
-  try { cloudApply(await rpc("pa_sync", { token: tok(), since: full ? null : cloudSince }), full || !cloudSince); if (!full) refresh(); }
+  try { const ch = cloudApply(await rpc("pa_sync", { token: tok(), since: full ? null : cloudSince }), full || !cloudSince); if (!full && ch) refresh(); }
   catch (e) { if (e.code === "auth") { signOut(); toast("Session ended. Sign in again."); } else if (full) throw e; }
   finally { cloudBusy = false; }
 }
@@ -793,9 +850,9 @@ const loginOf = (a, vid) => normName(a.role === "volunteer" ? S.volunteers[a.vid
 async function cloudAccount(id, obj) {
   const a = { ...S.accounts[id], ...obj };
   await rpc("pa_account", { token: tok(), acc_id: id, role: a.role, name: a.name || null, vid: a.vid || null, login: loginOf(a) || null,
-    login2: a.role === "head" && headVol() ? normName(headVol().name) : null, pw: obj.pw || null, old_pw: ui.oldPw || null });
+    login2: a.role === "head" && headVol() ? normName(headVol().name) : null, pw: obj.pw || null, old_pw: ui.oldPw || null, title: a.title || null, perm: a.perm || null });
   ui.oldPw = null;
-  S.accounts[id] = { role: a.role, ...(a.name ? { name: a.name } : {}), ...(a.vid ? { vid: a.vid } : {}), created: a.created || new Date().toISOString() };
+  S.accounts[id] = { role: a.role, ...(a.name ? { name: a.name } : {}), ...(a.vid ? { vid: a.vid } : {}), ...(a.title ? { title: a.title } : {}), ...(a.perm ? { perm: a.perm } : {}), created: a.created || new Date().toISOString() };
 }
 async function cloudPut(coll, id, obj) {
   try {
@@ -903,7 +960,7 @@ function renderBrandMeta() {
   const saveChip = mode === "db" || mode === "cloud" ? `<span class="chip t-ok"><span class="dot"></span>Synced</span>`
     : mode === "local" ? `<span class="chip t-warn" title="Data is kept on this device only"><span class="dot"></span>${DESKTOP ? "Saved on this computer" : "Saved in this browser"}</span>` : "";
   const a = me(), r = role();
-  $("#brandMeta").innerHTML = `${r === "volunteer" || !a ? "" : saveChip}<span class="chip num">${left >= 0 ? `${left} days left` : "Year closed"}</span>${a ? `<span class="chip who"><span class="dot"></span>${esc(accName(a))} · ${{ head: "Head", admin: "Administration", volunteer: "Volunteer" }[r]}</span><button class="chip out" data-act="sign-out">Sign out</button>` : ""}`;
+  $("#brandMeta").innerHTML = `${r === "volunteer" || !a ? "" : saveChip}<span class="chip num">${left >= 0 ? `${left} days left` : "Year closed"}</span>${a ? `<span class="chip who"><span class="dot"></span>${esc(accName(a))} · ${(r === "council" ? a.title || "Student Council" : { head: "Head", admin: "Administration", volunteer: "Volunteer" }[r])}</span><button class="chip out" data-act="sign-out">Sign out</button>` : ""}`;
 }
 function moveInk() {
   const t = $(`.tab[data-view="${view}"]`), ink = $("#tabInk");
@@ -915,6 +972,7 @@ function moveInk() {
 const TABS = {
   head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["inbox", "Inbox"], ["handbook", "Handbook"], ["settings", "Settings"]],
   admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["handbook", "Handbook"]],
+  council: [["cevents", "Events"]],
   volunteer: [["me", "My hours"], ["vevents", "Events"], ["vcerts", "Certificates"], ["handbook", "Handbook"], ["complain", "Complaints"]]
 };
 let session = null, lastAct = Date.now(), fails = 0, lockUntil = 0;
@@ -923,13 +981,22 @@ const me = () => session && S.accounts[session.id];
 const role = () => me()?.role || null;
 const accName = a => a.role === "volunteer" ? (S.volunteers[a.vid]?.name || "Removed volunteer") : a.role === "head" ? (headVol()?.name || a.name) : a.name;
 const myVol = () => { const a = me(); if (!a) return null; const id = a.role === "head" ? headVol()?.id : a.vid; return id && S.volunteers[id] ? { ...S.volunteers[id], id } : null; };
-const tabsFor = () => TABS[role()] || [];
+const perm = () => me()?.perm || null;
+const tabsFor = () => role() === "council" ? [...TABS.council, ...(perm() === "pr" ? [["pr", "Announcements"]] : [])] : TABS[role()] || [];
+// Student Council 2026–27. The Head of Volunteers is Dan's own account, so he is not listed.
+const COUNCIL = [["Fayez Sankari", "President"], ["Abel Varghese", "Vice President"], ["Murad Samarah", "VP's Aide"], ["Suhaib Mohammad", "Newspaper Manager"],
+  ["Waleed Osama", "Head of Academics"], ["Sameer Haroun", "Head of Finance"], ["Mohammad Thaer", "Head of Media"], ["Ragheb Haroun", "Head of PR & Communication", "pr"],
+  ["Marwan Ehab", "Head of Events", "events"], ["Muhannad Hamad", "Co-Head of Events", "events"]];
+const PERMS = { events: "Events tools", pr: "PR tools" };
+const scAcc = name => Object.entries(S.accounts).find(([, a]) => a.role === "council" && normName(a.name) === normName(name));
+const canEditEv = e => !!e && e.council && e.status !== "done" && (e.by === session?.id || perm() === "events");
 const headAcc = () => Object.entries(S.accounts).find(([, a]) => a.role === "head");
 const accFor = vid => Object.entries(S.accounts).find(([, a]) => a.role === "volunteer" && a.vid === vid);
 function allowed(coll, id) {
   const r = role();
   if (r === "head" || ui.sys || mode === "loading") return true;
   if (coll === "complaints") return r === "volunteer" && !S.complaints[id];
+  if (coll === "events") return r === "council" && (!S.events[id] || canEditEv(S.events[id]));
   if (coll === "accounts") return !!session && id === session.id;
   return false;
 }
@@ -1097,7 +1164,8 @@ function refresh() {
   else if (view === "certs") { el.innerHTML = VIEWS.certs(); after.certs(); }
   else if (view === "inbox" || view === "me" || view === "vevents" || view === "vcerts") { el.innerHTML = VIEWS[view](); after[view] && after[view](); ringIn(el, false); }
   else if (view === "complain") { const r = $("#cpSent"); if (r) r.innerHTML = cpSent(); }
-  else if (view === "settings") { const r = $("#statusList"); const ac = $("#acctBox"); if (ac) ac.innerHTML = acctBox(); if (r) r.innerHTML = statusRows(); const i = $("#dataInfo"); if (i) i.innerHTML = dataInfo(); }
+  else if (view === "cevents" || view === "pr") el.innerHTML = VIEWS[view]();
+  else if (view === "settings") { const r = $("#statusList"); const ac = $("#acctBox"); if (ac) { ac.innerHTML = acctBox(); bindAcct(); } if (r) r.innerHTML = statusRows(); const i = $("#dataInfo"); if (i) i.innerHTML = dataInfo(); }
   el.classList.remove("enter");
   if (ui.drawer && !ui.verifying) { const d = $("#drawerStats"); if (d) d.innerHTML = drawerStats(); if (!S.volunteers[ui.drawer]) closeOverlay(); }
 }
@@ -1550,8 +1618,8 @@ VIEWS.me = () => {
   </div>`;
 };
 function mineEventRow(e, v) {
-  const { confirmed, waitlist } = eventRoster(e), inC = confirmed.includes(v.id), inW = waitlist.includes(v.id);
-  return `<div class="mev"><div class="edate"><span>${fmtDate(e.date, { month: "short" })}</span><b>${parse(e.date).getDate()}</b></div><div style="min-width:0;flex:1"><b>${esc(e.title)}</b><div class="muted" style="font-size:13px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location, evHours(e) ? fmtH(evHours(e)) + " h" : ""].filter(Boolean).join(" · "))}</div></div>${inC ? `<span class="tag ok">Confirmed</span>` : inW ? `<span class="tag warn">Waitlist</span>` : e.external ? `<span class="tag ext">External</span>` : ""}</div>`;
+  const { confirmed, waitlist } = eventRoster(e), inC = confirmed.includes(v.id), inW = waitlist.includes(v.id), inL = (e.leads || []).includes(v.id);
+  return `<div class="mev"><div class="edate"><span>${fmtDate(e.date, { month: "short" })}</span><b>${parse(e.date).getDate()}</b></div><div style="min-width:0;flex:1"><b>${esc(e.title)}</b><div class="muted" style="font-size:13px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location, evHours(e) ? fmtH(evHours(e)) + " h" : ""].filter(Boolean).join(" · "))}</div></div>${inL ? `<span class="tag lead">★ Shift lead</span>` : inC ? `<span class="tag ok">Confirmed</span>` : inW ? `<span class="tag warn">Waitlist</span>` : e.external ? `<span class="tag ext">External</span>` : ""}</div>`;
 }
 after.me = () => {
   $("#pwForm")?.addEventListener("submit", async e => {
@@ -1682,12 +1750,31 @@ VIEWS.handbook = () => {
 };
 
 /* ---------- accounts (head) ---------- */
+function accRows(rl) {
+  const L = Object.entries(S.accounts).filter(([, a]) => a.role === rl);
+  return L.length ? `<div class="slist">${L.map(([id, a]) => `<div class="srow"><span><b>${esc(a.name)}</b></span><span style="display:flex;gap:6px">${ui.acctReset === id ? `<input type="text" id="admPw-${id}" value="${genPassword()}" style="width:180px" aria-label="New password"><button class="btn small primary" data-act="adm-pw" data-id="${id}">Save</button>` : `<button class="btn small" data-act="adm-reset" data-id="${id}">Reset password</button><button class="iconbtn" data-act="adm-del" data-id="${id}" aria-label="Remove ${esc(a.name)}">✕</button>`}</span></div>`).join("")}</div>` : `<div class="muted" style="font-size:13px">None</div>`;
+}
+function councilRows() {
+  const pre = COUNCIL.map(([name, title, p]) => ({ name, title, p, acc: scAcc(name) }));
+  const extra = Object.entries(S.accounts).filter(([, a]) => a.role === "council" && !COUNCIL.some(([n]) => normName(n) === normName(a.name))).map(([id, a]) => ({ name: a.name, title: a.title, p: a.perm, acc: [id, a] }));
+  return [...pre, ...extra].map((m, i) => {
+    const tools = m.p ? `<span class="tag ${m.p === "pr" ? "sc" : "lead"}">${PERMS[m.p]}</span>` : "";
+    const who = `<span style="min-width:0"><b>${esc(m.name)}</b> <span class="muted" style="font-size:12.5px">${esc(m.title || "Student Council")}</span> ${tools}</span>`;
+    if (m.acc) { const id = m.acc[0]; return `<div class="srow">${who}<span style="display:flex;gap:6px;align-items:center">${ui.acctReset === id ? `<input type="text" id="admPw-${id}" value="${genPassword()}" style="width:170px" aria-label="New password"><button class="btn small primary" data-act="adm-pw" data-id="${id}">Save</button>` : `<span class="tag ok">Sign-in active</span><button class="btn small" data-act="adm-reset" data-id="${id}">Reset password</button><button class="iconbtn" data-act="adm-del" data-id="${id}" aria-label="Remove ${esc(m.name)}">✕</button>`}</span></div>`; }
+    return `<div class="srow">${who}<span style="display:flex;gap:6px;align-items:center">${ui.scMake === i ? `<input type="text" id="scMakePw" value="${genPassword()}" style="width:170px" aria-label="Password"><button class="btn small primary" data-act="sc-save" data-i="${i}">Save</button>` : `<span class="tag">No sign-in</span><button class="btn small primary" data-act="sc-make" data-i="${i}">Create sign-in</button>`}</span></div>`;
+  }).join("");
+}
 function acctBox() {
-  const admins = Object.entries(S.accounts).filter(([, a]) => a.role === "admin");
   const vn = Object.values(S.accounts).filter(a => a.role === "volunteer").length;
   return `<div class="eyebrow" style="margin-bottom:6px">Administration</div>
-    ${admins.length ? `<div class="slist">${admins.map(([id, a]) => `<div class="srow"><span><b>${esc(a.name)}</b></span><span style="display:flex;gap:6px">${ui.acctReset === id ? `<input type="text" id="admPw-${id}" value="${genPassword()}" style="width:180px" aria-label="New password"><button class="btn small primary" data-act="adm-pw" data-id="${id}">Save</button>` : `<button class="btn small" data-act="adm-reset" data-id="${id}">Reset password</button><button class="iconbtn" data-act="adm-del" data-id="${id}" aria-label="Remove ${esc(a.name)}">✕</button>`}</span></div>`).join("")}</div>` : `<div class="muted" style="font-size:13px">None</div>`}
+    ${accRows("admin")}
     <form id="admForm" class="grid2" style="margin-top:10px;align-items:end"><label class="field">Name<input type="text" id="admName" maxlength="80" required></label><label class="field">Password<input type="text" id="admPw" value="${genPassword()}" required minlength="6"></label><div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn" type="submit">Add administration account</button></div></form>
+    <div class="eyebrow" style="margin:18px 0 6px">Student Council ${s_year()}</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:6px">Council members post events. Events tools: edit any council event and see the team calendar. PR tools: ready-to-post announcements and recaps.</div>
+    <div class="slist">${councilRows()}</div>
+    <form id="scAccForm" class="grid2" style="margin-top:10px;align-items:end"><label class="field">Name<input type="text" id="scName" maxlength="80" required></label><label class="field">Position<input type="text" id="scTitle" maxlength="60" placeholder="e.g. Secretary"></label>
+      <label class="field">Tools<select id="scPerm"><option value="">Post events</option><option value="events">Events tools</option><option value="pr">PR tools</option></select></label><label class="field">Password<input type="text" id="scPw" value="${genPassword()}" required minlength="6"></label>
+      <div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn" type="submit">Add council member</button></div></form>
     <div class="eyebrow" style="margin:18px 0 6px">Volunteers</div><div class="muted" style="font-size:13px">${vn} with sign-in · set from each volunteer's profile on the Roster</div>
     <div class="eyebrow" style="margin:18px 0 6px">Head password</div>
     <form id="headPwForm" class="grid2" style="align-items:end"><label class="field">Current<input type="password" id="hpOld" required autocomplete="current-password"></label><label class="field">New<input type="password" id="hpNew" required minlength="8" autocomplete="new-password"></label><div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn" type="submit">Change password</button></div></form>`;
@@ -1698,6 +1785,14 @@ function bindAcct() {
     if (!name || pw.length < 6) return toast("Name and a 6+ character password required.");
     if (Object.values(S.accounts).some(a => normName(accName(a)) === normName(name))) return toast("That name already has an account.");
     await put("accounts", uid(), { role: "admin", name, ...(await makeSecret(pw)), created: new Date().toISOString() });
+    toast(`${name} added · password ${pw}`);
+  });
+  $("#scAccForm")?.addEventListener("submit", async e => {
+    e.preventDefault(); const name = $("#scName").value.trim(), pw = $("#scPw").value;
+    if (!name || pw.length < 6) return toast("Name and a 6+ character password required.");
+    if (Object.values(S.accounts).some(a => normName(accName(a)) === normName(name))) return toast("That name already has an account.");
+    await put("accounts", uid(), { role: "council", name, title: $("#scTitle").value.trim(), perm: $("#scPerm").value || null, ...(await makeSecret(pw)), created: new Date().toISOString() });
+    $("#acctBox").innerHTML = acctBox(); bindAcct();
     toast(`${name} added · password ${pw}`);
   });
   $("#headPwForm")?.addEventListener("submit", async e => {
@@ -1720,7 +1815,7 @@ function renderOverlay() {
   else if (ui.modal) host.innerHTML = `<div class="overlay" data-close>${ui.modal()}</div>`;
   else { host.innerHTML = ""; return; }
   document.body.style.overflow = "hidden";
-  if (role() !== "head") host.querySelectorAll(".drawer input,.drawer select,.drawer textarea,.modal form input,.modal form select,.modal form textarea,.modal form button[type=submit]").forEach(x => { if (!x.closest("#impForm")) x.disabled = true; });
+  if (role() !== "head" && !host.querySelector("#scForm")) host.querySelectorAll(".drawer input,.drawer select,.drawer textarea,.modal form input,.modal form select,.modal form textarea,.modal form button[type=submit]").forEach(x => { if (!x.closest("#impForm")) x.disabled = true; });
   host.querySelector("[autofocus]")?.focus();
   bindOverlay();
 }
@@ -1858,6 +1953,42 @@ function bindOverlay() {
       closeOverlay(); toast(ui.eventId ? "Event updated" : "Event posted");
     });
   }
+  const ap = $("#apForm");
+  if (ap) {
+    const have = () => eventRoster(S.events[ui.eventId]).confirmed.length;
+    const sync = () => {
+      const n = ap.querySelectorAll("[data-ap] input:checked").length, need = Math.max(0, leadsNeeded(S.events[ui.eventId], have() + n) - leadsOf(S.events[ui.eventId]).length);
+      $("#apLeadNeed").textContent = need;
+      return need;
+    };
+    $("#apN").addEventListener("input", e => {
+      const n = Math.max(0, Number(e.target.value) || 0);
+      ap.querySelectorAll("[data-ap] input").forEach((c, i) => { c.checked = i < n; });
+      const need = sync(); ap.querySelectorAll("[data-apl] input").forEach((c, i) => { c.checked = i < need; });
+    });
+    ap.querySelectorAll("[data-ap] input").forEach(c => c.addEventListener("change", () => { $("#apN").value = ap.querySelectorAll("[data-ap] input:checked").length; sync(); }));
+    ap.addEventListener("submit", async e => {
+      e.preventDefault(); const ev = S.events[ui.eventId];
+      const picked = [...ap.querySelectorAll("[data-ap] input:checked")].map(c => c.closest("[data-ap]").dataset.ap);
+      const lead = [...ap.querySelectorAll("[data-apl] input:checked")].map(c => c.closest("[data-apl]").dataset.apl);
+      // Someone picked as a lead leads instead; the next in line takes their volunteer spot.
+      const add = picked.filter(x => !lead.includes(x)), rest = [...ap.querySelectorAll("[data-ap] input:not(:checked)")].map(c => c.closest("[data-ap]").dataset.ap).filter(x => !lead.includes(x));
+      while (add.length < picked.length && rest.length) add.push(rest.shift());
+      if (!add.length && !lead.length) return toast("Select at least one volunteer.");
+      closeOverlay();
+      await put("events", ui.eventId, { ...ev, signups: [...(ev.signups || []).filter(x => !lead.includes(x)), ...add.filter(x => !lead.includes(x))], leads: [...leadsOf(ev), ...lead] });
+      toast(`Added ${add.length} volunteer${add.length === 1 ? "" : "s"}${lead.length ? ` · ${lead.length} shift lead${lead.length === 1 ? "" : "s"}` : ""}`);
+    });
+  }
+  const scf = $("#scForm");
+  if (scf) scf.addEventListener("submit", async e => {
+    e.preventDefault(); const title = $("#cTitle").value.trim(); if (!title) return $("#cTitle").focus();
+    const id = ui.eventId || uid(), prev = S.events[id] || { signups: [], status: "open", council: true, by: session.id, byName: accName(me()) };
+    const start = $("#cStart").value, end = $("#cEnd").value;
+    const ok = await put("events", id, { ...prev, title, date: $("#cDate").value || todayISO(), start, end, hours: hoursFromTimes(start, end) || prev.hours || 0, location: $("#cLoc").value.trim(), spots: Math.max(0, Number($("#cSpots").value) || 0), notes: $("#cNotes").value.trim(), council: true });
+    if (ok === false) return;
+    closeOverlay(); toast(ui.eventId ? "Event updated" : "Event posted");
+  });
   const af = $("#attForm");
   if (af) af.addEventListener("submit", async e => {
     e.preventDefault();
@@ -2334,10 +2465,48 @@ async function setRank(id, rank) {
 /* ---------- events ---------- */
 // Grade 12 take spots first; everyone else keeps sign-up order. Overflow is the waitlist.
 function eventRoster(ev) {
-  const ids = (ev.signups || []).filter(id => S.volunteers[id]);
+  const ids = (ev.signups || []).filter(id => S.volunteers[id] && !(ev.leads || []).includes(id));
   const ord = ids.map((id, i) => ({ id, i, p: S.volunteers[id].grade === 12 ? 0 : 1 })).sort((a, b) => a.p - b.p || a.i - b.i).map(x => x.id);
   const n = Number(ev.spots) || ord.length;
   return { confirmed: ord.slice(0, n), waitlist: ord.slice(n) };
+}
+// One supervisory lead per 5 volunteers, at least 1 and at most 3.
+const leadsNeeded = (e, n = eventRoster(e).confirmed.length) => Math.min(3, Math.max(1, Math.ceil(n / 5)));
+const leadsOf = e => (e.leads || []).filter(id => S.volunteers[id]);
+const fewestFirst = (a, b) => (a.done - b.done) || a.h - b.h || b.v.grade - a.v.grade || a.v.name.localeCompare(b.v.name);
+function leadPool(e) {
+  const taken = new Set(leadsOf(e));
+  return vols().filter(v => v.rank === "supervisory" && !taken.has(v.id) && canJoin(v, e) && statusOf(v.status).rule !== "warn")
+    .map(v => ({ v, h: hoursFor(v.id), done: 0 })).sort(fewestFirst);
+}
+// Who still needs hours most: below the goal first, fewest hours first, Grade 12 on ties.
+function autoPool(e) {
+  const taken = new Set([...(e.signups || []), ...(e.leads || [])]);
+  return vols().filter(v => !taken.has(v.id) && !v.head && canJoin(v, e) && statusOf(v.status).rule !== "warn")
+    .map(v => { const h = hoursFor(v.id); return { v, h, done: isDone(v, h) ? 1 : 0 }; }).sort(fewestFirst);
+}
+const leadChip = (evId, vid, done) => { const v = S.volunteers[vid]; return `<span class="vchip lead"><span class="star">★</span>${esc(v.name)} <small>${cls(v)}</small>${done ? "<span></span>" : `<button class="iconbtn" data-act="ev-unlead" data-id="${evId}" data-vid="${vid}" aria-label="Remove ${esc(v.name)} as shift lead">✕</button>`}</span>`; };
+function leadBlock(e) {
+  const L = leadsOf(e), need = leadsNeeded(e), pool = leadPool(e);
+  return `<div class="leads"><div class="leads-head"><span class="eyebrow">Shift leads</span><span class="num tag ${L.length >= need ? "ok" : "warn"}">${L.length} of ${need}</span><span class="muted" style="font-size:12px">1 per 5 volunteers · max 3</span></div>
+    ${L.length ? `<div class="chips">${L.map(id => leadChip(e.id, id)).join("")}</div>` : ""}
+    ${L.length < 3 ? `<div class="signup"><select id="evlead-${e.id}" aria-label="Shift lead to add">${pool.length ? `<option value="">Add a supervisory lead…</option>${pool.map(x => `<option value="${x.v.id}">${cls(x.v)} · ${esc(x.v.name)} · ${fmtH(x.h)} h</option>`).join("")}` : `<option value="">No supervisory volunteer free</option>`}</select><button class="btn" data-act="ev-lead" data-id="${e.id}" ${pool.length ? "" : "disabled"}>Add</button></div>` : ""}</div>`;
+}
+function autoModal(id) {
+  const e = S.events[id], spots = Number(e.spots), have = eventRoster(e).confirmed.length;
+  const pool = autoPool(e), n = Math.min(pool.length, spots ? Math.max(0, spots - have) : Math.min(5, pool.length));
+  const lp = leadPool(e), lneed = Math.max(0, leadsNeeded(e, have + n) - leadsOf(e).length);
+  return `<div class="modal wide" role="dialog" aria-label="Auto-pick volunteers"><h2>Auto-pick for ${esc(e.title)}</h2>
+    <form id="apForm" class="stack-form">
+      <div class="att-sum"><span>Below ${S.settings.goal} h first, <b>fewest hours first</b>. Goal reached goes last.</span><span class="muted">Blocked, unwilling and Grade 11 before ${fmtDate(S.settings.sem2)} are left out.</span></div>
+      <div class="grid2"><label class="field">Volunteers to add${spots ? ` · ${have} of ${spots} filled` : ""}<input type="number" id="apN" min="0" max="${pool.length}" value="${n}"></label>
+        <div class="field" style="display:flex;flex-direction:column;gap:6px"><span>Shift leads needed</span><b class="num" id="apLeadNeed" style="font-size:22px">${lneed}</b></div></div>
+      <div class="eyebrow">Volunteers</div>
+      <div class="ap-list">${pool.length ? pool.map((x, i) => `<label class="attrow ap" data-ap="${x.v.id}"><input type="checkbox" ${i < n ? "checked" : ""}><span>${esc(x.v.name)} <span class="muted" style="font-size:12px">${cls(x.v)}</span></span><span class="num ${x.done ? "muted" : ""}" style="font-size:13px">${fmtH(x.h)} h${x.done ? " · goal met" : ""}</span></label>`).join("") : `<div class="muted">Nobody eligible left.</div>`}</div>
+      <div class="eyebrow">Shift leads · supervisory</div>
+      <div class="ap-list">${lp.length ? lp.map((x, i) => `<label class="attrow ap" data-apl="${x.v.id}"><input type="checkbox" ${i < lneed ? "checked" : ""}><span>★ ${esc(x.v.name)} <span class="muted" style="font-size:12px">${cls(x.v)}</span></span><span class="num" style="font-size:13px">${fmtH(x.h)} h</span></label>`).join("") : `<div class="muted">No supervisory volunteer free.</div>`}</div>
+      <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn primary" type="submit">Add selected</button></div>
+    </form></div>`;
 }
 function canJoin(v, ev) {
   if (statusOf(v.status).rule === "block") return false;
@@ -2356,23 +2525,26 @@ function eventCards() {
   if (!all.length) return `<div class="panel empty">No events.<br><br><button class="btn primary" data-act="new-event">+ New event</button></div>`;
   const card = (e, i) => {
     const { confirmed, waitlist } = eventRoster(e), spots = Number(e.spots), isDone = e.status === "done";
-    const elig = sortVols(vols().filter(v => !(e.signups || []).includes(v.id) && canJoin(v, e)));
+    const elig = sortVols(vols().filter(v => !(e.signups || []).includes(v.id) && !(e.leads || []).includes(v.id) && canJoin(v, e)));
     const g11 = g11Locked(e.date) && vols().some(v => v.grade === 11);
     const att = isDone ? entries().filter(x => x.eventId === e.id) : [];
     return `<article class="panel ecard ${isDone ? "done" : ""}" style="--i:${i}">
       <div class="ehead"><div class="edate"><span>${fmtDate(e.date, { month: "short" })}</span><b>${parse(e.date).getDate()}</b></div>
-        <div style="flex:1;min-width:0"><h3>${esc(e.title)}${e.external ? ` <span class="tag ext" style="vertical-align:3px">External</span>` : ""}</h3><div class="muted" style="font-size:13.5px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location, e.hours ? fmtH(e.hours) + " h" : ""].filter(Boolean).join(" · "))}</div></div>
+        <div style="flex:1;min-width:0"><h3>${esc(e.title)}${e.external ? ` <span class="tag ext" style="vertical-align:3px">External</span>` : ""}${e.council ? ` <span class="tag sc" style="vertical-align:3px">Student Council</span>` : ""}</h3><div class="muted" style="font-size:13.5px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location, e.hours ? fmtH(e.hours) + " h" : ""].filter(Boolean).join(" · "))}</div></div>
         <button class="btn small ghost" data-act="edit-event" data-id="${e.id}">Edit</button></div>
       ${isDone ? `<div class="muted" style="font-size:14px">Attendance recorded: <b style="color:var(--ink)">${att.length} volunteer${att.length === 1 ? "" : "s"}, ${fmtH(att.reduce((t, x) => t + Number(x.hours || 0), 0))} h</b>${e.supervisor ? `, signed off by ${esc(e.supervisor)}` : ""}.</div>
-        <div class="chips">${att.filter(x => S.volunteers[x.volunteerId]).map(x => vchip(e.id, x.volunteerId, false, true)).join("")}</div>
+        <div class="chips">${leadsOf(e).map(id => leadChip(e.id, id, true)).join("")}${att.filter(x => S.volunteers[x.volunteerId] && !leadsOf(e).includes(x.volunteerId)).map(x => vchip(e.id, x.volunteerId, false, true)).join("")}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">${e.external ? `<span class="tag ext">External${e.organizer ? " · " + esc(e.organizer) : ""}</span>` : e.photo ? `<img src="${e.photo}" alt="" style="height:40px;width:auto;max-width:120px;border-radius:6px;object-fit:contain">` : `<span class="muted" style="font-size:13px">Photo needed for certificates</span>`}<button class="btn primary" data-act="goto-thread" data-id="${e.id}">Certificates thread</button></div>` : `
       <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px" class="muted"><span>${spots ? `${confirmed.length} of ${spots} spots filled` : `${confirmed.length} signed up · no limit`}</span>${waitlist.length ? `<span>${waitlist.length} on waitlist</span>` : ""}</div>
         ${spots ? `<div class="bar ${confirmed.length >= spots ? "g12" : ""}"><i style="--w:${Math.min(100, confirmed.length / spots * 100)}%;--i:${i}"></i></div>` : ""}</div>
       ${confirmed.length ? `<div class="chips">${confirmed.map(id => vchip(e.id, id)).join("")}</div>` : ""}
       ${waitlist.length ? `<div class="eyebrow">Waitlist</div><div class="chips">${waitlist.map(id => vchip(e.id, id, true)).join("")}</div>` : ""}
       ${g11 ? `<div class="muted" style="font-size:12.5px">Grade 11 can't join events before ${fmtLong(S.settings.sem2)}.</div>` : ""}
-      <div class="signup"><select id="evsel-${e.id}" aria-label="Volunteer to sign up">${elig.length ? `<option value="">Sign someone up…</option>${elig.map(v => `<option value="${v.id}">${cls(v)} · ${esc(v.name)}</option>`).join("")}` : `<option value="">Everyone eligible is signed up</option>`}</select><button class="btn" data-act="ev-signup" data-id="${e.id}" ${elig.length ? "" : "disabled"}>Add</button></div>
-      <div style="display:flex;justify-content:flex-end"><button class="btn primary" data-act="attendance" data-id="${e.id}" ${confirmed.length + waitlist.length ? "" : "disabled"}>Record attendance</button></div>`}
+      ${e.council && e.byName ? `<div class="muted" style="font-size:12.5px">Posted by ${esc(e.byName)}${e.notes ? ` · ${esc(e.notes)}` : ""}</div>` : ""}
+      ${leadBlock(e)}
+      <div class="staff-head"><span class="eyebrow">Add volunteers</span><button class="btn small primary" data-act="ev-auto" data-id="${e.id}" ${elig.length ? "" : "disabled"}>Auto-pick by fewest hours</button></div>
+      <div class="signup"><select id="evsel-${e.id}" aria-label="Volunteer to sign up">${elig.length ? `<option value="">Pick by hand…</option>${elig.map(v => `<option value="${v.id}">${cls(v)} · ${esc(v.name)}</option>`).join("")}` : `<option value="">Everyone eligible is signed up</option>`}</select><button class="btn" data-act="ev-signup" data-id="${e.id}" ${elig.length ? "" : "disabled"}>Add</button></div>
+      <div style="display:flex;justify-content:flex-end"><button class="btn primary" data-act="attendance" data-id="${e.id}" ${confirmed.length + waitlist.length + leadsOf(e).length ? "" : "disabled"}>Record attendance</button></div>`}
     </article>`;
   };
   return `${open.length ? `<div class="events st">${open.map(card).join("")}</div>` : `<div class="panel empty">Nothing scheduled. <button class="btn small" data-act="new-event">+ New event</button></div>`}
@@ -2420,14 +2592,89 @@ function eventModal(id) {
 }
 function attendanceModal(id) {
   const e = S.events[id], { confirmed, waitlist } = eventRoster(e);
-  const row = (vid, on) => { const v = S.volunteers[vid]; return `<div class="attrow" data-att="${vid}"><input type="checkbox" ${on ? "checked" : ""} aria-label="${esc(v.name)} attended"><span>${esc(v.name)} <span class="muted" style="font-size:12px">${cls(v)}${on ? "" : " · waitlist"}</span></span><input type="number" min="0" max="24" step="0.25" value="${evHours(e) || ""}" aria-label="Hours for ${esc(v.name)}"></div>`; };
+  const row = (vid, on, lead) => { const v = S.volunteers[vid]; return `<div class="attrow" data-att="${vid}"><input type="checkbox" ${on ? "checked" : ""} aria-label="${esc(v.name)} attended"><span>${lead ? "★ " : ""}${esc(v.name)} <span class="muted" style="font-size:12px">${cls(v)}${lead ? " · shift lead" : on ? "" : " · waitlist"}</span></span><input type="number" min="0" max="24" step="0.25" value="${evHours(e) || ""}" aria-label="Hours for ${esc(v.name)}"></div>`; };
   return `<div class="modal" role="dialog" aria-label="Record attendance"><h2>Who came to ${esc(e.title)}?</h2>
     <form id="attForm" class="stack-form">
       <div class="att-sum"><span><b class="num">${fmtH(evHours(e))} h</b> each${e.start && e.end ? ` · ${e.start}–${e.end}` : ""}</span><span class="muted">Logged on ${fmtLong(e.date)} · adjust for early leavers</span></div>
-      <div>${confirmed.map(v => row(v, true)).join("")}${waitlist.map(v => row(v, false)).join("")}</div>
+      <div>${leadsOf(e).map(v => row(v, true, true)).join("")}${confirmed.map(v => row(v, true)).join("")}${waitlist.map(v => row(v, false)).join("")}</div>
       <label class="field">Signed off by<input type="text" id="aSup" value="${esc(e.supervisor || "")}" list="supList" placeholder="Leave empty to sign off later"></label>
       ${supList()}
       <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn primary" type="submit">Log hours</button></div>
+    </form></div>`;
+}
+
+
+/* ---------- Student Council ---------- */
+VIEWS.cevents = () => {
+  const all = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => e.council);
+  const live = e => e.status !== "done" && e.date >= todayISO();
+  const up = all.filter(live).sort((a, b) => a.date.localeCompare(b.date)), past = all.filter(e => !live(e)).sort((a, b) => b.date.localeCompare(a.date));
+  const card = (e, i) => {
+    const { confirmed } = eventRoster(e), L = leadsOf(e), need = Number(e.spots) || 0, own = canEditEv(e);
+    return `<article class="panel ecard ${e.status === "done" ? "done" : ""}" style="--i:${i}">
+      <div class="ehead"><div class="edate"><span>${fmtDate(e.date, { month: "short" })}</span><b>${parse(e.date).getDate()}</b></div>
+        <div style="flex:1;min-width:0"><h3>${esc(e.title)}</h3><div class="muted" style="font-size:13.5px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location].filter(Boolean).join(" · "))}</div></div>
+        ${own ? `<button class="btn small ghost" data-act="sc-edit" data-id="${e.id}">Edit</button>` : ""}</div>
+      <div class="muted" style="font-size:13.5px">${e.status === "done" ? "Completed" : `<b style="color:var(--ink)">${confirmed.length}${need ? ` of ${need}` : ""}</b> volunteers · <b style="color:var(--ink)">${L.length}</b> shift lead${L.length === 1 ? "" : "s"}`}${e.byName ? ` · posted by ${esc(e.byName)}` : ""}</div>
+      ${need ? `<div class="bar ${confirmed.length >= need ? "g12" : ""}"><i style="--w:${Math.min(100, confirmed.length / need * 100)}%;--i:${i}"></i></div>` : ""}
+      ${L.length || confirmed.length ? `<div class="chips">${L.map(id => leadChip(e.id, id, true)).join("")}${confirmed.map(id => `<span class="vchip">${esc(S.volunteers[id].name)} <small>${cls(S.volunteers[id])}</small></span>`).join("")}</div>` : `<div class="muted" style="font-size:13px">Not staffed yet.</div>`}
+      ${e.notes ? `<div class="muted" style="font-size:13px">${esc(e.notes)}</div>` : ""}</article>`;
+  };
+  return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Student Council events</h2><div class="muted" style="font-size:14px">Post an event · the Head of Volunteers staffs it</div></div>
+    <button class="btn primary" data-act="sc-new">+ New event</button></div>
+    ${up.length ? `<div class="events st">${up.map(card).join("")}</div>` : `<div class="panel empty">No upcoming events.<br><br><button class="btn primary" data-act="sc-new">+ New event</button></div>`}
+    ${perm() ? teamCalendar() : ""}
+    ${past.length ? `<div class="eyebrow sec-title">Past</div><div class="events">${past.map(card).join("")}</div>` : ""}`;
+};
+// Events and PR leads see what the volunteering team already has booked, to avoid clashes.
+function teamCalendar() {
+  const ev = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => !e.council && e.status !== "done" && e.date >= todayISO()).sort((a, b) => a.date.localeCompare(b.date));
+  return `<div class="eyebrow sec-title">Volunteering team calendar</div><section class="panel"><div class="mini-events">${ev.length ? ev.map(e => `<div class="mev"><div class="edate"><span>${fmtDate(e.date, { month: "short" })}</span><b>${parse(e.date).getDate()}</b></div><div style="min-width:0;flex:1"><b>${esc(e.title)}</b><div class="muted" style="font-size:13px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location].filter(Boolean).join(" · "))}</div></div>${e.external ? `<span class="tag ext">External</span>` : ""}</div>`).join("") : `<div class="muted" style="font-size:14px">Nothing booked.</div>`}</div></section>`;
+}
+/* ---------- PR announcements ---------- */
+const longDay = d => fmtDate(d, { weekday: "long", month: "long", day: "numeric" });
+function annText(e) {
+  const { confirmed } = eventRoster(e), L = leadsOf(e).map(id => S.volunteers[id].name), n = confirmed.length + L.length;
+  return [`📣 ${e.title}`, `🗓 ${longDay(e.date)}${e.start ? ` · ${e.start}${e.end ? "–" + e.end : ""}` : ""}`, e.location ? `📍 ${e.location}` : "",
+    n ? `🤝 ${n} Primum Auxilium volunteer${n === 1 ? "" : "s"} on site${L.length ? `, led by ${L.join(", ")}` : ""}.` : "", e.notes ? `ℹ️ ${e.notes}` : "",
+    ].filter(Boolean).concat("", e.council ? "Student Council × Primum Auxilium" : "Primum Auxilium · MEIS").join("\n");
+}
+function recapText(e) {
+  const es = entries().filter(x => x.eventId === e.id), h = es.reduce((t, x) => t + Number(x.hours || 0), 0), n = (e.attended || []).length || es.length;
+  return [`💙 Thank you to the ${n} Primum Auxilium volunteer${n === 1 ? "" : "s"} who helped at ${e.title} on ${longDay(e.date)}${h ? `, giving ${fmtH(h)} hours of service` : ""}.`, "", e.council ? "Student Council × Primum Auxilium" : "Primum Auxilium · MEIS"].join("\n");
+}
+function statsText() {
+  const es = entries().filter(inYear), h = es.reduce((t, x) => t + Number(x.hours || 0), 0), done = Object.values(S.events).filter(e => e.status === "done").length;
+  return [`📊 Primum Auxilium this school year`, `• ${fmtH(h)} hours of service`, `• ${done} event${done === 1 ? "" : "s"} staffed`, `• ${vols().length} volunteers on the team`, "", "Sponsored by Middle East International School · supervised by the Ministry of Education"].join("\n");
+}
+VIEWS.pr = () => {
+  const all = Object.entries(S.events).map(([id, e]) => ({ id, ...e }));
+  const up = all.filter(e => e.status !== "done" && e.date >= todayISO()).sort((a, b) => a.date.localeCompare(b.date));
+  const back = new Date(+parse(todayISO()) - 30 * 864e5).toISOString().slice(0, 10);
+  const done = all.filter(e => e.status === "done" && e.date >= back).sort((a, b) => b.date.localeCompare(a.date));
+  ui.ann = {}; const box = (k, text, extra = "") => { ui.ann[k] = text; return `<pre class="ann">${esc(text)}</pre><div class="ann-actions">${extra}<button class="btn small primary" data-act="ann-copy" data-k="${k}">Copy</button></div>`; };
+  return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Announcements</h2><div class="muted" style="font-size:14px">Ready to post · copy and paste into any channel</div></div></div>
+    <div class="st">
+    <div class="eyebrow sec-title">Coming up</div>${up.length ? up.map((e, i) => `<article class="panel" style="--i:${i}"><div class="panel-head"><h2>${esc(e.title)}</h2><span class="muted num" style="font-size:13px">${fmtDate(e.date)}</span></div>${box("u" + e.id, annText(e))}</article>`).join("") : `<div class="panel empty">Nothing coming up.</div>`}
+    <div class="eyebrow sec-title">Recaps · last 30 days</div>${done.length ? done.map((e, i) => `<article class="panel" style="--i:${i}"><div class="panel-head"><h2>${esc(e.title)}</h2><span class="muted num" style="font-size:13px">${fmtDate(e.date)}</span></div>${e.photo ? `<img class="ann-photo" src="${e.photo}" alt="">` : ""}${box("d" + e.id, recapText(e), e.photo && downloads ? `<button class="btn small" data-act="ann-photo" data-id="${e.id}">Download photo</button>` : "")}</article>`).join("") : `<div class="panel empty">No finished events yet.</div>`}
+    <div class="eyebrow sec-title">By the numbers</div><article class="panel">${box("stats", statsText())}</article>
+    </div>`;
+};
+function councilModal(id) {
+  const e = id ? S.events[id] : { title: "", date: todayISO(), start: "", end: "", location: "", spots: 6, notes: "" };
+  return `<div class="modal" role="dialog" aria-label="Event"><h2>${id ? "Edit event" : "New event"}</h2>
+    <form id="scForm" class="stack-form">
+      <label class="field">Event<input type="text" id="cTitle" value="${esc(e.title)}" required ${id ? "" : "autofocus"} maxlength="100" placeholder="e.g. Spring fair"></label>
+      <div class="grid2">
+        <label class="field">Date<input type="date" id="cDate" value="${e.date}"></label>
+        <label class="field">Location<input type="text" id="cLoc" value="${esc(e.location || "")}" maxlength="120" placeholder="Where"></label>
+        <label class="field">Starts<input type="time" id="cStart" value="${e.start || ""}"></label>
+        <label class="field">Ends<input type="time" id="cEnd" value="${e.end || ""}"></label>
+      </div>
+      <label class="field">Volunteers needed<input type="number" id="cSpots" min="0" max="200" value="${e.spots ?? 0}"></label>
+      <label class="field">Details<input type="text" id="cNotes" value="${esc(e.notes || "")}" maxlength="500" placeholder="Tasks, dress code, contact…"></label>
+      ${ui.confirm === "sc" ? `<div class="confirm"><span style="flex:1">Delete this event?</span><button type="button" class="btn small" data-act="sc-keep">Keep</button><button type="button" class="btn small danger solid" data-act="del-event" data-id="${id}">Delete</button></div>` : ""}
+      <div class="actions">${id && ui.confirm !== "sc" ? `<button type="button" class="btn danger" data-act="sc-ask-del" style="margin-right:auto">Delete</button>` : ""}<button type="button" class="btn ghost" data-close>Cancel</button><button class="btn primary" type="submit">${id ? "Save event" : "Post event"}</button></div>
     </form></div>`;
 }
 
@@ -2684,6 +2931,15 @@ document.addEventListener("click", async e => {
     case "cancel-ev": ui.confirm = null; ui.modal = () => eventModal(ui.eventId); renderOverlay(); break;
     case "del-event": await del("events", id); closeOverlay(); toast("Event deleted"); break;
     case "ev-signup": signUp(id); break;
+    case "ev-lead": { const sel = $("#evlead-" + id), vid = sel && sel.value; if (!vid) { sel && sel.focus(); break; } const ev = S.events[id]; await put("events", id, { ...ev, leads: [...leadsOf(ev), vid], signups: (ev.signups || []).filter(x => x !== vid) }); toast(`${S.volunteers[vid].name} is shift lead`); break; }
+    case "ev-unlead": { const ev = S.events[id]; await put("events", id, { ...ev, leads: leadsOf(ev).filter(x => x !== a.dataset.vid) }); break; }
+    case "ev-auto": ui.eventId = id; ui.modal = () => autoModal(id); renderOverlay(); break;
+    case "ann-copy": { const t = ui.ann && ui.ann[a.dataset.k]; if (!t) break; try { await navigator.clipboard.writeText(t); toast("Copied"); } catch { toast("Select the text and copy it"); } break; }
+    case "ann-photo": { const e = S.events[id]; if (!e || !e.photo) break; const b = await (await fetch(e.photo)).blob(); try { await downloads.save({ filename: `${e.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.webp`, data: await b.arrayBuffer() }); } catch {} break; }
+    case "sc-new": ui.eventId = null; ui.confirm = null; ui.modal = () => councilModal(null); renderOverlay(); break;
+    case "sc-edit": ui.eventId = id; ui.confirm = null; ui.modal = () => councilModal(id); renderOverlay(); break;
+    case "sc-ask-del": ui.confirm = "sc"; ui.modal = () => councilModal(ui.eventId); renderOverlay(); break;
+    case "sc-keep": ui.confirm = null; ui.modal = () => councilModal(ui.eventId); renderOverlay(); break;
     case "ev-remove": { const ev = S.events[id]; await put("events", id, { ...ev, signups: (ev.signups || []).filter(x => x !== a.dataset.vid) }); break; }
     case "attendance": ui.eventId = id; ui.modal = () => attendanceModal(id); renderOverlay(); break;
     case "open-cert": ui.drawer = null; ui.certId = id; ui.modal = certModal; renderOverlay(); drawCert($("#certCanvas"), id); break;
@@ -2730,8 +2986,15 @@ document.addEventListener("click", async e => {
     case "cp-del": await del("complaints", ui.cpId); closeOverlay(); toast("Deleted"); break;
     case "my-cert": certDownload(myVol().id, "pdf", a); break;
     case "adm-reset": ui.acctReset = id; $("#acctBox").innerHTML = acctBox(); break;
+    case "sc-make": ui.scMake = Number(a.dataset.i); ui.acctReset = null; $("#acctBox").innerHTML = acctBox(); bindAcct(); break;
+    case "sc-save": {
+      const [name, title, p] = COUNCIL[Number(a.dataset.i)], pw = $("#scMakePw").value;
+      if (pw.length < 6) { toast("6+ characters"); break; }
+      await put("accounts", uid(), { role: "council", name, title, perm: p || null, ...(await makeSecret(pw)), created: new Date().toISOString() });
+      ui.scMake = null; $("#acctBox").innerHTML = acctBox(); bindAcct(); toast(`${name} · password ${pw}`); break;
+    }
     case "adm-pw": { const pw = $("#admPw-" + id).value; if (pw.length < 6) { toast("6+ characters"); break; } await put("accounts", id, { ...S.accounts[id], ...(await makeSecret(pw)) }); ui.acctReset = null; $("#acctBox").innerHTML = acctBox(); bindAcct(); toast(`Password set · ${pw}`); break; }
-    case "adm-del": { const n = S.accounts[id]?.name; await del("accounts", id); toast(`Removed ${n}`); break; }
+    case "adm-del": { const n = S.accounts[id]?.name; await del("accounts", id); if ($("#acctBox")) { $("#acctBox").innerHTML = acctBox(); bindAcct(); } toast(`Removed ${n}`); break; }
     case "vpw-edit": ui.signinEdit = id; ui.confirm = null; $("#signinBox").innerHTML = signinHTML(id); $("#vPwNew")?.select(); break;
     case "vpw-cancel": ui.signinEdit = null; $("#signinBox").innerHTML = signinHTML(ui.drawer); break;
     case "vpw-save": { const pw = $("#vPwNew").value; if (pw.length < 6) { toast("6+ characters"); break; } const ex = accFor(id); await put("accounts", ex ? ex[0] : uid(), { ...(ex ? ex[1] : { role: "volunteer", vid: id, created: new Date().toISOString() }), ...(await makeSecret(pw)) }); ui.signinEdit = null; $("#signinBox").innerHTML = signinHTML(id); toast(`Password set · ${pw}`); break; }
@@ -2763,7 +3026,7 @@ document.addEventListener("keydown", e => {
   if (reduced()) return;
   // Ink ripple from the press point on buttons and tappable cards.
   document.addEventListener("pointerdown", e => {
-    const el = e.target.closest(".btn,.tab,.qa,.vrow,.post,.bcard,.seg button,.rs-head,.chip.out");
+    const el = e.target.closest("button,.btn,label.btn,.tab,.qa,.vrow,.post,.bcard,.rs-head,.chip.out,.attrow,.srow,.mev");
     if (!el || el.disabled) return;
     const r = el.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2.2, ink = document.createElement("span");
     ink.className = "ripple"; ink.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
@@ -2792,6 +3055,21 @@ document.addEventListener("keydown", e => {
   // Header crest drifts with scroll.
   const ghost = $(".band .ghost"), crest = $("#crestImg");
   addEventListener("scroll", () => { const y = Math.min(scrollY, 300); if (ghost) ghost.style.translate = `0 ${y * .25}px`; if (crest) crest.style.translate = `0 ${y * .08}px`; }, { passive: true });
+})();
+
+
+/* ---------- feedback on every action ---------- */
+(() => {
+  if (reduced()) return;
+  const kick = (el, c) => { if (!el) return; el.classList.remove(c); void el.offsetWidth; el.classList.add(c); setTimeout(() => el.classList.remove(c), 700); };
+  // Saving any form pulses its main button.
+  document.addEventListener("submit", e => kick(e.target.querySelector("button[type=submit]"), "pulse"), true);
+  // A changed choice flashes so it's clear it registered.
+  document.addEventListener("change", e => { const t = e.target; if (t.matches("select,input[type=date],input[type=time],input[type=number]")) kick(t, "flash"); if (t.matches("input[type=checkbox],input[type=radio]")) kick(t.closest("label,.attrow,.checkrow") || t, "tick"); }, true);
+  // Copy buttons confirm with a check.
+  document.addEventListener("click", e => { const b = e.target.closest('[data-act$="copy"]'); if (!b) return; const t = b.textContent; b.classList.add("done"); b.textContent = "Copied ✓"; setTimeout(() => { b.textContent = t; b.classList.remove("done"); }, 1400); }, true);
+  // Overlays: new content in drawers and modals slides in each time it is redrawn.
+  new MutationObserver(() => { const m = document.querySelector("#overlayHost .modal,#overlayHost .drawer"); if (m && !m.dataset.seen) { m.dataset.seen = 1; m.querySelectorAll(".attrow,.ap,.field,.srow").forEach((x, i) => { x.style.setProperty("--k", Math.min(i, 14)); x.classList.add("in-k"); }); } }).observe($("#overlayHost"), { childList: true });
 })();
 
 addEventListener("resize", moveInk);

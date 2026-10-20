@@ -3128,8 +3128,6 @@ document.addEventListener("click", async e => {
     case "ev-remove": { const ev = S.events[id]; await put("events", id, { ...ev, signups: (ev.signups || []).filter(x => x !== a.dataset.vid) }); break; }
     case "ics": icsDownload(id); break;
     case "open-log": ui.eventId = id; ui.modal = () => logModal(id); renderOverlay(); break;
-    case "log-copy": { const e = S.events[ui.eventId], f = logRead(); const t = logText(e, f.summary, f.people); try { await navigator.clipboard.writeText(t); toast("Copied · paste it in Discord"); } catch { toast("Copy blocked by the browser"); } break; }
-    case "log-copy-saved": { const e = S.events[id], l = S.logs[id]; if (!e || !l) break; try { await navigator.clipboard.writeText(logText(e, l.summary, l.people)); toast("Copied · paste it in Discord"); } catch { toast("Copy blocked by the browser"); } break; }
     case "month-open": ui.modal = monthModal; renderOverlay(); break;
     case "push-on": pushOn(); break;
     case "push-off": pushOff(); break;
@@ -3358,17 +3356,6 @@ function evPush(prev, e, id) {
 const RGROUP = v => v.rank === "probationary" ? 2 : v.rank === "supervisory" || v.rank === "logistics" ? 0 : 1;
 const RGROUPS = ["Senior volunteers", "Volunteers", "Probationary volunteers"];
 const logTeam = e => [...new Set([...leadsOf(e), ...eventRoster(e).confirmed])].filter(id => S.volunteers[id]);
-function logText(e, summary, people) {
-  const g = [[], [], []], notes = [];
-  logTeam(e).forEach(id => {
-    const v = S.volunteers[id], p = people[id] || { status: "present" };
-    if (p.status === "absent") return;
-    g[RGROUP(v)].push(v.name + (p.status === "late" ? " (late)" : p.status === "early" ? " (left early)" : ""));
-    if (p.note) notes.push(`- ${v.name}: ${p.note}`);
-  });
-  return [`Event Name: ${e.title}`, `Event log: ${summary || ""}`, `Senior Volunteers involved: ${g[0].join(", ")}`, `Volunteers involved: ${g[1].join(", ")}`, `Probationary volunteers involved: ${g[2].join(", ")}`,
-    ...(notes.length ? ["Notes:", ...notes] : [])].join("\n");
-}
 function logModal(id) {
   const e = S.events[id], l = S.logs[id] || {}, ids = logTeam(e);
   const grp = RGROUPS.map((n, gi) => {
@@ -3380,7 +3367,7 @@ function logModal(id) {
       <div class="att-sum"><span>Everyone selected is already on the list. Just confirm how it went.</span><span class="muted">${fmtLong(e.date)}</span></div>
       <label class="field">How did it go?<textarea id="lgSum" rows="4" maxlength="3000" placeholder="A few lines on what happened">${esc(l.summary || "")}</textarea></label>
       ${grp || `<div class="muted">No one is selected yet.</div>`}
-      <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button type="button" class="btn" data-act="log-copy">Copy for Discord</button><button class="btn primary" type="submit">Save log</button></div>
+      <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn primary" type="submit">Save log</button></div>
     </form></div>`;
 }
 function logRead() {
@@ -3392,7 +3379,7 @@ function logBlock(e) {
   const c = { late: 0, early: 0, absent: 0 }; Object.values(l.people || {}).forEach(p => { if (c[p.status] !== undefined) c[p.status]++; });
   const flags = Object.entries(l.people || {}).filter(([, p]) => p.status !== "present" || p.note).map(([v, p]) => `<div style="font-size:13px"><b>${esc(S.volunteers[v]?.name || "")}</b> · ${LOGST[p.status] || ""}${p.note ? ` · ${esc(p.note)}` : ""}</div>`).join("");
   return `<details class="evlog"><summary>Shift lead log · ${esc(l.byName || "")}${c.absent + c.late + c.early ? ` · ${[c.late && c.late + " late", c.early && c.early + " left early", c.absent && c.absent + " absent"].filter(Boolean).join(", ")}` : ""}</summary>
-    <div style="margin-top:8px">${l.summary ? `<div style="font-size:14px;white-space:pre-wrap">${esc(l.summary)}</div>` : ""}${flags}${role() === "head" ? `<div style="margin-top:8px"><button class="btn small" data-act="log-copy-saved" data-id="${e.id}">Copy for Discord</button></div>` : ""}</div></details>`;
+    <div style="margin-top:8px">${l.summary ? `<div style="font-size:14px;white-space:pre-wrap">${esc(l.summary)}</div>` : ""}${flags}</div></details>`;
 }
 
 // Add to calendar

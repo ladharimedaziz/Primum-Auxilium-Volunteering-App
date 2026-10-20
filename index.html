@@ -1785,7 +1785,7 @@ VIEWS.complain = () => `<div class="logwrap st">
       <div class="seg cpk" role="group" aria-label="Type">${CP_KINDS.map((k, i) => `<button type="button" data-cpk="${k}" aria-pressed="${i === 0}">${k}</button>`).join("")}</div>
       <label class="field">Subject<input type="text" id="cpSub" required maxlength="100"></label>
       <label class="field">Details<textarea id="cpBody" rows="7" required maxlength="4000"></textarea></label>
-      <label class="checkrow"><input type="checkbox" id="cpAnon"><span><b>Send anonymously</b><small>Name not attached · replies unavailable</small></span></label>
+      <div class="muted" style="font-size:13px"><b style="color:var(--ink)">No retaliation.</b> Your name goes with your complaint, and the Head of Volunteers will not hold it against you, as long as it is not an outright personal attack.</div>
       <div class="policy">${icx}<span>Non-retaliation policy: no penalty, reassignment or exclusion for anything sent here.</span></div>
       <div style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit">Send</button></div>
     </form></section>
@@ -1814,9 +1814,9 @@ after.complain = () => {
   $("#cpForm").addEventListener("submit", async e => {
     e.preventDefault(); const sub = $("#cpSub").value.trim(), body = $("#cpBody").value.trim();
     if (!sub) return $("#cpSub").focus(); if (!body) return $("#cpBody").focus();
-    const anon = $("#cpAnon").checked, v = myVol();
+    const anon = false, v = myVol();
     const ok = await put("complaints", uid(), { kind, subject: sub, body, anon, ...(anon ? {} : { vid: v ? v.id : null, name: v ? v.name : accName(me()) }), status: "new", created: new Date().toISOString() });
-    if (ok !== false) { e.target.reset(); pushSend([{ staff: true, title: anon ? "New anonymous complaint" : "New complaint", body: sub, tag: "cp" }]); toast("Sent to the Head of Volunteers and Student Council"); }
+    if (ok !== false) { e.target.reset(); pushSend([{ staff: true, title: "New complaint", body: sub, tag: "cp" }]); toast("Sent to the Head of Volunteers and Student Council"); }
   });
 };
 const openQ = () => Object.values(S.queries).filter(q => (q.status || "open") === "open").length;
@@ -1882,7 +1882,7 @@ const HB_VOL = `<header class="hb-head"><img src="CREST" alt=""><div><div class=
 <li><h3>Outside school</h3><ul><li>Only with approval from the school and the Head.</li><li>Formal dress and your ID.</li><li>Be at the meeting point on time.</li><li>Respect local customs. You represent MEIS.</li><li>The organizer gives your certificate.</li></ul></li>
 <li><h3>If something goes wrong</h3><ul><li>Stay calm. Never argue in public.</li><li>Tell your supervisor.</li><li>Safety problem: tell the Head straight away.</li></ul></li>
 <li><h3>Getting promoted</h3><div class="pills4"><span>On time</span><span>Calm</span><span>Takes initiative</span><span>Follows the rules</span></div></li>
-<li><h3>Speak up</h3><p>Use <b>Questions & complaints</b> in this app any time. The Head of Volunteers and the Student Council read them, and nobody can punish you for speaking up.</p></li>
+<li><h3>Speak up</h3><p>Use <b>Questions & complaints</b> in this app any time. The Head of Volunteers and the Student Council read them. Your name goes with it, and a complaint is never held against you unless it is an outright personal attack.</p></li>
 </ol>
 <footer class="hb-foot">Volunteering with Primum Auxilium means following this handbook.<div class="hb-credit"><img src="MEISL" alt=""><span>Sponsored by Middle East International School<br>Under the supervision of the Ministry of Education</span><img src="MOEL" alt="" class="moe"></div></footer>`;
 const HB_SUP = `<header class="hb-head"><img src="CREST" alt=""><div><div class="eyebrow">Primum Auxilium · MEIS · Supervisory only</div><h2>Supervisory Handbook</h2><div class="muted">Read with the Volunteer Handbook</div></div></header>

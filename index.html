@@ -665,6 +665,14 @@ pre.ann{transition:box-shadow .3s,transform .3s var(--spring)}pre.ann:hover{box-
 .tab[aria-selected=true]{animation:tabPick .45s var(--spring)}
 @keyframes tabPick{40%{transform:translateY(-2px) scale(1.06)}}
 .motion-btn{min-width:30px;justify-content:center}
+
+.notice-panel{border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));box-shadow:0 10px 30px -14px color-mix(in srgb,var(--accent) 60%,transparent);margin-bottom:16px;animation:noticeIn .6s var(--spring) both}
+.notice-panel .bell{display:inline-block;animation:ring 1.2s .4s ease-in-out 2}
+@keyframes ring{10%,30%{transform:rotate(14deg)}20%,40%{transform:rotate(-14deg)}50%{transform:none}}
+@keyframes noticeIn{from{opacity:0;transform:translateY(-14px) scale(.97)}}
+.notice-panel.bye{animation:noticeOut .38s ease-in both}@keyframes noticeOut{to{opacity:0;transform:translateY(-10px) scale(.96);height:0;margin:0;padding:0}}
+.nmev.lead .edate{background:var(--navy);color:#fff}.nmev.out{opacity:.7}
+.tab .badge{animation:pop .4s var(--spring)}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -984,7 +992,7 @@ function moveInk() {
 
 /* ---------- sign-in ---------- */
 const TABS = {
-  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["inbox", "Inbox"], ["handbook", "Handbook"], ["settings", "Settings"]],
+  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["handbook", "Handbook"], ["settings", "Settings"]],
   admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["handbook", "Handbook"]],
   council: [["cevents", "Events"]],
   volunteer: [["me", "My hours"], ["vevents", "Events"], ["vcerts", "Certificates"], ["handbook", "Handbook"], ["complain", "Complaints"]]
@@ -1138,9 +1146,48 @@ function renderGate() {
   });
   $("#keyOk")?.addEventListener("change", e => { $("#keyDone").disabled = !e.target.checked; });
 }
+/* ---------- volunteer alerts: selections show up the next time they open the app ---------- */
+const seenKey = () => `pa-seen-${session?.id}`;
+const getSeen = () => { try { return JSON.parse(localStorage.getItem(seenKey())) || {}; } catch { return {}; } };
+function notices() {
+  const v = role() === "volunteer" && myVol(); if (!v) return [];
+  const seen = getSeen(), out = [];
+  for (const [id, e] of Object.entries(S.events)) {
+    if (e.status === "done" || e.date < todayISO()) continue;
+    const { confirmed, waitlist } = eventRoster(e);
+    const st = (e.leads || []).includes(v.id) ? "lead" : confirmed.includes(v.id) ? "in" : waitlist.includes(v.id) ? "wait" : "";
+    const key = st && `${st}|${e.date}|${e.start || ""}|${e.location || ""}`;
+    if (st && seen[id] !== key) out.push({ id, e, st, key, changed: !!seen[id] && seen[id].split("|")[0] === st });
+    else if (!st && seen[id]) out.push({ id, e, st: "out", key: "" });
+  }
+  return out.sort((a, b) => a.e.date.localeCompare(b.e.date));
+}
+const noticeLine = n => ({ lead: `★ You're <b>shift lead</b> for`, in: "You're <b>selected</b> for", wait: "You're on the <b>waitlist</b> for", out: "You're <b>no longer on</b>" }[n.st] + ` <b>${esc(n.e.title)}</b>` + (n.changed ? " · details changed" : ""));
+function ackNotices() {
+  const seen = getSeen();
+  notices().forEach(n => { if (n.st === "out") delete seen[n.id]; else seen[n.id] = n.key; });
+  try { localStorage.setItem(seenKey(), JSON.stringify(seen)); } catch {}
+  ui.noticeSig = "";
+}
+function noticePanel() {
+  const ns = notices(); if (!ns.length) return "";
+  return `<section class="panel notice-panel" style="--i:0"><div class="panel-head"><h2><span class="bell">🔔</span> New for you</h2><button class="btn small primary" data-act="notice-ok">Got it</button></div>
+    <div class="mini-events">${ns.map(n => `<div class="mev nmev ${n.st}"><div class="edate"><span>${fmtDate(n.e.date, { month: "short" })}</span><b>${parse(n.e.date).getDate()}</b></div><div style="min-width:0;flex:1"><div style="font-size:14px">${noticeLine(n)}</div><div class="muted" style="font-size:13px">${esc([fmtDate(n.e.date, { weekday: "long" }), n.e.start && n.e.end ? `${n.e.start}–${n.e.end}` : n.e.start, n.e.location].filter(Boolean).join(" · "))}</div></div></div>`).join("")}</div></section>`;
+}
+// Called after every draw: a fresh selection pops a toast and buzzes the phone once.
+function alertNew() {
+  const ns = notices(), sig = ns.map(n => n.id + n.st + n.key).join(",");
+  if (!sig || sig === ui.noticeSig) { ui.noticeSig = sig; return; }
+  const fresh = ns.filter(n => !(ui.noticeSig || "").includes(n.id + n.st + n.key));
+  ui.noticeSig = sig;
+  if (!fresh.length) return;
+  const n = fresh[0];
+  toast(n.st === "out" ? `Update: you're no longer on ${n.e.title}` : n.changed ? `🔔 Updated: ${n.e.title} · ${fmtDate(n.e.date)}${n.e.start ? " " + n.e.start : ""}` : `🔔 ${n.st === "lead" ? "Shift lead" : n.st === "wait" ? "Waitlisted" : "Selected"}: ${n.e.title} · ${fmtDate(n.e.date)}`);
+  try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch {}
+}
 function renderTabs(soft) {
-  const nav = $("#tabs"), list = tabsFor(), nNew = Object.values(S.complaints).filter(c => (c.status || "new") === "new").length;
-  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
+  const nav = $("#tabs"), list = tabsFor(), nNew = Object.values(S.complaints).filter(c => (c.status || "new") === "new").length, nAl = notices().length;
+  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
   if (nav.dataset.sig === html) return;
   nav.dataset.sig = html; nav.innerHTML = html;
   if (soft) moveInk();
@@ -1162,6 +1209,7 @@ function render(animate) {
   else ringIn(el, false);
   after[view] && after[view]();
   renderOverlay();
+  alertNew();
 }
 // Data changed under us: redraw only the parts that hold data, so half-typed forms survive.
 function refresh() {
@@ -1181,6 +1229,7 @@ function refresh() {
   else if (view === "cevents" || view === "pr") el.innerHTML = VIEWS[view]();
   else if (view === "settings") { const r = $("#statusList"); const ac = $("#acctBox"); if (ac) { ac.innerHTML = acctBox(); bindAcct(); } if (r) r.innerHTML = statusRows(); const i = $("#dataInfo"); if (i) i.innerHTML = dataInfo(); }
   el.classList.remove("enter");
+  alertNew();
   if (ui.drawer && !ui.verifying) { const d = $("#drawerStats"); if (d) d.innerHTML = drawerStats(); if (!S.volunteers[ui.drawer]) closeOverlay(); }
 }
 
@@ -1614,7 +1663,7 @@ VIEWS.me = () => {
   const list = entries().filter(e => e.volunteerId === v.id).sort((a, b) => b.date.localeCompare(a.date));
   const next = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => e.status !== "done" && e.date >= todayISO()).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
   const pr = promotionFor(v);
-  return `<div class="hello st"><div style="--i:0"><div class="eyebrow">${greet()}</div><h2 class="hello-name">${esc(firstName(v.name))}</h2><div class="muted">${cls(v)}${rankOf(v) ? " · " + rankOf(v).label : ""}${v.role ? " · " + esc(v.role) : ""}</div><div style="margin-top:8px">${govChips(v)}</div></div></div>
+  return `${noticePanel()}<div class="hello st"><div style="--i:0"><div class="eyebrow">${greet()}</div><h2 class="hello-name">${esc(firstName(v.name))}</h2><div class="muted">${cls(v)}${rankOf(v) ? " · " + rankOf(v).label : ""}${v.role ? " · " + esc(v.role) : ""}</div><div style="margin-top:8px">${govChips(v)}</div></div></div>
   <div class="me-grid st">
     <section class="panel kpi hero me-hero" style="--i:1">${rule === "exempt" ? `<div><div class="eyebrow">Requirement</div><div class="v">Exempt</div><div class="d">${esc(statusOf(v.status).label)}</div></div>` : `${ringHTML(pct)}
       <div><div class="eyebrow">This school year</div><div class="v"><span data-count="${r1(h)}" data-dec="${h % 1 ? 1 : 0}">${fmtH(h)}</span><small>of ${g} h</small></div>
@@ -1648,7 +1697,7 @@ VIEWS.vevents = () => {
   const all = Object.entries(S.events).map(([id, e]) => ({ id, ...e }));
   const open = all.filter(e => e.status !== "done").sort((a, b) => a.date.localeCompare(b.date));
   const past = all.filter(e => e.status === "done" && entries().some(x => x.eventId === e.id && x.volunteerId === v.id)).sort((a, b) => b.date.localeCompare(a.date));
-  return `<div class="toolbar"><div style="flex:1"><h2 style="font-size:22px">Events</h2><div class="muted" style="font-size:14px">Sign-ups through your supervisor · Grade 12 first</div></div></div>
+  return `${noticePanel()}<div class="toolbar"><div style="flex:1"><h2 style="font-size:22px">Events</h2><div class="muted" style="font-size:14px">Sign-ups through your supervisor · Grade 12 first</div></div></div>
     <section class="panel st"><div class="mini-events">${open.length ? open.map((e, i) => `<div style="--i:${i}">${mineEventRow(e, v)}</div>`).join("") : `<div class="muted">No events scheduled.</div>`}</div></section>
     ${past.length ? `<div class="eyebrow sec-title">Attended</div><section class="panel"><div class="mini-events">${past.map(e => mineEventRow(e, v)).join("")}</div></section>` : ""}`;
 };
@@ -2509,6 +2558,12 @@ function autoPool(e) {
     .map(v => { const h = hoursFor(v.id); return { v, h, done: isDone(v, h) ? 1 : 0 }; }).sort(fewestFirst);
 }
 const leadChip = (evId, vid, done) => { const v = S.volunteers[vid]; return `<span class="vchip lead"><span class="star">★</span>${esc(v.name)} <small>${cls(v)}</small>${done ? "<span></span>" : `<button class="iconbtn" data-act="ev-unlead" data-id="${evId}" data-vid="${vid}" aria-label="Remove ${esc(v.name)} as shift lead">✕</button>`}</span>`; };
+function callupText(e) {
+  const { confirmed, waitlist } = eventRoster(e), nm = id => S.volunteers[id].name, L = leadsOf(e);
+  return [`📣 Call-up: ${e.title}`, `🗓 ${fmtDate(e.date, { weekday: "long", month: "long", day: "numeric" })}${e.start ? ` · ${e.start}${e.end ? "–" + e.end : ""}` : ""}`, e.location ? `📍 ${e.location}` : "",
+    L.length ? `★ Shift lead${L.length > 1 ? "s" : ""}: ${L.map(nm).join(", ")}` : "", confirmed.length ? `✅ Selected: ${confirmed.map(nm).join(", ")}` : "",
+    waitlist.length ? `⏳ Waitlist: ${waitlist.map(nm).join(", ")}` : "", e.notes ? `ℹ️ ${e.notes}` : ""].filter(Boolean).concat("", "Reply to confirm. Details are in the Primum Auxilium app.").join("\n");
+}
 function leadBlock(e) {
   const L = leadsOf(e), need = leadsNeeded(e), pool = leadPool(e);
   return `<div class="leads"><div class="leads-head"><span class="eyebrow">Shift leads</span><span class="num tag ${L.length >= need ? "ok" : "warn"}">${L.length} of ${need}</span><span class="muted" style="font-size:12px">1 per 5 volunteers · max 3</span></div>
@@ -2567,7 +2622,7 @@ function eventCards() {
       ${leadBlock(e)}
       <div class="staff-head"><span class="eyebrow">Add volunteers</span><button class="btn small primary" data-act="ev-auto" data-id="${e.id}" ${elig.length ? "" : "disabled"}>Auto-pick by fewest hours</button></div>
       <div class="signup"><select id="evsel-${e.id}" aria-label="Volunteer to sign up">${elig.length ? `<option value="">Pick by hand…</option>${elig.map(v => `<option value="${v.id}">${cls(v)} · ${esc(v.name)}</option>`).join("")}` : `<option value="">Everyone eligible is signed up</option>`}</select><button class="btn" data-act="ev-signup" data-id="${e.id}" ${elig.length ? "" : "disabled"}>Add</button></div>
-      <div style="display:flex;justify-content:flex-end"><button class="btn primary" data-act="attendance" data-id="${e.id}" ${confirmed.length + waitlist.length + leadsOf(e).length ? "" : "disabled"}>Record attendance</button></div>`}
+      <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">${confirmed.length + leadsOf(e).length ? `<button class="btn" data-act="callup-copy" data-id="${e.id}">Copy call-up</button>` : ""}<button class="btn primary" data-act="attendance" data-id="${e.id}" ${confirmed.length + waitlist.length + leadsOf(e).length ? "" : "disabled"}>Record attendance</button></div>`}
     </article>`;
   };
   return `${open.length ? `<div class="events st">${open.map(card).join("")}</div>` : `<div class="panel empty">Nothing scheduled. <button class="btn small" data-act="new-event">+ New event</button></div>`}
@@ -2996,6 +3051,8 @@ document.addEventListener("click", async e => {
     case "new-event-go": go("events"); ui.eventId = null; ui.confirm = null; ui.modal = () => eventModal(null); renderOverlay(); break;
     case "import-go": go("roster"); setTimeout(() => $("#impFile")?.click(), 50); break;
     case "motion": { const on = !document.documentElement.classList.toggle("calm"); try { localStorage.setItem("pa-motion", on ? "full" : "calm"); } catch {} renderBrandMeta(); toast(on ? "Animations on" : "Calm motion"); break; }
+    case "notice-ok": { const p = a.closest(".notice-panel"); ackNotices(); if (p && !reduced()) { p.classList.add("bye"); setTimeout(() => { p.remove(); renderTabs(true); }, 380); } else { p && p.remove(); renderTabs(true); } break; }
+    case "callup-copy": { const t = callupText(S.events[id]); try { await navigator.clipboard.writeText(t); toast("Call-up copied · paste it in the group chat"); } catch { toast("Copy blocked by the browser"); } break; }
     case "sign-out": signOut(); break;
     case "gate-recover": ui.gate = "recover"; renderGate(); break;
     case "gate-back": ui.gate = null; renderGate(); break;

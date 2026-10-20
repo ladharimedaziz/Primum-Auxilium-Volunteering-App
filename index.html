@@ -722,8 +722,8 @@ const RANKS = [
 ];
 const TONES = ["teal", "violet", "rose", "blue", "brass", "grey"];
 const REPORT_KINDS = ["Event report", "Weekly summary", "Incident", "Audit"];
-const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, settings: { ...DEFAULTS } };
-const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews"];
+const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, appeals: {}, settings: { ...DEFAULTS } };
+const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews", "appeals"];
 let db = null, downloads = null, mode = "loading";
 const DESKTOP = !!window.PA_DESKTOP;
 let view = "dashboard";
@@ -803,7 +803,7 @@ function weeksLeft() { return Math.max(1, daysBetween(todayISO(), S.settings.yea
 
 /* ---------- persistence ---------- */
 const LKEY = "primum-auxilium-v1";
-function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, settings: S.settings }); }
+function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, settings: S.settings }); }
 async function put(coll, id, obj) {
   if (!allowed(coll, id)) { toast("View only"); return false; }
   if (mode === "cloud") return cloudPut(coll, id, obj);
@@ -954,7 +954,7 @@ async function boot() {
   } else {
     mode = "local";
     const saved = store.get(LKEY);
-    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, logs: saved.logs || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
+    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, appeals: saved.appeals || {}, logs: saved.logs || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
     else if (!DESKTOP) seedLocal();
     loadSession(); render(true);
   }
@@ -1000,8 +1000,8 @@ function moveInk() {
 
 /* ---------- sign-in ---------- */
 const TABS = {
-  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["review", "Review"], ["handbook", "Handbook"], ["settings", "Settings"]],
-  admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["handbook", "Handbook"]],
+  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ["handbook", "Handbook"], ["settings", "Settings"]],
+  admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["appeals", "Appeals"], ["handbook", "Handbook"]],
   council: [["cevents", "Events"], ["ccerts", "Certificates"]],
   volunteer: [["me", "My hours"], ["vevents", "Events"], ["vcerts", "Certificates"], ["handbook", "Handbook"], ["complain", "Questions & complaints"]]
 };
@@ -1013,7 +1013,8 @@ const role = () => me()?.role || null;
 const accName = a => a.role === "volunteer" ? (S.volunteers[a.vid]?.name || "Removed volunteer") : a.role === "head" ? (headVol()?.name || a.name) : a.name;
 const myVol = () => { const a = me(); if (!a) return null; const id = a.role === "head" ? headVol()?.id : a.vid; return id && S.volunteers[id] ? { ...S.volunteers[id], id } : null; };
 const perm = () => me()?.perm || null;
-const tabsFor = () => role() === "council" ? [...TABS.council, ["inbox", "Inbox"], ["review", "Review"], ...(perm() === "pr" ? [["pr", "Announcements"]] : [])] : TABS[role()] || [];
+const held = () => role() === "volunteer" && !!myVol() && statusOf(myVol().status).rule === "block";
+const tabsFor = () => held() ? [["appeal", "Appeal"]] : role() === "council" ? [...TABS.council, ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ...(perm() === "pr" ? [["pr", "Announcements"]] : [])] : TABS[role()] || [];
 // Student Council 2026–27. The Head of Volunteers is Dan's own account, so he is not listed.
 const COUNCIL = [["Fayez Sankari", "President"], ["Abel Varghese", "Vice President"], ["Murad Samarah", "VP's Aide"], ["Suhaib Mohammad", "Newspaper Manager"],
   ["Waleed Osama", "Head of Academics"], ["Sameer Haroun", "Head of Finance"], ["Mohammad Thaer", "Head of Media"], ["Ragheb Haroun", "Head of PR & Communication", "pr"],
@@ -1028,6 +1029,7 @@ function allowed(coll, id) {
   if (r === "head" || ui.sys || mode === "loading") return true;
   if (coll === "complaints") return r === "volunteer" && !S.complaints[id];
   if (coll === "queries") return (r === "volunteer" && !S.queries[id]) || (r === "council" && !!S.queries[id]);
+  if (coll === "appeals") return (r === "volunteer" && held() && !S.appeals[id]) || (r === "admin" && !!S.appeals[id]);
   if (coll === "reviews") return r === "volunteer" && !S.reviews[id] && myVol()?.rank === "supervisory";
   if (coll === "logs") { const e = S.events[id], v = myVol(); return r === "volunteer" && !!e && !!v && (e.leads || []).includes(v.id) && e.status !== "done"; }
   if (coll === "events") return r === "council" && (!S.events[id] || canEditEv(S.events[id]));
@@ -1236,7 +1238,7 @@ function alertNew() {
 }
 function renderTabs(soft) {
   const nav = $("#tabs"), list = tabsFor(), nNew = newCp() + openQ(), nAl = notices().length;
-  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "review" && rvPending() ? `<span class="badge num">${rvPending()}</span>` : ""}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
+  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "appeals" && apPending() ? `<span class="badge num">${apPending()}</span>` : ""}${k === "review" && rvPending() ? `<span class="badge num">${rvPending()}</span>` : ""}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
   if (nav.dataset.sig === html) return;
   nav.dataset.sig = html; nav.innerHTML = html;
   if (soft) moveInk();
@@ -1275,6 +1277,7 @@ function refresh() {
   else if (view === "certs") { el.innerHTML = VIEWS.certs(); after.certs(); }
   else if (view === "inbox" || view === "me" || view === "vevents" || view === "vcerts") { el.innerHTML = VIEWS[view](); after[view] && after[view](); ringIn(el, false); }
   else if (view === "complain") { const r = $("#cpSent"); if (r) r.innerHTML = cpSent(); const q = $("#qList"); if (q) q.innerHTML = qList(); }
+  else if (view === "review" || view === "appeals" || view === "ccerts" || view === "appeal") { const ae = document.activeElement; if (!(ae && el.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName))) { el.innerHTML = VIEWS[view](); after[view] && after[view](); } }
   else if (view === "cevents" || view === "pr") el.innerHTML = VIEWS[view]();
   else if (view === "settings") { const r = $("#statusList"); const ac = $("#acctBox"); if (ac) { ac.innerHTML = acctBox(); bindAcct(); } if (r) r.innerHTML = statusRows(); const i = $("#dataInfo"); if (i) i.innerHTML = dataInfo(); }
   el.classList.remove("enter");
@@ -2301,7 +2304,7 @@ function importModal() {
 }
 
 /* ---------- desktop updates ---------- */
-function backupJSON() { return JSON.stringify({ app: "primum-auxilium", version: 2, exportedAt: new Date().toISOString(), volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, settings: S.settings }, null, 1); }
+function backupJSON() { return JSON.stringify({ app: "primum-auxilium", version: 2, exportedAt: new Date().toISOString(), volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, settings: S.settings }, null, 1); }
 function updBox() {
   const u = ui.upd || { state: "idle" }, keep = `<div class="muted" style="font-size:13px">Data is kept. A backup is saved before installing.</div>`;
   const btn = (label, primary) => `<button class="btn ${primary ? "primary" : ""}" data-act="upd-check">${label}</button>`;
@@ -2356,7 +2359,7 @@ async function restore() {
     ev.pdfs = kept;
   }
   const withAcc = mode !== "cloud" && Object.values(b.accounts || {}).some(a => a.role === "head");
-  for (const c of ["entries", "reports", "events", "volunteers", ...(withAcc ? ["accounts"] : []), ...(b.complaints ? ["complaints"] : []), ...(b.queries ? ["queries"] : []), ...(b.reviews ? ["reviews"] : []), ...(b.logs ? ["logs"] : [])]) {
+  for (const c of ["entries", "reports", "events", "volunteers", ...(withAcc ? ["accounts"] : []), ...(b.complaints ? ["complaints"] : []), ...(b.queries ? ["queries"] : []), ...(b.reviews ? ["reviews"] : []), ...(b.appeals ? ["appeals"] : []), ...(b.logs ? ["logs"] : [])]) {
     for (const id of Object.keys(S[c])) if (!(b[c] || {})[id]) await del(c, id);
     for (const [id, doc] of Object.entries(b[c] || {})) await put(c, id, doc);
   }
@@ -3131,6 +3134,8 @@ document.addEventListener("click", async e => {
     case "push-on": pushOn(); break;
     case "push-off": pushOff(); break;
     case "rv-ask": break;
+    case "ap-ok": appealDecide(id, "approved"); break;
+    case "ap-no": appealDecide(id, "denied"); break;
     case "rv-up": reviewDecide(id, "upheld"); break;
     case "rv-no": reviewDecide(id, "dismissed"); break;
     case "attendance": ui.eventId = id; ui.modal = () => attendanceModal(id); renderOverlay(); break;
@@ -3527,6 +3532,43 @@ VIEWS.ccerts = () => {
     });
   };
 })();
+
+/* ---------- appeals ---------- */
+const apList = () => Object.entries(S.appeals).map(([id, a]) => ({ id, ...a })).sort((a, b) => (a.status === "pending" ? 0 : 1) - (b.status === "pending" ? 0 : 1) || (b.created || "").localeCompare(a.created || ""));
+const apPending = () => Object.values(S.appeals).filter(a => a.status === "pending").length;
+const AP_TAG = { pending: ["Waiting", "warn"], approved: ["Approved", "ok"], denied: ["Denied", "danger"] };
+VIEWS.appeal = () => {
+  const mine = apList(), pend = mine.some(a => a.status === "pending");
+  return `<div class="logwrap st"><section class="panel" style="--i:0"><div class="panel-head"><h2>Your account is on hold</h2></div>
+    <p class="muted" style="margin:0 0 12px">You can't use the rest of the app while you are blacklisted. You can send an appeal. The Head of Volunteers or the school administration will review it, and the Student Council can read it.</p>
+    ${pend ? `<div class="notice"><div><b>Your appeal is waiting for a decision.</b></div></div>` : `<form id="apForm" class="stack-form"><label class="field">Your appeal<textarea id="apMsg" rows="5" required maxlength="3000" placeholder="Explain what happened and why the decision should change"></textarea></label><div style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit">Send appeal</button></div></form>`}</section>
+    ${mine.length ? `<div class="eyebrow sec-title">Your appeals</div>${mine.map((a, i) => { const t = AP_TAG[a.status] || AP_TAG.pending; return `<article class="panel" style="--i:${i + 1};margin-bottom:12px"><div class="panel-head"><span class="muted num" style="font-size:13px">${a.created ? fmtDate(a.created.slice(0, 10)) : ""}</span><span class="tag ${t[1]}">${t[0]}</span></div><div class="report-body">${esc(a.message)}</div>${a.note ? `<div class="cp-reply" style="margin-top:10px"><span class="eyebrow">Decision</span>${esc(a.note)}</div>` : ""}</article>`; }).join("")}` : ""}</div>`;
+};
+after.appeal = () => {
+  $("#apForm")?.addEventListener("submit", async e => {
+    e.preventDefault(); const msg = $("#apMsg").value.trim(); if (!msg) return;
+    const v = myVol(), ok = await put("appeals", uid(), { vid: v ? v.id : null, name: v ? v.name : "", message: msg, status: "pending", created: new Date().toISOString() });
+    if (ok !== false) { toast("Appeal sent"); pushSend([{ staff: true, title: "New appeal", body: v ? v.name : "A volunteer", tag: "ap" }]); }
+  });
+};
+VIEWS.appeals = () => {
+  const list = apList(), canDecide = role() === "head" || role() === "admin";
+  return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Appeals</h2><div class="muted" style="font-size:14px">From blacklisted volunteers${canDecide ? " · approving lifts the blacklist" : " · view only, the Head of Volunteers or administration decides"}</div></div></div>
+  <div class="st">${list.length ? list.map((a, i) => { const v = S.volunteers[a.vid], t = AP_TAG[a.status] || AP_TAG.pending;
+    return `<article class="panel" style="--i:${i};margin-bottom:12px"><div class="panel-head"><h2>${esc(v ? v.name : a.name || "Removed volunteer")} <span class="muted" style="font-size:13px">${v ? cls(v) : ""}</span></h2><span class="tag ${t[1]}">${t[0]}</span></div>
+    <div class="muted" style="font-size:13px">${a.created ? fmtDate(a.created.slice(0, 10)) : ""}</div><div class="report-body" style="margin:10px 0">${esc(a.message)}</div>
+    ${a.status !== "pending" && a.note ? `<div class="cp-reply"><span class="eyebrow">Decision${a.decidedBy ? " · " + esc(a.decidedBy) : ""}</span>${esc(a.note)}</div>` : ""}
+    ${canDecide && a.status === "pending" ? `<label class="field" style="margin-top:8px">Note to the volunteer (optional)<input type="text" id="apn-${a.id}" maxlength="500"></label><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px"><button class="btn small" data-act="ap-no" data-id="${a.id}">Deny</button><button class="btn small primary" data-act="ap-ok" data-id="${a.id}">Approve and lift blacklist</button></div>` : ""}</article>`; }).join("") : `<div class="panel empty">No appeals.</div>`}</div>`;
+};
+after.appeals = () => {};
+async function appealDecide(id, st) {
+  const a = S.appeals[id]; if (!a || a.status !== "pending") return;
+  const note = ($("#apn-" + id)?.value || "").trim();
+  if (await put("appeals", id, { ...a, status: st, note, decidedBy: accName(me()), decidedAt: new Date().toISOString() }) === false) return;
+  if (st === "approved") { if (mode === "cloud") await cloudPull(false); else if (S.volunteers[a.vid]) await put("volunteers", a.vid, { ...S.volunteers[a.vid], status: "active" }); }
+  toast(st === "approved" ? "Approved · blacklist lifted" : "Appeal denied");
+  pushSend([{ vids: [a.vid], title: st === "approved" ? "Appeal approved" : "Appeal decision", body: st === "approved" ? "You can use the app again" : "Open the app to read the decision", tag: "ap" + id }]);
+}
 
 addEventListener("resize", moveInk);
 addEventListener("scroll", () => $("#tabbar").classList.toggle("stuck", scrollY > 150), { passive: true });

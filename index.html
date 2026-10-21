@@ -893,8 +893,8 @@ const RANKS = [
 ];
 const TONES = ["teal", "violet", "rose", "blue", "brass", "grey"];
 const REPORT_KINDS = ["Event report", "Weekly summary", "Incident", "Audit"];
-const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, appeals: {}, cchat: {}, cmutes: {}, cwork: {}, achat: {}, seats: {}, bills: {}, cvotes: {}, settings: { ...DEFAULTS } };
-const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews", "appeals", "cchat", "cmutes", "cwork", "achat", "seats", "bills", "cvotes"];
+const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, appeals: {}, cchat: {}, cmutes: {}, cwork: {}, achat: {}, seats: {}, bills: {}, cvotes: {}, cgchat: {}, settings: { ...DEFAULTS } };
+const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews", "appeals", "cchat", "cmutes", "cwork", "achat", "seats", "bills", "cvotes", "cgchat"];
 let db = null, downloads = null, mode = "loading";
 const DESKTOP = !!window.PA_DESKTOP;
 let view = "dashboard";
@@ -974,7 +974,7 @@ function weeksLeft() { return Math.max(1, daysBetween(todayISO(), S.settings.yea
 
 /* ---------- persistence ---------- */
 const LKEY = "primum-auxilium-v1";
-function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, cchat: S.cchat, cmutes: S.cmutes, cwork: S.cwork, achat: S.achat, seats: S.seats, bills: S.bills, cvotes: S.cvotes, settings: S.settings }); }
+function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, cchat: S.cchat, cmutes: S.cmutes, cwork: S.cwork, achat: S.achat, seats: S.seats, bills: S.bills, cvotes: S.cvotes, cgchat: S.cgchat, settings: S.settings }); }
 async function put(coll, id, obj) {
   if (!allowed(coll, id)) { toast("View only"); return false; }
   if (mode === "cloud") return cloudPut(coll, id, obj);
@@ -1139,7 +1139,7 @@ async function boot() {
   } else {
     mode = "local";
     const saved = store.get(LKEY);
-    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, appeals: saved.appeals || {}, logs: saved.logs || {}, cchat: saved.cchat || {}, cmutes: saved.cmutes || {}, cwork: saved.cwork || {}, achat: saved.achat || {}, seats: saved.seats || {}, bills: saved.bills || {}, cvotes: saved.cvotes || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
+    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, appeals: saved.appeals || {}, logs: saved.logs || {}, cchat: saved.cchat || {}, cmutes: saved.cmutes || {}, cwork: saved.cwork || {}, achat: saved.achat || {}, seats: saved.seats || {}, bills: saved.bills || {}, cvotes: saved.cvotes || {}, cgchat: saved.cgchat || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
     else if (!DESKTOP) seedLocal();
     loadSession(); render(true);
   }
@@ -1186,7 +1186,7 @@ function moveInk() {
 
 /* ---------- sign-in ---------- */
 const TABS = {
-  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ["achat", "Administration"], ["congress", "Congress"], ["handbook", "Handbook"], ["settings", "Settings"]],
+  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ["achat", "Administration"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["handbook", "Handbook"], ["settings", "Settings"]],
   admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["appeals", "Appeals"], ["achat", "Chat with Head"], ["handbook", "Handbook"]],
   council: [["cevents", "Events"], ["ccerts", "Certificates"], ["congress", "Congress"]],
   volunteer: [["me", "My hours"], ["vevents", "Events"], ["vcerts", "Certificates"], ["handbook", "Handbook"], ["complain", "Questions & complaints"]]
@@ -1201,7 +1201,7 @@ const myVol = () => { const a = me(); if (!a) return null; const id = a.role ===
 const perm = () => me()?.perm || null;
 const held = () => role() === "volunteer" && !!myVol() && statusOf(myVol().status).rule === "block";
 const seated = () => role() === "volunteer" && !held() && !!myVol() && !!S.seats[myVol().id];
-const tabsFor = () => realm() === "council" ? councilTabs() : held() ? [["appeal", "Appeal"]] : role() === "volunteer" && seated() ? [...TABS.volunteer, ["congress", "Congress"]] : role() === "council" ? [...TABS.council, ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ...(perm() === "pr" ? [["pr", "Announcements"]] : [])] : TABS[role()] || [];
+const tabsFor = () => realm() === "council" ? councilTabs() : held() ? [["appeal", "Appeal"]] : role() === "volunteer" && seated() ? [...TABS.volunteer, ["congress", "Congress"], ["cgchat", "Congress chat"]] : role() === "council" ? [...TABS.council, ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ...(perm() === "pr" ? [["pr", "Announcements"]] : [])] : TABS[role()] || [];
 // Student Council 2026–27. The Head of Volunteers is Dan's own account, so he is not listed.
 const COUNCIL = [["Fayez Sankari", "President", "president"], ["Abel Varghese", "Vice President", "vp"], ["Murad Samarah", "VP's Aide", "aide"], ["Suhaib Mohammad", "Newspaper Manager", "newspaper"],
   ["Waleed Osama", "Head of Academics", "academics"], ["Sameer Haroun", "Head of Finance", "finance"], ["Mohammad Thaer", "Head of Media", "media"], ["Ragheb Haroun", "Head of PR & Communication", "pr"],
@@ -1225,6 +1225,7 @@ function allowed(coll, id) {
   if (coll === "events") return r === "council" && (!S.events[id] || canEditEv(S.events[id]));
   if (coll === "accounts") return !!session && id === session.id;
   if (coll === "seats") return false;
+  if (coll === "cgchat") return r === "volunteer" && seated() && (!S.cgchat[id] || S.cgchat[id].by === myVol()?.id);
   if (coll === "bills") return (r === "volunteer" && seated() && !S.bills[id]) || (r === "council" && S.bills[id]?.status === "voting");
   if (coll === "cvotes") { const c = S.cvotes[id]; return c ? (c.kind === "msg" && c.by === (myVol()?.id || session?.id)) : (r === "council" ? !id.startsWith("v:") : r === "volunteer" && seated()); }
   if (coll === "achat") return r === "admin" && (!S.achat[id] || S.achat[id].by === session.id);
@@ -1437,7 +1438,7 @@ function alertNew() {
 }
 function renderTabs(soft) {
   const nav = $("#tabs"), list = tabsFor(), nNew = newCp() + openQ(), nAl = notices().length;
-  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "appeals" && apPending() ? `<span class="badge num">${apPending()}</span>` : ""}${k === "review" && rvPending() ? `<span class="badge num">${rvPending()}</span>` : ""}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}${k === "congress" && cgOpenBills() ? `<span class="badge num">${cgOpenBills()}</span>` : ""}${k === "achat" && aUnread() ? `<span class="badge num">${aUnread()}</span>` : ""}${k === "c-chat" && chatUnread() ? `<span class="badge num">${chatUnread()}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
+  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "appeals" && apPending() ? `<span class="badge num">${apPending()}</span>` : ""}${k === "review" && rvPending() ? `<span class="badge num">${rvPending()}</span>` : ""}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}${k === "congress" && cgOpenBills() ? `<span class="badge num">${cgOpenBills()}</span>` : ""}${k === "cgchat" && gUnread() ? `<span class="badge num">${gUnread()}</span>` : ""}${k === "achat" && aUnread() ? `<span class="badge num">${aUnread()}</span>` : ""}${k === "c-chat" && chatUnread() ? `<span class="badge num">${chatUnread()}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
   if (nav.dataset.sig === html) return;
   nav.dataset.sig = html; nav.innerHTML = html;
   if (soft) moveInk();
@@ -1480,9 +1481,10 @@ function refresh() {
   else if (view === "review" || view === "appeals" || view === "ccerts" || view === "appeal") { const ae = document.activeElement; if (!(ae && el.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName))) { el.innerHTML = VIEWS[view](); after[view] && after[view](); } }
   else if (view === "congress") { const sig = JSON.stringify([S.seats, S.bills, S.cvotes, S.volunteers, ui.cgOpen, ui.cgConfirm, ui.cgSel]), ae = document.activeElement; if (el.dataset.cgsig !== sig && !(ae && el.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName))) { el.innerHTML = VIEWS.congress(); el.dataset.cgsig = sig; after.congress(); } }
   else if (view === "achat") achatRefresh();
+  else if (view === "cgchat") gchatRefresh();
   else if (view === "cevents" || view === "pr") el.innerHTML = VIEWS[view]();
   else if (view.startsWith("c-")) councilRefresh();
-  else if (view === "settings") { const r = $("#statusList"); const ac = $("#acctBox"); if (ac) { ac.innerHTML = acctBox(); bindAcct(); } if (r) r.innerHTML = statusRows(); const i = $("#dataInfo"); if (i) i.innerHTML = dataInfo(); }
+  else if (view === "settings") { const r = $("#statusList"); const ac = $("#acctBox"); if (ac && !(document.activeElement && ac.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) { ac.innerHTML = acctBox(); bindAcct(); } if (r) r.innerHTML = statusRows(); const i = $("#dataInfo"); if (i) i.innerHTML = dataInfo(); }
   el.classList.remove("enter");
   alertNew();
   if (ui.drawer && !ui.verifying) { const d = $("#drawerStats"); if (d) d.innerHTML = drawerStats(); if (!S.volunteers[ui.drawer]) closeOverlay(); }
@@ -2149,14 +2151,28 @@ async function scSetupAll(quiet) {
   ui.scAll = false; try { localStorage.setItem("pa-sccreds", JSON.stringify(ui.scCreds)); } catch {}
   const bx = $("#acctBox"); if (bx) { bx.innerHTML = acctBox(); bindAcct(); } if (!quiet) toast("Council sign-ins ready");
 }
+async function loadAdmins() {
+  if (mode !== "cloud" || role() !== "head") return;
+  try { ui.admList = await rpc("pa_admin_list", { token: tok() }); } catch { return; }
+  const bx = $("#admCodeBox"); if (bx) bx.innerHTML = admBoxHTML();
+}
 function admBoxHTML() {
+  if (mode === "cloud") {
+    const L = ui.admList;
+    return `${L === undefined ? `<div class="muted" style="font-size:13px">Loading…</div>` : (L || []).length ? L.map(x => `<div class="adm-row" style="padding:10px 0;border-top:1px solid var(--line)"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>${esc(x.name)}</b><span class="muted" style="font-size:12.5px">${x.seen ? "last in " + esc(new Date(x.seen).toLocaleDateString([], { month: "short", day: "numeric" })) : "never signed in"}</span></div>
+      <div class="keybox num adm-code" style="margin:6px 0">${esc(x.code)}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="adm-copy" data-id="${x.id}">Copy code</button><button class="btn small ghost" data-act="adm-rename" data-id="${x.id}">Rename</button>
+      ${ui.admAsk === "renew:" + x.id ? `<button class="btn small danger solid" data-act="adm-renew" data-id="${x.id}">Confirm new code (signs them out)</button><button class="btn small ghost" data-act="adm-no">Cancel</button>` : `<button class="btn small ghost" data-act="adm-ask-renew" data-id="${x.id}">New code</button>`}
+      ${ui.admAsk === "rm:" + x.id ? `<button class="btn small danger solid" data-act="adm-remove" data-id="${x.id}">Confirm remove</button><button class="btn small ghost" data-act="adm-no">Cancel</button>` : `<button class="btn small ghost" data-act="adm-ask-rm" data-id="${x.id}">Remove</button>`}</div></div>`).join("") : `<div class="muted" style="font-size:13px">No administration accounts yet.</div>`}
+      <form id="admAddForm" class="grid2" style="margin-top:10px;align-items:end"><label class="field">Username<input type="text" id="admName" maxlength="60" required placeholder="e.g. Mr Khalid"></label><div style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit">Add and make a code</button></div></form>`;
+  }
   if (ui.admCode && Date.now() - (ui.admAt || 0) < 170e3) return `<div class="keybox num adm-code" id="admCodeText">${esc(ui.admCode)}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="admcode-copy">Copy</button><button class="btn small ghost" data-act="adm-gen">New code</button></div>`;
   ui.admCode = null; return `<button class="btn primary" data-act="adm-gen">Generate access code</button>`;
 }
 function acctBox() {
   const vn = Object.values(S.accounts).filter(a => a.role === "volunteer").length;
   return `<div class="eyebrow" style="margin-bottom:6px">School administration</div>
-    <div class="muted" style="font-size:12.5px;margin-bottom:8px">Administration signs in with a one-time access code. Generate one, then read it out or send it.</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:8px">${mode === "cloud" ? "Give each person a username. Their code stays valid until you renew or remove it, so they can sign out and back in any time." : "Administration signs in with a one-time access code. Generate one, then read it out or send it."}</div>
     <div id="admCodeBox" class="adm-box">${admBoxHTML()}</div>
     <div class="eyebrow" style="margin:18px 0 6px">Student Council ${s_year()}</div>
     <div class="muted" style="font-size:12.5px;margin-bottom:6px">Council members post events. Events tools: edit any council event and see the team calendar. PR tools: ready-to-post announcements and recaps.</div>
@@ -2170,6 +2186,11 @@ function acctBox() {
     <form id="headPwForm" class="grid2" style="align-items:end"><label class="field">Current<input type="password" id="hpOld" required autocomplete="current-password"></label><label class="field">New<input type="password" id="hpNew" required minlength="8" autocomplete="new-password"></label><div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn" type="submit">Change password</button></div></form>`;
 }
 function bindAcct() {
+  if (!bindAcct.done) { bindAcct.done = 1; document.addEventListener("submit", async e => {
+    if (e.target.id !== "admAddForm") return; e.preventDefault(); const n = $("#admName").value.trim(); if (!n) return;
+    try { const r = await rpc("pa_admin_add", { token: tok(), name: n }); ui.admList = [...(ui.admList || []), { ...r, seen: null }]; $("#admCodeBox").innerHTML = admBoxHTML(); toast(`${r.name} added. Copy their code.`); } catch { toast("Couldn't add. Try again."); }
+  }); }
+  if (ui.admList === undefined) loadAdmins();
   $("#scAccForm")?.addEventListener("submit", async e => {
     e.preventDefault(); const name = $("#scName").value.trim(), pw = $("#scPw").value;
     if (!name || pw.length < 6) return toast("Name and a 6+ character password required.");
@@ -2462,6 +2483,7 @@ function loadXLSX() {
 }
 function classFrom(t) { const m = String(t || "").match(/(?:^|[^0-9])(1[12])\s*[-_ ]?\s*([abc])(?![a-z])/i); return m ? m[1] + m[2].toUpperCase() : ""; }
 const normName = t => String(t || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z\u0600-\u06ff]+/g, " ").trim();
+const LABEL_RE = /competitor|reci?e?ptionist|receptionist|\bproject\b|participants?\b|\bteam\b|\bgroup\b|\btotal\b|\blist\b|substitute|reserve|\bsheet\b/i;
 const HEAD_RE = /^(names?|full ?name|student( name)?s?|nom|pr[ée]nom|first ?name|last ?name|surname|class|grade|section|no\.?|#|id)$/i;
 const looksName = t => { t = String(t ?? "").trim(); return t.length >= 2 && t.length <= 60 && /\p{L}/u.test(t) && !/[\d@]/.test(t); };
 function tidyName(t) {
@@ -2488,7 +2510,7 @@ function extractNames(rows) {
   const out = [], seen = new Set();
   for (const r of rows.slice(hi + 1)) {
     const n = tidyName(cols.map(c => String(r[c] ?? "").trim()).filter(Boolean).join(" "));
-    if (!looksName(n) || HEAD_RE.test(n) || seen.has(normName(n))) continue;
+    if (!looksName(n) || HEAD_RE.test(n) || LABEL_RE.test(n) || seen.has(normName(n))) continue;
     seen.add(normName(n)); out.push(n);
   }
   return out;
@@ -2505,7 +2527,7 @@ async function importFiles(files) {
     for (const sn of wb.SheetNames) {
       const names = extractNames(X.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, blankrows: false, defval: "" }));
       if (!names.length) continue;
-      batches.push({ src: wb.SheetNames.length > 1 ? `${f.name} › ${sn}` : f.name, cls: classFrom(sn) || fileCls, names: names.map(n => { const dup = rosterHas(n); return { n, dup, on: !dup }; }) });
+      batches.push({ src: wb.SheetNames.length > 1 ? `${f.name} › ${sn}` : f.name, cls: classFrom(sn) || fileCls, names: names.map(n => { const dup = rosterHas(n); return { n, dup, on: !dup && /\s/.test(n) }; }) });
     }
   }
   if (!batches.length) return toast("No names found.");
@@ -3403,6 +3425,12 @@ document.addEventListener("click", async e => {
       catch { toast("Couldn't make a code. Try again."); }
       a.disabled = false; break;
     }
+    case "adm-copy": try { await navigator.clipboard.writeText((ui.admList || []).find(x => x.id === id)?.code || ""); toast("Copied"); } catch { toast("Select the code and copy it"); } break;
+    case "adm-ask-renew": ui.admAsk = "renew:" + id; $("#admCodeBox").innerHTML = admBoxHTML(); break;
+    case "adm-ask-rm": ui.admAsk = "rm:" + id; $("#admCodeBox").innerHTML = admBoxHTML(); break;
+    case "adm-no": ui.admAsk = null; $("#admCodeBox").innerHTML = admBoxHTML(); break;
+    case "adm-renew": case "adm-remove": { try { await rpc("pa_admin_edit", { token: tok(), acc_id: id, name: null, renew: a.dataset.act === "adm-renew", remove: a.dataset.act === "adm-remove" }); ui.admAsk = null; await loadAdmins(); toast(a.dataset.act === "adm-renew" ? "New code made" : "Removed"); } catch { toast("Couldn't do that. Try again."); } break; }
+    case "adm-rename": { const cur = (ui.admList || []).find(x => x.id === id); const nn = prompt("Username", cur ? cur.name : ""); if (nn && nn.trim()) { try { await rpc("pa_admin_edit", { token: tok(), acc_id: id, name: nn.trim(), renew: false, remove: false }); await loadAdmins(); } catch { toast("Couldn't rename."); } } break; }
     case "admcode-copy": try { await navigator.clipboard.writeText(ui.admCode); toast("Copied"); } catch {} break;
     case "gate-recover": ui.gate = "recover"; renderGate(); break;
     case "gate-back": ui.gate = null; renderGate(); break;
@@ -3840,8 +3868,8 @@ function cgBillCard(b, i) {
       ${votes.length ? `<div class="muted" style="font-size:13px;margin-bottom:8px">${["yes", "no", "abstain"].map(k => cnt(k) ? `<b>${k === "yes" ? "Yes" : k === "no" ? "No" : "Abstain"}:</b> ${names(votes.filter(c => c.vote === k).map(c => c.by))}` : "").filter(Boolean).join(" · ")}</div>` : ""}
       ${seated() && b.status === "voting" ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><span class="muted" style="align-self:center">Your vote:</span>${[["yes", "Yes"], ["no", "No"], ["abstain", "Abstain"]].map(([k, l]) => `<button class="btn small ${mine === k ? "primary" : ""}" data-cg="vote" data-id="${b.id}" data-v="${k}">${l}</button>`).join("")}</div>` : ""}
       <div class="eyebrow" style="margin:12px 0 6px">Questions</div>
-      ${msgs.length ? msgs.map(m => `<div style="margin-bottom:8px;font-size:14px"><b>${esc(m.byName || "")}${m.byTitle ? ` <span class="tag" style="margin-left:4px">${esc(m.byTitle)}</span>` : ""}</b> <span class="muted" style="font-size:12px">${m.at ? new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</span>${m.by === mv ? ` <button class="btn small ghost" data-cg="msgdel" data-id="${m.id}">Delete</button>` : ""}<br>${esc(m.text)}</div>`).join("") : `<div class="muted" style="font-size:13px">No questions yet.</div>`}
-      ${seated() || role() === "council" ? `<form class="achform cgQ" data-bill="${b.id}"><textarea rows="1" maxlength="1500" required placeholder="Ask a question or answer one"></textarea><button class="btn small primary" type="submit">Send</button></form>` : ""}
+      ${msgs.length ? msgs.map(m => `<div style="margin-bottom:8px;font-size:14px"><b>${esc(m.byName || "")}${m.byTitle ? ` <span class="tag" style="margin-left:4px">${esc(m.byTitle)}</span>` : ""}</b> <span class="muted" style="font-size:12px">${m.at ? new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</span>${b.status === "voting" || role() === "head" ? ` <button class="btn small ghost" data-cg="reply" data-id="${m.id}" data-bill="${b.id}">Reply</button>` : ""}${m.by === mv || role() === "head" ? ` <button class="btn small ghost" data-cg="msgdel" data-id="${m.id}">Delete</button>` : ""}<br>${m.replyTo && S.cvotes[m.replyTo] ? `<span class="muted" style="font-size:12.5px;border-left:3px solid var(--line);padding-left:6px;display:inline-block;margin-bottom:2px">${esc(S.cvotes[m.replyTo].byName || "")}: ${esc(String(S.cvotes[m.replyTo].text).slice(0, 90))}</span><br>` : ""}${esc(m.text)}</div>`).join("") : `<div class="muted" style="font-size:13px">No questions yet.</div>`}
+      ${seated() || role() === "council" || role() === "head" ? `${ui.cgReply?.[b.id] && S.cvotes[ui.cgReply[b.id]] ? `<div class="muted" style="font-size:12.5px;margin-top:8px">Replying to ${esc(S.cvotes[ui.cgReply[b.id]].byName || "")}: “${esc(String(S.cvotes[ui.cgReply[b.id]].text).slice(0, 80))}” <button class="btn small ghost" data-cg="noreply" data-id="${b.id}">Cancel</button></div>` : ""}<form class="achform cgQ" data-bill="${b.id}"><textarea rows="1" maxlength="1500" required placeholder="Ask a question or answer one"></textarea><button class="btn small primary" type="submit">Send</button></form>` : ""}
       ${canDecide ? `<div class="cp-reply" style="margin-top:12px"><span class="eyebrow">Council decision</span><label class="field" style="margin-top:6px">Note (optional)<input type="text" id="cgNote-${b.id}" maxlength="500"></label><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn small" data-cg="decide" data-id="${b.id}" data-v="rejected">Not passed</button><button class="btn small primary" data-cg="decide" data-id="${b.id}" data-v="passed">Pass</button></div></div>` : ""}
       ${role() === "head" ? (ui.cgConfirm === "bill:" + b.id ? `<div style="margin-top:10px"><button class="btn small danger solid" data-cg="billdel" data-id="${b.id}">Confirm delete bill</button> <button class="btn small ghost" data-cg="noask">Cancel</button></div>` : `<div style="margin-top:10px"><button class="btn small ghost" data-cg="ask-billdel" data-id="${b.id}">Delete bill</button></div>`) : ""}`
      : `<div class="muted" style="font-size:12.5px;margin-top:6px">Tap to read the proposal${b.status === "voting" && seated() && !mine ? " and vote" : ""}</div>`}</article>`;
@@ -3878,8 +3906,9 @@ after.congress = () => {
   });
   document.querySelectorAll("form.cgQ").forEach(f => f.addEventListener("submit", async e => {
     e.preventDefault(); const ta = f.querySelector("textarea"), text = ta.value.trim(); if (!text) return;
-    const stamp = mode === "cloud" ? {} : { by: cgMy(), byName: accName(me()), byTitle: role() === "council" ? me().title || "" : "", at: new Date().toISOString() };
-    if (await put("cvotes", uid(), { kind: "msg", bill: f.dataset.bill, text, ...stamp }) === false) return;
+    const stamp = mode === "cloud" && role() !== "head" ? {} : { by: cgMy(), byName: accName(me()), byTitle: role() === "council" ? me().title || "" : role() === "head" ? "Head of Volunteers" : "", at: new Date().toISOString() }, rp = ui.cgReply?.[f.dataset.bill];
+    if (await put("cvotes", uid(), { kind: "msg", bill: f.dataset.bill, text, ...(rp ? { replyTo: rp } : {}), ...stamp }) === false) return;
+    if (ui.cgReply) delete ui.cgReply[f.dataset.bill];
     if (mode === "cloud") await cloudPull(false); ta.value = ""; ui.cgOpen = f.dataset.bill; render(false);
   }));
 };
@@ -3902,6 +3931,8 @@ document.addEventListener("click", async e => {
     case "ask-unseat": ui.cgConfirm = "seat:" + id; redraw(); break;
     case "ask-billdel": ui.cgConfirm = "bill:" + id; redraw(); break;
     case "noask": ui.cgConfirm = null; redraw(); break;
+    case "reply": (ui.cgReply = ui.cgReply || {})[a.dataset.bill] = id; ui.cgOpen = a.dataset.bill; redraw(); setTimeout(() => document.querySelector(`form.cgQ[data-bill="${a.dataset.bill}"] textarea`)?.focus(), 30); break;
+    case "noreply": if (ui.cgReply) delete ui.cgReply[id]; redraw(); break;
     case "unseat": if (await del("seats", id) !== false) { ui.cgConfirm = null; ui.cgSel = null; if (mode === "cloud") await cloudPull(false); toast("Seat removed"); redraw(); } break;
     case "billdel": { for (const c of cgVotes(id)) await del("cvotes", c.id); if (await del("bills", id) !== false) { ui.cgConfirm = null; if (mode === "cloud") await cloudPull(false); toast("Bill deleted"); redraw(); } break; }
     case "msgdel": if (await del("cvotes", id) !== false) { if (mode === "cloud") await cloudPull(false); redraw(); } break;
@@ -3912,6 +3943,46 @@ document.addEventListener("click", async e => {
         pushSend([{ vids: cgSeats().map(m => m.id), title: st === "passed" ? "Bill passed" : "Bill not passed", body: b.title, tag: "bill" + id }]);
       } break; }
   }
+});
+
+/* ---------- Congress chat (Head and seated volunteers) ---------- */
+const gMsgs = () => Object.entries(S.cgchat).map(([id, m]) => ({ id, ...m })).sort((a, b) => (a.at || "").localeCompare(b.at || ""));
+const gKey = () => "pa-gread-" + session?.id;
+const gOk = () => role() === "head" || seated();
+const gUnread = () => { if (!session || !gOk()) return 0; const t = store.get(gKey()) || ""; return gMsgs().filter(m => m.by !== cgMy() && (m.at || "") > t).length; };
+function gMarkRead() { const l = gMsgs().at(-1); if (l && (store.get(gKey()) || "") < l.at) { store.set(gKey(), l.at); renderTabs(true); } }
+function gListHTML() {
+  const l = gMsgs(), mv = cgMy();
+  return l.length ? l.map(m => { const q = m.replyTo && S.cgchat[m.replyTo];
+    return `<div class="m${m.by === mv ? " me" : ""}"><span class="who">${esc(m.by === mv ? "You" : m.byName || "Congress")} · ${m.at ? esc(new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })) : "sending…"} <button class="del" data-cgc="reply" data-id="${m.id}">Reply</button>${m.by === mv || role() === "head" ? `<button class="del" data-cgc="del" data-id="${m.id}">Delete</button>` : ""}</span>${q ? `<span class="who" style="border-left:3px solid currentColor;padding-left:6px;opacity:.7">${esc(q.byName || "")}: ${esc(String(q.text).slice(0, 90))}</span>` : ""}${esc(m.text)}</div>`; }).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet. Start the debate.</div>`;
+}
+const gReplyBar = () => { const q = ui.gReply && S.cgchat[ui.gReply]; return q ? `<div class="muted" style="font-size:12.5px;margin-top:8px">Replying to ${esc(q.byName || "")}: “${esc(String(q.text).slice(0, 80))}” <button class="btn small ghost" data-cgc="noreply">Cancel</button></div>` : ""; };
+VIEWS.cgchat = () => `<div class="logwrap st"><section class="panel" style="--i:0"><div class="panel-head"><h2>Congress chat</h2></div>
+  <div class="muted" style="font-size:13px;margin-bottom:8px">Debate here. Only congressmen and the Head of Volunteers can read and write.</div>
+  <div class="ach" id="gList">${gListHTML()}</div><div id="gReply">${gReplyBar()}</div>
+  <form class="achform" id="gForm"><textarea id="gText" rows="1" maxlength="2000" placeholder="Write a message" required></textarea><button class="btn primary" type="submit">Send</button></form></section></div>`;
+after.cgchat = () => {
+  const L = $("#gList"); if (L) L.scrollTop = L.scrollHeight; gMarkRead();
+  const ta = $("#gText");
+  const send = async () => {
+    const text = ta.value.trim(); if (!text || ui.gSending) return; ui.gSending = true;
+    const m = { text, ...(ui.gReply ? { replyTo: ui.gReply } : {}), ...(mode === "cloud" && role() !== "head" ? {} : { by: cgMy(), byName: accName(me()), at: new Date().toISOString() }) };
+    try { if (await put("cgchat", uid(), m) !== false) { ta.value = ""; ui.gReply = null; if (mode === "cloud") await cloudPull(false); gchatRefresh(true); } } finally { ui.gSending = false; }
+  };
+  $("#gForm")?.addEventListener("submit", e => { e.preventDefault(); send(); });
+  ta?.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+};
+function gchatRefresh(force) {
+  const L = $("#gList"); if (!L) return;
+  const html = gListHTML(); if (L.dataset.sig !== html) { const near = L.scrollHeight - L.scrollTop - L.clientHeight < 120; L.dataset.sig = html; L.innerHTML = html; if (near || force) L.scrollTop = L.scrollHeight; }
+  const r = $("#gReply"); if (r) r.innerHTML = gReplyBar();
+  if (document.visibilityState === "visible") gMarkRead();
+}
+document.addEventListener("click", async e => {
+  const a = e.target.closest("[data-cgc]"); if (!a) return;
+  if (a.dataset.cgc === "reply") { ui.gReply = a.dataset.id; gchatRefresh(); $("#gText")?.focus(); }
+  else if (a.dataset.cgc === "noreply") { ui.gReply = null; gchatRefresh(); }
+  else if (a.dataset.cgc === "del") { if (await del("cgchat", a.dataset.id) !== false) { if (mode === "cloud") await cloudPull(false); gchatRefresh(); } }
 });
 
 /* ---------- appeals ---------- */
@@ -3962,7 +4033,7 @@ function realm() {
   return ui.realm;
 }
 function setRealm(r) { realm(); ui.realm = r; store.set("pa-realm-" + session.id, r); }
-function councilTabs() { return C_TABS.map(([k, l]) => [k, l]); }
+function councilTabs() { return [...C_TABS.map(([k, l]) => [k, l]), ...(role() === "head" ? [["cgchat", "Congress chat"]] : [])]; }
 function initRealm() { ui.realmFor = null; if (role() === "council") { setRealm("council"); ui.realmIntro = true; } }
 const cLogo = () => $("#councilLogo").src;
 const cLogoInk = () => $("#councilLogoInk").src;

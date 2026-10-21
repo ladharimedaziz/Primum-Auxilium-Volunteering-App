@@ -1859,8 +1859,6 @@ VIEWS.settings = () => {
         <div class="muted" style="font-size:13px">Thresholds for the "Ready for promotion" list. Promotions are manual.</div>
         <div class="eyebrow">Probationary → Elected</div>
         <div class="grid2"><label class="field">Hours<input type="number" id="pEH" min="0" value="${promo().electedHours}"></label><label class="field">Events attended<input type="number" id="pEE" min="0" value="${promo().electedEvents}"></label></div>
-        <div class="eyebrow">Elected → Supervisory</div>
-        <div class="grid2"><label class="field">Hours<input type="number" id="pSH" min="0" value="${promo().supHours}"></label><label class="field">Events attended<input type="number" id="pSE" min="0" value="${promo().supEvents}"></label></div>
         <div style="display:flex;justify-content:flex-end"><button class="btn" type="submit">Save rules</button></div>
       </form>
     </section>
@@ -1910,7 +1908,7 @@ after.settings = () => {
   pf.addEventListener("submit", e => {
     e.preventDefault();
     const n = id => Math.max(0, Number($(id).value) || 0);
-    putSettings({ promo: { electedHours: n("#pEH"), electedEvents: n("#pEE"), supHours: n("#pSH"), supEvents: n("#pSE") } }).then(() => toast("Promotion rules saved"));
+    putSettings({ promo: { electedHours: n("#pEH"), electedEvents: n("#pEE") } }).then(() => toast("Promotion rules saved"));
   });
   $("#yearForm").addEventListener("submit", e => {
     e.preventDefault();
@@ -2519,7 +2517,6 @@ function promotionFor(v) {
   const p = promo(), h = hoursFor(v.id), ev = eventsAttended(v.id), cur = v.rank || "probationary";
   let next = null;
   if (cur === "probationary" && h >= p.electedHours && ev >= p.electedEvents) next = "elected";
-  else if (cur === "elected" && h >= p.supHours && ev >= p.supEvents) next = "supervisory";
   if (!next || v.promoSkip === next) return null;
   return { next, label: RANKS.find(k => k.id === next).label, h, ev };
 }

@@ -1,1 +1,1 @@
-{"version":"1.2.11","notes":"Fixes the failed install on the desktop app. Updates now show the real error if anything goes wrong.","minApp":"1.2.0","file":"ui-1.2.11.json"}
+{"version":"1.2.12","notes":"Primum Auxilium now runs on the website only. This app now points there.","minApp":"1.2.0","file":"ui-1.2.12.json"}

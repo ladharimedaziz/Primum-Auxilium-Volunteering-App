@@ -1075,6 +1075,75 @@ html.calm .gavel-svg .g-ring ellipse{opacity:0}
 @media print{.bnav{display:none!important}}
 /* long rosters: sections off screen skip layout and paint until scrolled to */
 #rosterList>.rgrp,#teamList>.rgrp{content-visibility:auto;contain-intrinsic-size:auto 420px}
+
+/* ---------- Night glass: frosted cards over a glowing night sky, side menu on wide screens ---------- */
+:root{--glow1:#3E5684;--glow2:#9A6A12;--glow3:#667589;--glass:rgba(255,255,255,.055);--glass-2:rgba(255,255,255,.09);--glass-line:rgba(255,255,255,.11);--glass-blur:blur(18px) saturate(1.35);--radar:90,170,255;--side:244px}
+:root[data-theme="dark"]{--bg:#0B1222}
+:root[data-theme="light"]{--glass:rgba(255,255,255,.62);--glass-2:rgba(255,255,255,.82);--glass-line:rgba(35,50,83,.13);--radar:40,110,220}
+:root[data-realm="council"]{--glow1:#7A1D26;--glow2:#C25661;--glow3:#3A0B10}
+body[data-role="admin"]{--glow1:#5B3A99;--glow2:#C3AEEC;--glow3:#2A1D4D}
+body{background:radial-gradient(900px 620px at 12% 6%,color-mix(in srgb,var(--glow1) 55%,transparent),transparent 62%),radial-gradient(820px 620px at 92% 30%,color-mix(in srgb,var(--glow2) 20%,transparent),transparent 60%),radial-gradient(900px 700px at 50% 112%,color-mix(in srgb,var(--glow3) 38%,transparent),transparent 62%),var(--bg)!important;background-attachment:fixed!important}
+:root[data-theme="light"] body{background:radial-gradient(900px 620px at 12% 6%,color-mix(in srgb,var(--glow1) 24%,transparent),transparent 62%),radial-gradient(820px 620px at 92% 30%,color-mix(in srgb,var(--glow2) 14%,transparent),transparent 60%),radial-gradient(900px 700px at 50% 112%,color-mix(in srgb,var(--glow3) 22%,transparent),transparent 62%),var(--bg)!important;background-attachment:fixed!important}
+[data-realm="council"] body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180' fill='%236E1A22' fill-opacity='.055'%3E%3Cpath d='M30 14l3.5 7.4 8 1.1-5.8 5.6 1.4 8L30 32.3l-7.1 3.8 1.4-8-5.8-5.6 8-1.1zM130 82l2.3 4.9 5.3.7-3.9 3.7.9 5.3-4.6-2.5-4.6 2.5.9-5.3-3.9-3.7 5.3-.7zM70 128l1.6 3.4 3.7.5-2.7 2.6.6 3.7-3.2-1.7-3.2 1.7.6-3.7-2.7-2.6 3.7-.5z'/%3E%3C/svg%3E")}
+:root[data-theme="dark"][data-realm="council"] body::after{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180' fill='%23E6A1A9' fill-opacity='.06'%3E%3Cpath d='M30 14l3.5 7.4 8 1.1-5.8 5.6 1.4 8L30 32.3l-7.1 3.8 1.4-8-5.8-5.6 8-1.1zM130 82l2.3 4.9 5.3.7-3.9 3.7.9 5.3-4.6-2.5-4.6 2.5.9-5.3-3.9-3.7 5.3-.7zM70 128l1.6 3.4 3.7.5-2.7 2.6.6 3.7-3.2-1.7-3.2 1.7.6-3.7-2.7-2.6 3.7-.5z'/%3E%3C/svg%3E")}
+/* glass surfaces */
+.panel,.qa,.c-stat,.c-member,.rsec,.post,.tcard,.vrow,.bcard,.c-card,.c-col,.bcol,.attach,.fileatt,.ecard,.cg-hemi{background:var(--glass)!important;border-color:var(--glass-line)!important}
+.panel,.qa,.c-stat,.post,.c-col,.bcol,.rsec{backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur)}
+.panel{border-radius:20px}
+.vrow.head,.tcard.head{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 16%,transparent),var(--glass) 70%)!important}
+.kpi.hero{background:linear-gradient(135deg,color-mix(in srgb,var(--glow1) 78%,transparent),color-mix(in srgb,var(--navy) 62%,transparent))!important;box-shadow:inset 0 0 0 1px rgba(201,206,214,.35),0 30px 60px -30px rgba(0,0,0,.7)!important;color:#fff}
+.btn:not(.primary):not(.danger),.seg,.chip:not(.out):not(.realm):not([class*="t-"]){border-color:var(--glass-line)}
+.btn:not(.primary):not(.danger){background:var(--glass-2)}
+:root[data-theme="dark"]:not([data-realm="council"]) body:not([data-role="admin"]) .btn.primary{background:linear-gradient(135deg,#E2B159,#C9963E);color:#1A1205;border-color:transparent;box-shadow:0 10px 24px -12px rgba(226,177,89,.7)}
+:root[data-theme="dark"] input[type=text],:root[data-theme="dark"] input[type=password],:root[data-theme="dark"] input[type=time],:root[data-theme="dark"] input[type=number],:root[data-theme="dark"] input[type=date],:root[data-theme="dark"] input[type=search],:root[data-theme="dark"] select,:root[data-theme="dark"] textarea{background-color:rgba(255,255,255,.06);border-color:var(--glass-line)}
+:root[data-theme="dark"] input:focus,:root[data-theme="dark"] select:focus,:root[data-theme="dark"] textarea:focus{background-color:rgba(255,255,255,.1)}
+.overlay{background:rgba(4,8,18,.5)}
+.modal,.drawer{background:color-mix(in srgb,var(--bg) 84%,transparent)!important;backdrop-filter:blur(26px) saturate(1.4);-webkit-backdrop-filter:blur(26px) saturate(1.4);border-color:var(--glass-line)!important}
+:root[data-theme="light"] .modal,:root[data-theme="light"] .drawer{background:rgba(255,255,255,.86)!important}
+.tabbar{background:color-mix(in srgb,var(--bg) 55%,transparent)!important}
+.bnav{background:color-mix(in srgb,var(--bg) 62%,transparent);border-top-color:var(--glass-line)}
+.notice,.rule,.policy{backdrop-filter:blur(10px)}
+:root[data-theme="dark"] .notice{background:color-mix(in srgb,var(--blue) 14%,transparent)}
+:root[data-theme="dark"] .notice.ex{background:color-mix(in srgb,var(--brass) 14%,transparent)}
+:root[data-theme="dark"] header.band{background:transparent!important}
+:root[data-theme="dark"] header.band .ghost{opacity:.05}
+:root[data-theme="dark"] .rim{height:1px!important;background:linear-gradient(90deg,transparent,rgba(201,206,214,.55),transparent)!important}
+:root[data-theme="dark"] .credits{border-color:var(--glass-line)}
+.theme-btn .ic{width:15px;height:15px}
+/* radar behind the glass: the Head and the council only */
+.radar{display:none;position:fixed;z-index:-1;pointer-events:none;width:min(118vmin,1100px);aspect-ratio:1;inset-inline-end:-16vmin;top:52%;translate:0 -50%;border-radius:50%;
+  background:repeating-radial-gradient(circle closest-side,transparent 0 calc(12.5% - 1.5px),rgba(var(--radar),.2) calc(12.5% - 1.5px) 12.5%),linear-gradient(transparent calc(50% - .5px),rgba(var(--radar),.16) 0 calc(50% + .5px),transparent 0),linear-gradient(90deg,transparent calc(50% - .5px),rgba(var(--radar),.16) 0 calc(50% + .5px),transparent 0);
+  -webkit-mask:radial-gradient(circle closest-side,#000 98%,transparent 100%);mask:radial-gradient(circle closest-side,#000 98%,transparent 100%)}
+body[data-role="head"]:not(.gated) .radar,body[data-role="council"]:not(.gated) .radar{display:block}
+.radar .sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(var(--radar),.5),rgba(var(--radar),.14) 10%,transparent 26%);animation:radarSpin 5s linear infinite}
+.radar .sweep::after{content:"";position:absolute;left:50%;top:0;width:2px;height:50%;margin-left:-1px;background:linear-gradient(rgba(var(--radar),.9),rgba(var(--radar),.2));box-shadow:0 0 14px rgba(var(--radar),.8)}
+.radar b{position:absolute;width:9px;height:9px;margin:-4.5px;border-radius:50%;background:rgb(var(--radar));box-shadow:0 0 14px rgb(var(--radar));opacity:0;animation:radarBlip 5s linear infinite;animation-delay:var(--d)}
+@keyframes radarSpin{to{transform:rotate(360deg)}}
+@keyframes radarBlip{0%{opacity:0}2%{opacity:1;transform:scale(1.4)}30%{opacity:.35;transform:scale(1)}60%,100%{opacity:0}}
+html.calm .radar .sweep,html.calm .radar b{animation:none}
+html.calm .radar b{opacity:.5}
+@media print{.radar{display:none!important}}
+/* tab icons show in the side menu */
+.tab .ic{display:none}
+@media (min-width:1100px){
+  body:not(.gated){padding-inline-start:var(--side)}
+  body:not(.gated) .tabbar{position:fixed!important;inset-inline-start:0;top:0;bottom:0;width:var(--side);z-index:35;padding:148px 0 24px;overflow-y:auto;scrollbar-width:thin;background:color-mix(in srgb,var(--bg) 42%,transparent)!important;backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border-inline-end:1px solid var(--glass-line);box-shadow:none!important}
+  body:not(.gated) .tabbar::before{content:"";position:absolute;top:22px;left:0;right:0;height:106px;background:var(--crest) center/contain no-repeat;filter:drop-shadow(0 8px 18px rgba(0,0,0,.35))}
+  [data-realm="council"] body:not(.gated) .tabbar::before{background-image:var(--crest-c);height:84px;top:36px}
+  body:not(.gated) .tabbar .wrap{padding:0 12px;max-width:none}
+  body:not(.gated) .tabs{flex-direction:column;gap:2px;border:0;overflow:visible;margin:0}
+  body:not(.gated) .tab{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;border-radius:12px;font-size:14.5px;text-align:start;white-space:normal}
+  body:not(.gated) .tab .ic{display:inline-block;width:20px;height:20px;opacity:.85}
+  body:not(.gated) .tab:hover{background:var(--glass-2);transform:none}
+  body:not(.gated) .tab[aria-selected="true"]{background:var(--accent-soft);color:var(--ink);box-shadow:inset 3px 0 0 var(--accent);animation:none}
+  [dir="rtl"] body:not(.gated) .tab[aria-selected="true"]{box-shadow:inset -3px 0 0 var(--accent)}
+  body:not(.gated) .tab .badge{margin-inline-start:auto}
+  body:not(.gated) .tab-ink{display:none}
+  body:not(.gated) header.band .crest,body:not(.gated) header.band .council-logo,body:not(.gated) header.band .ghost{display:none!important}
+  body:not(.gated) header.band{padding-block:22px 18px}
+}
+:root[data-theme="light"] .kpi.hero{background:linear-gradient(135deg,var(--navy),color-mix(in srgb,var(--navy) 72%,var(--glow1)))!important}
+
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -1147,6 +1216,7 @@ const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
 const initials = n => String(n || "?").trim().split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase();
 // Full motion by default; anyone can switch to calm motion from the header (remembered on this device).
 const reduced = () => document.documentElement.classList.contains("calm");
+try { document.documentElement.dataset.theme = localStorage.getItem("pa-theme") === "light" ? "light" : "dark"; } catch { document.documentElement.dataset.theme = "dark"; }
 try { const m = localStorage.getItem("pa-motion"); if (m === "calm" || (m !== "full" && matchMedia("(prefers-reduced-motion: reduce)").matches)) document.documentElement.classList.add("calm"); } catch {}
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 
@@ -1448,12 +1518,19 @@ async function migrateCouncil() {
 // Council members who are also on the roster get linked to their volunteer record (matched on first and last name).
 // Same person if the first letter agrees and a key surname token of one name starts the same as a token of the other.
 const nameToks = n => normName(n).split(" ").filter(Boolean);
+// Same word give or take one letter (Suhaib/Sohaib, Muhannad/Mohannad); short words must match exactly.
+const near = (p, q) => {
+  if (p === q) return true; if (Math.abs(p.length - q.length) > 1 || Math.min(p.length, q.length) < 4) return false;
+  let i = 0, j = 0, d = 0;
+  while (i < p.length && j < q.length) { if (p[i] === q[j]) { i++; j++; continue; } if (++d > 1) return false; if (p.length > q.length) i++; else if (q.length > p.length) j++; else { i++; j++; } }
+  return d + (p.length - i) + (q.length - j) <= 1;
+};
 function sameWho(a, b) {
   const x = nameToks(a), y = nameToks(b); if (!x.length || !y.length || x[0][0] !== y[0][0]) return false;
-  const hit = (p, q) => q.slice(1).some(t => t.slice(0, 4) === p[p.length - 1].slice(0, 4));
+  const hit = (p, q) => q.slice(1).some(t => t.slice(0, 4) === p[p.length - 1].slice(0, 4) || near(t, p[p.length - 1]));
   return x.length > 1 && y.length > 1 && (hit(x, y) || hit(y, x));
 }
-const councilVol = a => { if (a.vid && S.volunteers[a.vid]) return a.vid; const m = Object.entries(S.volunteers).filter(([, v]) => !v.head && sameWho(a.name, v.name)); return m.length === 1 ? m[0][0] : null; };
+const councilVol = a => { if (a.vid && S.volunteers[a.vid]) return a.vid; let m = Object.entries(S.volunteers).filter(([, v]) => !v.head && sameWho(a.name, v.name)); if (m.length > 1) m = m.filter(([, v]) => near(nameToks(a.name)[0], nameToks(v.name)[0])); return m.length === 1 ? m[0][0] : null; };
 async function syncCouncil() {
   if (mode !== "cloud" || role() !== "head") return;
   try { for (const [id, a] of Object.entries(S.accounts)) if (a.role === "council" && !a.vid) { const v = councilVol(a); if (v) await cloudAccount(id, { vid: v }); } if (view === "settings") refresh(); } catch {}
@@ -1540,7 +1617,7 @@ function renderBrandMeta() {
   const saveChip = mode === "cloud" && outbox().length ? `<span class="chip t-warn" title="Saved on this device. Sends when the connection is back."><span class="dot"></span>${outbox().length} to send</span>` : mode === "db" || mode === "cloud" ? `<span class="chip t-ok"><span class="dot"></span>Synced</span>`
     : mode === "local" ? `<span class="chip t-warn" title="Data is kept on this device only"><span class="dot"></span>${DESKTOP ? "Saved on this computer" : "Saved in this browser"}</span>` : "";
   const a = me(), r = role();
-  $("#brandMeta").innerHTML = `${r === "volunteer" || !a ? "" : saveChip}<span class="chip num">${left >= 0 ? `${left} days left` : "Year closed"}</span>${a ? `<span class="chip who"><span class="dot"></span>${esc(accName(a))} · ${(r === "council" ? a.title || "Student Council" : { head: "Head", admin: "Administration", volunteer: "Volunteer" }[r])}</span><button class="chip out motion-btn" data-act="motion" title="${reduced() ? "Turn animations on" : "Calm motion"}" aria-label="${reduced() ? "Turn animations on" : "Calm motion"}">${reduced() ? "◌" : "✦"}</button><button class="chip out" data-act="sign-out">Sign out</button>` : ""}`;
+  $("#brandMeta").innerHTML = `${r === "volunteer" || !a ? "" : saveChip}<span class="chip num">${left >= 0 ? `${left} days left` : "Year closed"}</span>${a ? `<span class="chip who"><span class="dot"></span>${esc(accName(a))} · ${(r === "council" ? a.title || "Student Council" : { head: "Head", admin: "Administration", volunteer: "Volunteer" }[r])}</span><button class="chip out motion-btn" data-act="motion" title="${reduced() ? "Turn animations on" : "Calm motion"}" aria-label="${reduced() ? "Turn animations on" : "Calm motion"}">${reduced() ? "◌" : "✦"}</button>${themeBtn()}<button class="chip out" data-act="sign-out">Sign out</button>` : themeBtn()}`;
   realmMeta();
 }
 function moveInk() {
@@ -1828,7 +1905,7 @@ const tabBadge = k => { const n = tabCount(k); return n ? `<span class="badge nu
 function renderTabs(soft) {
   const nav = $("#tabs"), list = tabsFor();
   renderBnav(list);
-  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${tabBadge(k)}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
+  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${ic(TAB_IC[k])}<span>${l}</span>${tabBadge(k)}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
   if (nav.dataset.sig === html) return;
   nav.dataset.sig = html; nav.innerHTML = html;
   if (soft) moveInk();
@@ -3920,6 +3997,7 @@ document.addEventListener("click", async e => {
     case "gov-filter": ui.gov = "missing"; go("roster"); break;
     case "new-event-go": go("events"); ui.eventId = null; ui.confirm = null; ui.modal = () => eventModal(null); renderOverlay(); break;
     case "import-go": go("roster"); setTimeout(() => $("#impFile")?.click(), 50); break;
+    case "theme": { const d = document.documentElement, dark = d.dataset.theme !== "dark"; d.dataset.theme = dark ? "dark" : "light"; try { localStorage.setItem("pa-theme", d.dataset.theme); } catch {} applyRealm(); renderBrandMeta(); toast(dark ? "Dark mode" : "Light mode"); break; }
     case "motion": { const on = !document.documentElement.classList.toggle("calm"); try { localStorage.setItem("pa-motion", on ? "full" : "calm"); } catch {} renderBrandMeta(); toast(on ? "Animations on" : "Calm motion"); break; }
     case "notice-ok": { const p = a.closest(".notice-panel"); ackNotices(); if (p && !reduced()) { p.classList.add("bye"); setTimeout(() => { p.remove(); renderTabs(true); }, 380); } else { p && p.remove(); renderTabs(true); } break; }
     case "callup-copy": { const t = callupText(S.events[id]); try { await navigator.clipboard.writeText(t); toast("Call-up copied · paste it in the group chat"); } catch { toast("Copy blocked by the browser"); } break; }
@@ -4643,7 +4721,7 @@ const cLogoInk = () => $("#councilLogoInk").src;
 function applyRealm() {
   const on = realm() === "council", root = document.documentElement;
   if (on) root.dataset.realm = "council"; else delete root.dataset.realm;
-  const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = on ? "#5B141B" : "#233253";
+  const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = root.dataset.theme === "dark" ? (on ? "#1A0A0D" : "#0B1222") : on ? "#5B141B" : "#233253";
   if (on && ui.realmIntro) { ui.realmIntro = false; realmFx("council", innerWidth / 2, innerHeight / 3, () => {}); }
   if (on && role() === "head" && !ui.cPermSync) { ui.cPermSync = true; syncCouncilPerms(); }
 }
@@ -5331,6 +5409,24 @@ addEventListener("resize", moveInk);
 addEventListener("scroll", () => $("#tabbar").classList.toggle("stuck", scrollY > 150), { passive: true });
 
 document.fonts && document.fonts.ready.then(moveInk);
+/* ---------- Night glass: light/dark switch, side-menu crest, radar ---------- */
+Object.assign(ICONS, {
+  sun: "M12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zM12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4",
+  moon: "M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"
+});
+function themeBtn() {
+  const dark = document.documentElement.dataset.theme === "dark", t = dark ? "Light mode" : "Dark mode";
+  return `<button class="chip out theme-btn" data-act="theme" title="${t}" aria-label="${t}">${ic(dark ? "sun" : "moon")}</button>`;
+}
+{
+  const root = document.documentElement.style;
+  root.setProperty("--crest", `url("${crestSrc()}")`);
+  root.setProperty("--crest-c", `url("${cLogoInk()}")`);
+  const blips = [[30, 26, 0.4], [68, 34, 1.3], [74, 66, 2.6], [38, 72, 3.4], [56, 18, 4.3], [22, 52, 2.1]];
+  document.body.insertAdjacentHTML("beforeend", `<div class="radar" aria-hidden="true"><i class="sweep"></i>${blips.map(([x, y, d]) => `<b style="left:${x}%;top:${y}%;--d:${d}s"></b>`).join("")}</div>`);
+}
+Object.assign(AR_UI, { "Light mode": "الوضع الفاتح", "Dark mode": "الوضع الداكن" });
+
 boot();
 })();
 </script>

@@ -197,6 +197,7 @@ textarea{resize:vertical;min-height:90px}
 .rank.r-probationary{color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
 .rank.r-elected{color:var(--teal);background:var(--teal-soft)}
 .rank.r-supervisory{color:var(--violet);background:var(--violet-soft)}
+.rank.r-council{color:#fff;background:#6E1A22;letter-spacing:.08em}
 .rank.r-logistics{color:#F4F4F4;background:#050505;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 2px 8px -2px rgba(0,0,0,.5);letter-spacing:.14em}
 .vbadge{font-size:11.5px;font-weight:700;color:var(--ok);background:var(--ok-soft);padding:2px 8px;border-radius:999px;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}
 .events{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:14px}
@@ -946,7 +947,8 @@ function earnedOn(vid) {
   return null;
 }
 const rankOf = v => RANKS.find(x => x.id === v.rank);
-const rankBadge = v => { const k = rankOf(v); return k ? `<span class="rank r-${k.id}">${k.label}</span>` : ""; };
+const councilMap = () => { const m = {}; for (const [id, a] of Object.entries(S.accounts)) if (a.role === "council") { const vid = councilVol(a); if (vid) m[vid] = { id, title: a.title || "Student Council", perm: a.perm || "" }; } return m; };
+const rankBadge = v => { const cm = councilMap()[v.id]; if (cm) return `<span class="rank r-council">${esc(cm.title)}</span>`; const k = rankOf(v); return k ? `<span class="rank r-${k.id}">${k.label}</span>` : ""; };
 const headVol = () => vols().find(v => v.head);
 function supervisorNames() {
   const n = new Set(vols().filter(v => v.head || ["supervisory", "logistics"].includes(v.rank)).map(v => v.name));
@@ -1664,14 +1666,16 @@ function rosterRows() {
     return `<div class="rsec ${shut ? "shut" : ""}"><button class="rs-head" data-act="toggle-sec" data-sec="${key}" aria-expanded="${!shut}"><span class="grade ${g12 ? "g12" : ""}">${label}</span><span class="cnt">${gv.length} · ${dn} done</span><span class="bar mini ${g12 ? "g12" : ""}"><i style="--w:${gv.length ? dn / gv.length * 100 : 0}%"></i></span>${chev}</button><div class="rs-rows"><div>${gv.map(row).join("")}</div></div></div>`;
   };
   let out = "";
-  const head = list.filter(v => v.head);
+  const cmap = councilMap(), head = list.filter(v => v.head);
   if (head.length) out += `<section class="rgrp"><div class="rg-head"><h3>Leadership</h3></div><div class="rs-flat">${head.map(row).join("")}</div></section>`;
+  const cv = list.filter(v => !v.head && cmap[v.id]).sort((a, b) => ((C_ORDER.indexOf(cmap[a.id].perm) + 1 || 98) - (C_ORDER.indexOf(cmap[b.id].perm) + 1 || 98)) || a.name.localeCompare(b.name));
+  if (cv.length) out += `<section class="rgrp"><div class="rg-head"><h3>Student Council</h3><span class="cnt">${cv.length} member${cv.length === 1 ? "" : "s"} · above shift leads</span></div><div class="rs-flat">${cv.map(row).join("")}</div></section>`;
   for (const g of [12, 11]) {
-    const gv = list.filter(v => !v.head && v.grade === g); if (!gv.length) continue;
+    const gv = list.filter(v => !v.head && !cmap[v.id] && v.grade === g); if (!gv.length) continue;
     const secs = [...SECTIONS, ""].map(x => [x, gv.filter(v => (SECTIONS.includes(v.section) ? v.section : "") === x)]).filter(([, x]) => x.length);
     out += `<section class="rgrp"><div class="rg-head"><h3>Grade ${g}</h3>${g === 12 ? `<span class="prio">Priority</span>` : locked ? `<span class="lock">Opens ${fmtDate(S.settings.sem2)}</span>` : ""}<span class="cnt">${gv.length} volunteer${gv.length === 1 ? "" : "s"} · ${doneN(gv)} done</span></div>${secs.map(([x, sv]) => secBlock(g + x, x ? `${g}${x}` : `${g} · no class`, sv, g === 12)).join("")}</section>`;
   }
-  const other = list.filter(v => !v.head && ![12, 11].includes(v.grade));
+  const other = list.filter(v => !v.head && !cmap[v.id] && ![12, 11].includes(v.grade));
   if (other.length) out += `<section class="rgrp"><div class="rg-head"><h3>Other</h3><span class="cnt">Set grade to 11 or 12</span></div><div class="rs-flat">${other.map(row).join("")}</div></section>`;
   seenIds = new Set(vols().map(v => v.id));
   return out;

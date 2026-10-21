@@ -1176,6 +1176,7 @@ html.calm-pick .radar b{opacity:.5}
 ::view-transition-new(root){animation:themeReveal .7s cubic-bezier(.2,.8,.2,1) both}
 @keyframes themeReveal{from{clip-path:circle(0 at var(--tx,90%) var(--ty,5%))}to{clip-path:circle(150vmax at var(--tx,90%) var(--ty,5%))}}
 .theme-btn .ic{transition:transform .5s var(--spring)}.theme-btn:hover .ic{transform:rotate(40deg) scale(1.1)}
+.id-btn{margin-top:12px;display:inline-flex;align-items:center;gap:8px}.id-btn .ic{width:16px;height:16px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -2432,7 +2433,7 @@ VIEWS.me = () => {
   const list = entries().filter(e => e.volunteerId === v.id).sort((a, b) => b.date.localeCompare(a.date));
   const next = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => e.status !== "done" && e.date >= todayISO()).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
   const pr = promotionFor(v);
-  return `${noticePanel()}<div class="hello st"><div style="--i:0"><div class="eyebrow">${greet()}</div><h2 class="hello-name">${esc(firstName(v.name))}</h2><div class="muted">${cls(v)}${rankOf(v) ? " · " + rankOf(v).label : ""}${v.role ? " · " + esc(v.role) : ""}</div><div style="margin-top:8px">${govChips(v)}</div></div></div>
+  return `${noticePanel()}<div class="hello st"><div style="--i:0"><div class="eyebrow">${greet()}</div><h2 class="hello-name">${esc(firstName(v.name))}</h2><div class="muted">${cls(v)}${rankOf(v) ? " · " + rankOf(v).label : ""}${v.role ? " · " + esc(v.role) : ""}</div><div style="margin-top:8px">${govChips(v)}</div><button class="btn small id-btn" data-act="open-card" data-id="${v.id}">${ic("user")}My ID card</button></div></div>
   <div class="me-grid st">
     <section class="panel kpi hero me-hero" style="--i:1">${rule === "exempt" ? `<div><div class="eyebrow">Requirement</div><div class="v">Exempt</div><div class="d">${esc(statusOf(v.status).label)}</div></div>` : `${ringHTML(pct, "big", h, g)}
       <div><div class="eyebrow">This school year</div><div class="v"><span data-count="${r1(h)}" data-dec="${h % 1 ? 1 : 0}">${fmtH(h)}</span><small>of ${g} h</small></div>
@@ -4963,7 +4964,7 @@ VIEWS["c-home"] = () => {
   return `<div class="st">
     <section class="panel c-hero" style="--i:0"><div class="plate"><img src="${cLogo()}" alt="M-EIS La Pasión Student Council"></div>
       <div style="flex:1;min-width:220px"><div class="eyebrow">${esc(mem.title || "Student Council")}</div><h2>${hello()}, ${esc(String(mem.name).split(" ")[0])}</h2>
-      <div class="muted" style="font-size:14px;margin-top:4px">Student Council ${s_year()} · only council members can open this side</div></div><i class="bigstar"></i></section>
+      <div class="muted" style="font-size:14px;margin-top:4px">Student Council ${s_year()} · only council members can open this side</div>${myVol() ? `<button class="btn small id-btn" data-act="open-card" data-id="${myVol().id}">${ic("user")}My ID card</button>` : ""}</div><i class="bigstar"></i></section>
     ${muteBar()}
     <div class="c-stats">
       <button class="c-stat" data-go="c-chat" style="--i:1"><b class="num">${unread}</b><span>Unread messages</span></button>
@@ -5610,7 +5611,7 @@ if (matchMedia("(hover:hover) and (pointer:fine)").matches) {
     const r = p.getBoundingClientRect(); p.style.setProperty("--mx", (e.clientX - r.left) + "px"); p.style.setProperty("--my", (e.clientY - r.top) + "px"); p.classList.add("lit");
   }, { passive: true });
 }
-Object.assign(AR_UI, { "Everyone on the team · #": "كل أعضاء الفريق · #", "No one by that name.": "لا أحد بهذا الاسم.", "Search the roster": "ابحث في القائمة", "Signs in as Student Council": "يسجل الدخول كعضو في مجلس الطلبة", "Merge into council sign-in": "دمج مع حساب المجلس", "Also has a separate volunteer sign-in.": "لديه أيضًا حساب متطوع منفصل.", "Merged": "تم الدمج" });
+Object.assign(AR_UI, { "My ID card": "بطاقتي", "Everyone on the team · #": "كل أعضاء الفريق · #", "No one by that name.": "لا أحد بهذا الاسم.", "Search the roster": "ابحث في القائمة", "Signs in as Student Council": "يسجل الدخول كعضو في مجلس الطلبة", "Merge into council sign-in": "دمج مع حساب المجلس", "Also has a separate volunteer sign-in.": "لديه أيضًا حساب متطوع منفصل.", "Merged": "تم الدمج" });
 
 boot();
 })();

@@ -1009,11 +1009,11 @@ function cloudErr(e) {
   if (e.code === "auth") signOut(); else cloudPull(false);
   return false;
 }
-const loginOf = (a, vid) => normName(a.role === "volunteer" ? S.volunteers[a.vid || vid]?.name : a.name);
+const loginOf = (a, vid) => a.role === "council" ? normName(councilUser(a)) : normName(a.role === "volunteer" ? S.volunteers[a.vid || vid]?.name : a.name);
 async function cloudAccount(id, obj) {
   const a = { ...S.accounts[id], ...obj };
   await rpc("pa_account", { token: tok(), acc_id: id, role: a.role, name: a.name || null, vid: a.vid || null, login: loginOf(a) || null,
-    login2: a.role === "head" && headVol() ? normName(headVol().name) : null, pw: obj.pw || null, old_pw: ui.oldPw || null, title: a.title || null, perm: a.perm || null });
+    login2: a.role === "head" && headVol() ? normName(headVol().name) : a.role === "council" ? normName(a.name) : null, pw: obj.pw || null, old_pw: ui.oldPw || null, title: a.title || null, perm: a.perm || null });
   ui.oldPw = null;
   S.accounts[id] = { role: a.role, ...(a.name ? { name: a.name } : {}), ...(a.vid ? { vid: a.vid } : {}), ...(a.title ? { title: a.title } : {}), ...(a.perm ? { perm: a.perm } : {}), created: a.created || new Date().toISOString() };
 }
@@ -1047,14 +1047,20 @@ async function cloudBoot() {
   catch { $("#view").innerHTML = `<div class="gate"><div class="gate-card panel"><img class="gate-crest" src="${crestSrc()}" alt=""><h2>Can't connect</h2><p class="muted gate-sub">Check your internet connection, then try again.</p><button class="btn primary big" onclick="location.reload()">Try again</button></div></div>`; return; }
   let x = null; try { x = JSON.parse(localStorage.getItem(SKEY)); } catch {}
   if (x && x.token) { session = x; try { await cloudPull(true); } catch { session = null; } if (session && !S.accounts[session.id]) session = null; }
-  saveSession(); render(true);
+  saveSession(); render(true); setTimeout(migrateCouncil, 1500);
   setInterval(() => { if (session && !document.hidden) cloudPull(false); }, 15e3);
   document.addEventListener("visibilitychange", () => { if (!document.hidden && session) cloudPull(false); });
+}
+// Council sign-ins made before positions became usernames still use the member's name; move them over once.
+async function migrateCouncil() {
+  if (mode !== "cloud" || role() !== "head") return;
+  try { if (localStorage.getItem("pa-scmig-1")) return; } catch {}
+  try { for (const [id, a] of Object.entries(S.accounts)) if (a.role === "council") await cloudAccount(id, {}); localStorage.setItem("pa-scmig-1", "1"); } catch {}
 }
 async function cloudSignIn(name, pw) {
   try {
     const r = await rpc("pa_login", { login: normName(name), pw });
-    session = { id: r.id, t: Date.now(), token: r.token }; await cloudPull(true); startSession(r.id, r.token); return "";
+    session = { id: r.id, t: Date.now(), token: r.token }; await cloudPull(true); startSession(r.id, r.token); setTimeout(migrateCouncil, 1500); return "";
   } catch (e) { return e.code === "throttle" ? "Too many attempts. Wait 15 minutes." : e.code === "login" ? "Name or password incorrect." : "Can't reach the server. Try again."; }
 }
 
@@ -1155,6 +1161,9 @@ const tabsFor = () => realm() === "council" ? councilTabs() : held() ? [["appeal
 const COUNCIL = [["Fayez Sankari", "President", "president"], ["Abel Varghese", "Vice President", "vp"], ["Murad Samarah", "VP's Aide", "aide"], ["Suhaib Mohammad", "Newspaper Manager", "newspaper"],
   ["Waleed Osama", "Head of Academics", "academics"], ["Sameer Haroun", "Head of Finance", "finance"], ["Mohammad Thaer", "Head of Media", "media"], ["Ragheb Haroun", "Head of PR & Communication", "pr"],
   ["Marwan Ehab", "Head of Events", "events"], ["Muhannad Hamad", "Co-Head of Events", "events"]];
+const COUNCIL_USER = { "President": "president", "Vice President": "vice president", "VP's Aide": "vp aide", "Newspaper Manager": "newspaper manager", "Head of Academics": "head of academics",
+  "Head of Finance": "head of finance", "Head of Media": "head of media", "Head of PR & Communication": "head of pr", "Head of Events": "head of events", "Co-Head of Events": "co head of events" };
+const councilUser = a => COUNCIL_USER[a.title] || normName(a.title || a.name);
 const PERMS = { events: "Events tools", pr: "PR tools", president: "President", vp: "Vice President", aide: "VP's Aide", newspaper: "Newspaper desk", academics: "Academics desk", finance: "Finance desk", media: "Media desk" };
 const scAcc = name => Object.entries(S.accounts).find(([, a]) => a.role === "council" && normName(a.name) === normName(name));
 const canEditEv = e => !!e && e.council && e.status !== "done" && (e.by === session?.id || perm() === "events");
@@ -1200,7 +1209,8 @@ async function trySignIn(name, pw) {
   const n = normName(name);
   for (const [id, a] of Object.entries(S.accounts)) {
     if (a.role === "admin") continue;
-    if (normName(accName(a)) !== n && !(a.role === "head" && normName(a.name) === n)) continue;
+    if (a.role === "council") { if (normName(councilUser(a)) !== n && normName(a.name) !== n) continue; }
+    else if (normName(accName(a)) !== n && !(a.role === "head" && normName(a.name) === n)) continue;
     if (await checkSecret(a, pw)) { fails = 0; startSession(id); return ""; }
   }
   if (++fails >= 5) { fails = 0; lockUntil = Date.now() + 30e3; }
@@ -1259,7 +1269,7 @@ function gateHTML() {
       <button class="btn primary big" type="submit">Reset password</button></form>
       <button class="linkbtn" data-act="gate-back">Back to sign in</button>`);
   return card("Sign in", "", `<form id="gateForm" class="stack-form">
-      <label class="field">Name<input type="text" id="gName" required autocomplete="username" autofocus maxlength="80"></label>
+      <label class="field">Name or position<input type="text" id="gName" required autocomplete="username" autofocus maxlength="80"></label>
       <label class="field">Password<input type="password" id="gPw" required autocomplete="current-password"></label>
       <div class="gerr" id="gErr" role="alert"></div>
       <button class="btn primary big" type="submit">Sign in</button></form>
@@ -2061,10 +2071,27 @@ function councilRows() {
   const extra = Object.entries(S.accounts).filter(([, a]) => a.role === "council" && !COUNCIL.some(([n]) => normName(n) === normName(a.name))).map(([id, a]) => ({ name: a.name, title: a.title, p: a.perm, acc: [id, a] }));
   return [...pre, ...extra].map((m, i) => {
     const tools = m.p ? `<span class="tag ${m.p === "pr" ? "sc" : "lead"}">${PERMS[m.p]}</span>` : "";
-    const who = `<span style="min-width:0"><b>${esc(m.name)}</b> <span class="muted" style="font-size:12.5px">${esc(m.title || "Student Council")}</span> ${tools}</span>`;
+    const who = `<span style="min-width:0"><b>${esc(m.name)}</b> <span class="muted" style="font-size:12.5px">${esc(m.title || "Student Council")}</span> ${tools}<span class="muted" style="font-size:12px;display:block">Username: <b>${esc(councilUser(m))}</b></span></span>`;
     if (m.acc) { const id = m.acc[0]; return `<div class="srow">${who}<span style="display:flex;gap:6px;align-items:center">${ui.acctReset === id ? `<input type="text" id="admPw-${id}" value="${genPassword()}" style="width:170px" aria-label="New password"><button class="btn small primary" data-act="adm-pw" data-id="${id}">Save</button>` : `<span class="tag ok">Sign-in active</span><button class="btn small" data-act="adm-reset" data-id="${id}">Reset password</button><button class="iconbtn" data-act="adm-del" data-id="${id}" aria-label="Remove ${esc(m.name)}">✕</button>`}</span></div>`; }
     return `<div class="srow">${who}<span style="display:flex;gap:6px;align-items:center">${ui.scMake === i ? `<input type="text" id="scMakePw" value="${genPassword()}" style="width:170px" aria-label="Password"><button class="btn small primary" data-act="sc-save" data-i="${i}">Save</button>` : `<span class="tag">No sign-in</span><button class="btn small primary" data-act="sc-make" data-i="${i}">Create sign-in</button>`}</span></div>`;
   }).join("");
+}
+function scCredsBox() {
+  const c = ui.scCreds; if (!c || !c.length) return "";
+  return `<div class="adm-box" style="margin:10px 0"><div class="keybox" style="text-align:left;font-size:14px;line-height:1.7">${c.map(x => `<div style="margin-bottom:8px"><b>${esc(x.title || "Student Council")}</b> · ${esc(x.name)}<br>Username: <span class="num">${esc(x.user)}</span> · Password: <span class="num">${esc(x.pw)}</span></div>`).join("")}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small primary" data-act="sc-creds-copy">Copy all</button><button class="btn small ghost" data-act="sc-creds-done">Done</button></div>
+    <div class="muted" style="font-size:12.5px;margin-top:6px">Passwords are not shown again after Done. Send each person only their own.</div></div>`;
+}
+const credsText = () => (ui.scCreds || []).map(x => `${x.title || "Student Council"} (${x.name})\nUsername: ${x.user}\nPassword: ${x.pw}`).join("\n\n") + (location.protocol.startsWith("http") ? `\n\nSign in at ${location.href.split("#")[0]}` : "");
+async function scSetupAll() {
+  ui.scCreds = ui.scCreds || [];
+  for (const [name, title, p] of COUNCIL) {
+    const pw = genPassword(), acc = scAcc(name), base = { role: "council", name, title, perm: p || null };
+    const ok = acc ? await put("accounts", acc[0], { ...acc[1], ...base, ...(await makeSecret(pw)) }) : await put("accounts", uid(), { ...base, ...(await makeSecret(pw)), created: new Date().toISOString() });
+    if (ok === false) return toast("Stopped. Try again.");
+    ui.scCreds = ui.scCreds.filter(x => x.name !== name).concat({ name, title, user: councilUser({ title }), pw });
+  }
+  ui.scAll = false; $("#acctBox").innerHTML = acctBox(); bindAcct(); toast("Council sign-ins ready");
 }
 function admBoxHTML() {
   if (ui.admCode && Date.now() - (ui.admAt || 0) < 170e3) return `<div class="keybox num adm-code" id="admCodeText">${esc(ui.admCode)}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="admcode-copy">Copy</button><button class="btn small ghost" data-act="adm-gen">New code</button></div>`;
@@ -2077,7 +2104,8 @@ function acctBox() {
     <div id="admCodeBox" class="adm-box">${admBoxHTML()}</div>
     <div class="eyebrow" style="margin:18px 0 6px">Student Council ${s_year()}</div>
     <div class="muted" style="font-size:12.5px;margin-bottom:6px">Council members post events. Events tools: edit any council event and see the team calendar. PR tools: ready-to-post announcements and recaps.</div>
-    <div class="slist">${councilRows()}</div>
+    ${scCredsBox()}<div class="slist">${councilRows()}</div>
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">${ui.scAll ? `<span class="muted" style="font-size:13px">This gives every member a new password.</span><button class="btn small danger solid" data-act="sc-all-go">Yes, set up all</button><button class="btn small ghost" data-act="sc-all-no">Cancel</button>` : `<button class="btn small" data-act="sc-all">Set up all council sign-ins</button><span class="muted" style="font-size:12.5px">Creates missing ones and gives everyone a fresh password</span>`}</div>
     <form id="scAccForm" class="grid2" style="margin-top:10px;align-items:end"><label class="field">Name<input type="text" id="scName" maxlength="80" required></label><label class="field">Position<input type="text" id="scTitle" maxlength="60" placeholder="e.g. Secretary"></label>
       <label class="field">Tools<select id="scPerm"><option value="">Post events</option><option value="events">Events tools</option><option value="pr">PR tools</option><option value="president">President</option><option value="vp">Vice President</option><option value="aide">VP's Aide</option><option value="newspaper">Newspaper desk</option><option value="academics">Academics desk</option><option value="finance">Finance desk</option><option value="media">Media desk</option></select></label><label class="field">Password<input type="text" id="scPw" value="${genPassword()}" required minlength="6"></label>
       <div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn" type="submit">Add council member</button></div></form>
@@ -2091,8 +2119,9 @@ function bindAcct() {
     if (!name || pw.length < 6) return toast("Name and a 6+ character password required.");
     if (Object.values(S.accounts).some(a => normName(accName(a)) === normName(name))) return toast("That name already has an account.");
     await put("accounts", uid(), { role: "council", name, title: $("#scTitle").value.trim(), perm: $("#scPerm").value || null, ...(await makeSecret(pw)), created: new Date().toISOString() });
+    ui.scCreds = (ui.scCreds || []).concat({ name, title: $("#scTitle").value.trim(), user: councilUser({ title: $("#scTitle").value.trim(), name }), pw });
     $("#acctBox").innerHTML = acctBox(); bindAcct();
-    toast(`${name} added · password ${pw}`);
+    toast(`${name} added`);
   });
   $("#headPwForm")?.addEventListener("submit", async e => {
     e.preventDefault(); const a = me();
@@ -3336,14 +3365,19 @@ document.addEventListener("click", async e => {
     case "cp-del": await del("complaints", ui.cpId); closeOverlay(); toast("Deleted"); break;
     case "my-cert": certDownload(myVol().id, "pdf", a); break;
     case "adm-reset": ui.acctReset = id; $("#acctBox").innerHTML = acctBox(); break;
+    case "sc-all": ui.scAll = true; $("#acctBox").innerHTML = acctBox(); bindAcct(); break;
+    case "sc-all-no": ui.scAll = false; $("#acctBox").innerHTML = acctBox(); bindAcct(); break;
+    case "sc-all-go": a.disabled = true; await scSetupAll(); break;
+    case "sc-creds-copy": try { await navigator.clipboard.writeText(credsText()); toast("Copied"); } catch { toast("Select the text and copy it"); } break;
+    case "sc-creds-done": ui.scCreds = null; $("#acctBox").innerHTML = acctBox(); bindAcct(); break;
     case "sc-make": ui.scMake = Number(a.dataset.i); ui.acctReset = null; $("#acctBox").innerHTML = acctBox(); bindAcct(); break;
     case "sc-save": {
       const [name, title, p] = COUNCIL[Number(a.dataset.i)], pw = $("#scMakePw").value;
       if (pw.length < 6) { toast("6+ characters"); break; }
       await put("accounts", uid(), { role: "council", name, title, perm: p || null, ...(await makeSecret(pw)), created: new Date().toISOString() });
-      ui.scMake = null; $("#acctBox").innerHTML = acctBox(); bindAcct(); toast(`${name} · password ${pw}`); break;
+      ui.scMake = null; ui.scCreds = (ui.scCreds || []).filter(x => x.name !== name).concat({ name, title, user: councilUser({ title }), pw }); $("#acctBox").innerHTML = acctBox(); bindAcct(); toast(`${name} · sign-in created`); break;
     }
-    case "adm-pw": { const pw = $("#admPw-" + id).value; if (pw.length < 6) { toast("6+ characters"); break; } await put("accounts", id, { ...S.accounts[id], ...(await makeSecret(pw)) }); ui.acctReset = null; $("#acctBox").innerHTML = acctBox(); bindAcct(); toast(`Password set · ${pw}`); break; }
+    case "adm-pw": { const pw = $("#admPw-" + id).value; if (pw.length < 6) { toast("6+ characters"); break; } await put("accounts", id, { ...S.accounts[id], ...(await makeSecret(pw)) }); ui.acctReset = null; const ac = S.accounts[id]; if (ac && ac.role === "council") ui.scCreds = (ui.scCreds || []).filter(x => x.name !== ac.name).concat({ name: ac.name, title: ac.title, user: councilUser(ac), pw }); $("#acctBox").innerHTML = acctBox(); bindAcct(); toast(ac && ac.role === "council" ? `${ac.name} · password reset` : `Password set · ${pw}`); break; }
     case "adm-del": { const n = S.accounts[id]?.name; await del("accounts", id); if ($("#acctBox")) { $("#acctBox").innerHTML = acctBox(); bindAcct(); } toast(`Removed ${n}`); break; }
     case "vpw-edit": ui.signinEdit = id; ui.confirm = null; $("#signinBox").innerHTML = signinHTML(id); $("#vPwNew")?.select(); break;
     case "vpw-cancel": ui.signinEdit = null; $("#signinBox").innerHTML = signinHTML(ui.drawer); break;

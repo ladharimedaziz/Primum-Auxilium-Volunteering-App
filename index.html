@@ -2473,7 +2473,7 @@ async function installUpdate() {
     const r = await window.paDesktop.install(backupJSON());
     if (!r.ok) throw new Error(r.error || "install");
     toast("Update installed. Restarting…"); setTimeout(() => window.paDesktop.restart(), 900);
-  } catch (e) { ui.upd = { state: "error", message: "Install failed. Nothing changed." }; paintUpd(); }
+  } catch (e) { ui.upd = { state: "error", message: `Install failed: ${String((e && e.message) || "unknown").slice(0, 160)}. Nothing changed.` }; paintUpd(); }
 }
 if (window.paDesktop) {
   window.paDesktop.version().then(v => { ui.updVer = v.ui; }).catch(() => {});

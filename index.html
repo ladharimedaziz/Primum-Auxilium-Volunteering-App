@@ -1177,6 +1177,22 @@ html.calm-pick .radar b{opacity:.5}
 @keyframes themeReveal{from{clip-path:circle(0 at var(--tx,90%) var(--ty,5%))}to{clip-path:circle(150vmax at var(--tx,90%) var(--ty,5%))}}
 .theme-btn .ic{transition:transform .5s var(--spring)}.theme-btn:hover .ic{transform:rotate(40deg) scale(1.1)}
 .id-btn{margin-top:12px;display:inline-flex;align-items:center;gap:8px}.id-btn .ic{width:16px;height:16px}
+/* council: roster cards open a read-only profile */
+button.tcard{width:100%;font:inherit;color:inherit;text-align:start;cursor:pointer}
+button.tcard:hover{transform:translateY(-2px);border-color:var(--accent)}
+.modal.peek{max-width:440px}
+.pk-top{display:flex;gap:14px;align-items:center;margin-bottom:14px}.pk-top h2{margin:0}
+.pk-top .avatar{width:56px;height:56px;font-size:20px;flex:none}
+.pk-list{display:grid;gap:8px;margin:0 0 6px}.pk-list>div{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:var(--glass-2);border:1px solid var(--glass-line)}
+.pk-list dt{color:var(--muted);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}.pk-list dd{margin:0;font-weight:700;text-align:end}
+.modal.peek .btn .ic{width:16px;height:16px;margin-inline-end:6px;vertical-align:-3px}
+/* blacklisted: hazard tape and a red pulse on their roster card */
+.vrow.bl,.tcard.bl{position:relative;overflow:hidden;border-color:color-mix(in srgb,var(--danger) 55%,transparent)!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--danger) 30%,transparent),0 0 22px -6px color-mix(in srgb,var(--danger) 60%,transparent);animation:blPulse 2.6s ease-in-out infinite}
+.vrow.bl::before,.tcard.bl::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:repeating-linear-gradient(-45deg,var(--danger) 0 10px,#111 10px 20px);opacity:.9;pointer-events:none}
+.vrow.bl .avatar,.tcard.bl .avatar{filter:grayscale(1) contrast(1.1);box-shadow:0 0 0 2px var(--danger)}
+.vrow.bl .nm,.tcard.bl .nm{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--danger) 70%,transparent);text-decoration-thickness:2px}
+@keyframes blPulse{50%{box-shadow:0 0 0 1px color-mix(in srgb,var(--danger) 50%,transparent),0 0 30px -4px color-mix(in srgb,var(--danger) 80%,transparent)}}
+html.calm .vrow.bl,html.calm .tcard.bl{animation:none}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -2143,7 +2159,7 @@ function rosterRows() {
   let i = 0;
   const row = v => {
     const k = Math.min(i++, 14), h = hf(v.id), d = isDone(v, h), rule = statusOf(v.status).rule, fresh = seenIds && !seenIds.has(v.id);
-    return `<button class="vrow ${v.head ? "head" : v.grade === 12 ? "p12" : ""}${fresh ? " flash" : ""}" data-act="open" data-id="${v.id}" style="--i:${k};--tone:var(--${statusOf(v.status).tone || "grey"})">
+    return `<button class="vrow ${v.head ? "head" : v.grade === 12 ? "p12" : ""}${fresh ? " flash" : ""}${rule === "block" ? " bl" : ""}" data-act="open" data-id="${v.id}" style="--i:${k};--tone:var(--${statusOf(v.status).tone || "grey"})">
       <span class="avatar ${v.head ? "hd" : v.grade === 12 ? "g12" : ""}">${esc(initials(v.name))}</span>
       <span class="nmcell" style="min-width:0"><div class="nm">${esc(v.name)}${v.role ? `<span class="role">${esc(v.role)}</span>` : ""}${v.example ? `<span class="ex-tag">Example</span>` : ""}</div><div class="nt">${rankBadge(v)}${govChips(v)}${esc(v.notes || "")}</div></span>
       <span class="gcell"><span class="grade ${v.grade === 12 ? "g12" : ""}">${cls(v)}</span></span>
@@ -3227,7 +3243,7 @@ async function drawCard(canvas, vid) {
   const D = "'Cinzel', Georgia, serif", B = "'Atkinson Hyperlegible', system-ui, sans-serif", M = "'IBM Plex Mono', monospace", AR = "'Atkinson Hyperlegible', Tahoma, 'Segoe UI', 'Noto Naskh Arabic', 'Noto Sans Arabic', sans-serif";
   const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
   const spaced = (t, x, y, sp, align = "left") => { const w = [...t].reduce((a, c) => a + ctx.measureText(c).width + sp, -sp); let cx = align === "right" ? x - w : align === "center" ? x - w / 2 : x; ctx.textAlign = "left"; for (const c of t) { ctx.fillText(c, cx, y); cx += ctx.measureText(c).width + sp; } return w; };
-  const rk = rankOf(v), lead = v.head || /head/i.test(v.role || ""), lg = !cc && !lead && rk?.id === "logistics";
+  const rk = rankOf(v), lead = v.head || /head/i.test(v.role || ""), lg = !cc && !lead && rk?.id === "logistics", bl = statusOf(v.status).rule === "block";
   // Accent per rank: gold for the Head, then the rank colours used across the app.
   const acc = cc ? ["#F2B8BF", "#A3293A"] : lg ? ["#FFFFFF", "#8A8A8A"] : lead ? ["#E9C46A", "#B8862B"] : { probationary: ["#D5DAE2", "#8A94A6"], elected: ["#5FD3D9", "#1C8C96"], supervisory: ["#C7A6F5", "#7A52C2"], logistics: ["#F2F2F2", "#7B7B7B"] }[rk?.id] || ["#D5DAE2", "#8A94A6"];
   ctx.save(); rr(0, 0, W, H, 34); ctx.clip();
@@ -3285,7 +3301,7 @@ async function drawCard(canvas, vid) {
   ctx.fillStyle = "rgba(255,255,255,.14)"; ctx.fillRect(0, by, W, 1);
   ctx.fillStyle = "rgba(201,206,214,.6)"; ctx.font = `700 13px ${B}`; spaced("ID NUMBER", 48, by + 44, 3); spaced("VALID UNTIL", 380, by + 44, 3);
   ctx.fillStyle = "#FFFFFF"; ctx.font = `600 32px ${M}`; ctx.textAlign = "left"; ctx.fillText(idNumber({ ...v, id: vid }), 48, by + 88);
-  ctx.font = `600 28px ${M}`; ctx.fillText(fmtDate(S.settings.yearEnd, { month: "short", year: "numeric" }), 380, by + 88);
+  ctx.font = `600 28px ${M}`; if (bl) ctx.fillStyle = "#FF6B70"; ctx.fillText(bl ? "Suspended" : fmtDate(S.settings.yearEnd, { month: "short", year: "numeric" }), 380, by + 88); ctx.fillStyle = "#FFFFFF";
   // Holographic seal
   const sx = W - 104, sy = by + 66, sr = 50;
   ctx.save(); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.clip();
@@ -3297,6 +3313,20 @@ async function drawCard(canvas, vid) {
   ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 2; ctx.stroke();
   // Rank stripe along the bottom edge
   g = ctx.createLinearGradient(0, 0, W, 0); g.addColorStop(0, acc[1]); g.addColorStop(.5, acc[0]); g.addColorStop(1, acc[1]); ctx.fillStyle = g; ctx.fillRect(0, H - 10, W, 10);
+  // Blacklisted: the colour drains out, hazard tape runs along the edges and a red stamp voids the card.
+  if (bl) {
+    ctx.globalCompositeOperation = "saturation"; ctx.fillStyle = "hsl(0,0%,50%)"; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = "rgba(110,0,12,.32)"; ctx.fillRect(0, 0, W, H);
+    const tape = (y, h) => { ctx.save(); ctx.beginPath(); ctx.rect(0, y, W, h); ctx.clip(); ctx.fillStyle = "#111"; ctx.fillRect(0, y, W, h); ctx.fillStyle = "#E5484D"; for (let x = -h; x < W + h; x += 36) { ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x + 18, y + h); ctx.lineTo(x + 18 + h, y); ctx.lineTo(x + h, y); ctx.closePath(); ctx.fill(); } ctx.restore(); };
+    tape(0, 14); tape(H - 18, 18);
+    ctx.save(); ctx.translate(W * .7, 318); ctx.rotate(-.2);
+    ctx.font = `700 60px ${D}`; const tw = ctx.measureText("BLACKLISTED").width + 64;
+    ctx.shadowColor = "rgba(229,72,77,.6)"; ctx.shadowBlur = 24; rr(-tw / 2, -60, tw, 112, 16); ctx.strokeStyle = "#E5484D"; ctx.lineWidth = 7; ctx.stroke(); ctx.shadowBlur = 0;
+    rr(-tw / 2 + 10, -50, tw - 20, 92, 9); ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "#E5484D"; ctx.textAlign = "center"; ctx.fillText("BLACKLISTED", 0, 8);
+    ctx.font = `700 17px ${B}`; spaced("ACCESS SUSPENDED", 0, 34, 6, "center");
+    ctx.restore();
+  }
   ctx.restore();
   ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 2; rr(1, 1, W - 2, H - 2, 33); ctx.stroke();
 }
@@ -4071,6 +4101,7 @@ document.addEventListener("click", async e => {
     case "cert-pdf": certDownload(ui.certId, "pdf", a); break;
     case "promote": await setRank(id, a.dataset.rank); if (view === "dashboard") refresh(); break;
     case "promo-skip": await put("volunteers", id, { ...S.volunteers[id], promoSkip: a.dataset.rank }); toast("Hidden until next rank"); break;
+    case "peek": ui.drawer = null; ui.modal = () => peekModal(id); renderOverlay(); break;
     case "open-card": ui.drawer = null; ui.cardId = id; ui.modal = cardModal; renderOverlay(); drawCard($("#cardCanvas"), id); break;
     case "card-png": { a.disabled = true; const c = document.createElement("canvas"); c.width = 2024; c.height = 1276; await drawCard(c, ui.cardId); const blob = await new Promise(r => c.toBlob(r, "image/png")); try { await downloads.save({ filename: `id-card-${S.volunteers[ui.cardId].name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`, data: blob }); } catch (e) { if (!(e && e.code === "declined")) toast("Download failed"); } a.disabled = false; break; }
     case "card-pdf": cardsPDF([ui.cardId], a); break;
@@ -5469,11 +5500,11 @@ function celebrate(v) {
 const roleOrder = v => v.head ? 0 : councilMap()[v.id] ? 1 : v.rank === "logistics" ? 2 : v.rank === "supervisory" ? 3 : 9;
 const isLead = v => roleOrder(v) < 9;
 function teamCard(v, k, mine) {
-  const cm = councilMap()[v.id];
-  return `<div class="tcard ${v.head ? "head" : cm ? "council" : "r-" + (v.rank || "none")} ${mine ? "mine" : ""}" style="--i:${Math.min(k, 14)}">
+  const cm = councilMap()[v.id], peek = role() === "council", tag = peek ? "button" : "div";
+  return `<${tag} class="tcard ${v.head ? "head" : cm ? "council" : "r-" + (v.rank || "none")} ${mine ? "mine" : ""}${statusOf(v.status).rule === "block" ? " bl" : ""}" style="--i:${Math.min(k, 14)}"${peek ? ` data-act="peek" data-id="${v.id}"` : ""}>
     <span class="avatar ${v.head ? "hd" : v.grade === 12 ? "g12" : ""}" aria-hidden="true">${esc(initials(v.name))}</span>
     <span class="tc-body"><b class="nm">${esc(v.name)}</b><span class="tc-meta">${v.head ? `<span class="rank r-head">${esc(v.role || "Head of Volunteers")}</span>` : rankBadge(v)}<span class="grade ${v.grade === 12 ? "g12" : ""}">${cls(v)}</span>${mine ? `<span class="tag">You</span>` : ""}</span></span>
-  </div>`;
+  </${tag}>`;
 }
 function teamRows() {
   const q = (ui.tq || "").trim().toLowerCase(), mv = myVol(), cm = councilMap();
@@ -5612,6 +5643,17 @@ if (matchMedia("(hover:hover) and (pointer:fine)").matches) {
   }, { passive: true });
 }
 Object.assign(AR_UI, { "My ID card": "بطاقتي", "Everyone on the team · #": "كل أعضاء الفريق · #", "No one by that name.": "لا أحد بهذا الاسم.", "Search the roster": "ابحث في القائمة", "Signs in as Student Council": "يسجل الدخول كعضو في مجلس الطلبة", "Merge into council sign-in": "دمج مع حساب المجلس", "Also has a separate volunteer sign-in.": "لديه أيضًا حساب متطوع منفصل.", "Merged": "تم الدمج" });
+
+/* Roster profiles the council can open: who they are and their ID card, nothing editable. */
+function peekModal(id) {
+  const v = S.volunteers[id]; if (!v) return `<div class="modal"><p class="muted">Not found.</p><div class="actions"><button class="btn ghost" data-close>Close</button></div></div>`;
+  const cm = councilMap()[id], rows = [["Class", cls(v) || "—"], ["Rank", v.head ? "Head of Volunteers" : rankOf(v)?.label || "—"], ...(v.role && !v.head ? [["Role", v.role]] : []), ...(cm ? [["Student Council", cm.title || "Member"]] : [])];
+  return `<div class="modal peek" role="dialog" aria-label="${esc(v.name)}">
+    <div class="pk-top"><span class="avatar ${v.head ? "hd" : v.grade === 12 ? "g12" : ""}">${esc(initials(v.name))}</span><div style="min-width:0"><h2>${esc(v.name)}</h2>${v.nameAr ? `<div class="muted" dir="rtl" style="font-size:15px">${esc(v.nameAr)}</div>` : ""}<div style="margin-top:6px">${v.head ? `<span class="rank r-head">${esc(v.role || "Head of Volunteers")}</span>` : rankBadge(v)}</div></div></div>
+    <dl class="pk-list">${rows.map(([k, x]) => `<div><dt>${k}</dt><dd>${esc(x)}</dd></div>`).join("")}</dl>
+    <div class="actions"><button class="btn primary" data-act="open-card" data-id="${id}">${ic("user")}ID card</button><button class="btn ghost" data-close>Close</button></div></div>`;
+}
+Object.assign(AR_UI, { "Not found.": "غير موجود.", "ID card": "بطاقة الهوية", "Rank": "الرتبة", "Role": "الدور", "Class": "الصف", "Student Council": "مجلس الطلبة" });
 
 boot();
 })();

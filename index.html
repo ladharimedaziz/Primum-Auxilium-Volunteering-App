@@ -1662,7 +1662,7 @@ function moveInk() {
 const TABS = {
   head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ["achat", "Administration"], ["cachat", "Council–admin chat"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["history", "History"], ["handbook", "Handbook"], ["settings", "Settings"]],
   admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["appeals", "Appeals"], ["achat", "Chat with Head"], ["cachat", "Council chat"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["history", "History"], ["handbook", "Handbook"]],
-  council: [["cevents", "Events"], ["ccerts", "Certificates"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["cachat", "Admin chat"]],
+  council: [["cevents", "Events"], ["team", "Roster"], ["ccerts", "Certificates"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["cachat", "Admin chat"]],
   volunteer: [["me", "My hours"], ["vevents", "Events"], ["team", "Roster"], ["vcerts", "Certificates"], ["handbook", "Handbook"], ["complain", "Questions & complaints"]]
 };
 let session = null, lastAct = Date.now(), fails = 0, lockUntil = 0;
@@ -5476,21 +5476,23 @@ function teamCard(v, k, mine) {
 }
 function teamRows() {
   const q = (ui.tq || "").trim().toLowerCase(), mv = myVol(), cm = councilMap();
-  const all = vols().filter(v => isLead(v) && (!q || v.name.toLowerCase().includes(q)));
+  const everyone = role() === "council", all = vols().filter(v => (everyone || isLead(v)) && (!q || v.name.toLowerCase().includes(q)));
   const grp = (label, list, note) => list.length ? `<section class="rgrp"><div class="rg-head"><h3>${label}</h3><span class="cnt">${note || list.length}</span></div><div class="tgrid">${list.map((v, i) => teamCard(v, i, mv && v.id === mv.id)).join("")}</div></section>` : "";
   const byC = (a, b) => ((C_ORDER.indexOf(cm[a.id].perm) + 1 || 98) - (C_ORDER.indexOf(cm[b.id].perm) + 1 || 98)) || a.name.localeCompare(b.name);
   let out = grp("Leadership", all.filter(v => v.head), " ")
     + grp("Student Council", all.filter(v => !v.head && cm[v.id]).sort(byC))
     + grp("Logistics", all.filter(v => roleOrder(v) === 2))
     + grp("Supervisory volunteers", sortVols(all.filter(v => roleOrder(v) === 3)));
-  if (!out) out = `<div class="panel empty" data-ic="people">${q ? "No one by that name in leadership." : "Leadership hasn't been set yet."}</div>`;
+  // The council sees the whole team: everyone else by class, Grade 12 first.
+  if (everyone) { const rest = sortVols(all.filter(v => !isLead(v))), by = new Map(); rest.forEach(v => { const c = cls(v) || "No class"; by.has(c) || by.set(c, []); by.get(c).push(v); }); by.forEach((list, c) => { out += grp(c === "No class" ? c : "Class " + c, list); }); }
+  if (!out) out = `<div class="panel empty" data-ic="people">${q ? (everyone ? "No one by that name." : "No one by that name in leadership.") : "Leadership hasn't been set yet."}</div>`;
   return out;
 }
 VIEWS.team = () => {
   const mv = myVol();
-  return `<div class="toolbar"><div style="flex:1;min-width:200px"><h2 style="font-size:22px">Roster</h2><div class="muted" style="font-size:14px">The people who lead the team</div></div></div>
+  return `<div class="toolbar"><div style="flex:1;min-width:200px"><h2 style="font-size:22px">Roster</h2><div class="muted" style="font-size:14px">${role() === "council" ? `Everyone on the team · ${vols().length}` : "The people who lead the team"}</div></div></div>
   ${mv && !isLead(mv) ? `<div class="tme st">${teamCard(mv, 0, true)}</div>` : ""}
-  <div class="toolbar"><input type="search" class="search" id="teamSearch" placeholder="Search by name" value="${esc(ui.tq || "")}" aria-label="Search leadership"></div>
+  <div class="toolbar"><input type="search" class="search" id="teamSearch" placeholder="Search by name" value="${esc(ui.tq || "")}" aria-label="${role() === "council" ? "Search the roster" : "Search leadership"}"></div>
   <div class="st" id="teamList">${teamRows()}</div>`;
 };
 after.team = () => { $("#teamSearch")?.addEventListener("input", e => { ui.tq = e.target.value; const l = $("#teamList"); l.innerHTML = teamRows(); l.classList.remove("soft"); void l.offsetWidth; l.classList.add("soft"); }); };
@@ -5608,7 +5610,7 @@ if (matchMedia("(hover:hover) and (pointer:fine)").matches) {
     const r = p.getBoundingClientRect(); p.style.setProperty("--mx", (e.clientX - r.left) + "px"); p.style.setProperty("--my", (e.clientY - r.top) + "px"); p.classList.add("lit");
   }, { passive: true });
 }
-Object.assign(AR_UI, { "Signs in as Student Council": "يسجل الدخول كعضو في مجلس الطلبة", "Merge into council sign-in": "دمج مع حساب المجلس", "Also has a separate volunteer sign-in.": "لديه أيضًا حساب متطوع منفصل.", "Merged": "تم الدمج" });
+Object.assign(AR_UI, { "Everyone on the team · #": "كل أعضاء الفريق · #", "No one by that name.": "لا أحد بهذا الاسم.", "Search the roster": "ابحث في القائمة", "Signs in as Student Council": "يسجل الدخول كعضو في مجلس الطلبة", "Merge into council sign-in": "دمج مع حساب المجلس", "Also has a separate volunteer sign-in.": "لديه أيضًا حساب متطوع منفصل.", "Merged": "تم الدمج" });
 
 boot();
 })();

@@ -736,7 +736,7 @@ body[data-role="admin"] header.band{background:radial-gradient(120% 140% at 0% 0
 @keyframes cgFxIn{from{opacity:0}to{opacity:1}}@keyframes cgFxOut{to{opacity:0}}
 @keyframes cgCard{from{opacity:0;transform:translateY(60px) scale(.6) rotate(-4deg)}to{opacity:1;transform:none}}
 @keyframes cgGavel{0%{transform:rotate(-50deg)}40%{transform:rotate(15deg)}60%{transform:rotate(-12deg)}100%{transform:rotate(0)}}
-@media (prefers-reduced-motion:reduce){.cg-seat.on,.cg-fx .card,.cg-bar i{animation:none}}
+html.calm .cg-seat.on,html.calm .cg-fx .card,html.calm .cg-bar i{animation:none}
 /* Head and administration chat */
 .ach{display:flex;flex-direction:column;gap:8px;max-height:min(58vh,520px);overflow-y:auto;padding:4px 2px 10px}
 .ach .m{max-width:82%;padding:9px 12px;border-radius:14px;background:var(--sunk);align-self:flex-start;white-space:pre-wrap;word-break:break-word;line-height:1.45}
@@ -1070,7 +1070,7 @@ html[dir="rtl"] input[type=search]{background-position:calc(100% - 12px) 50%}
 
 /* dark mode: make sure new surfaces follow */
 :root[data-theme="dark"] .empty::before{background-color:var(--accent-soft)}
-@media (prefers-reduced-motion:reduce){.gavel-svg .g-head,.gavel-svg .g-ring ellipse,.cg-fx .stamp,.bn-tile,.mst,.tcard,.soft>*{animation:none!important;opacity:1}}
+html.calm .gavel-svg .g-head,html.calm .gavel-svg .g-ring ellipse,html.calm .cg-fx .stamp,html.calm .bn-tile,html.calm .mst,html.calm .tcard,html.calm .soft>*{animation:none!important;opacity:1}
 html.calm .gavel-svg .g-ring ellipse{opacity:0}
 @media print{.bnav{display:none!important}}
 /* long rosters: sections off screen skip layout and paint until scrolled to */
@@ -1156,6 +1156,26 @@ html.calm-pick .radar b{opacity:.5}
 .cg-legend i{width:12px;height:12px;border-radius:50%;background:var(--party);box-shadow:0 0 8px color-mix(in srgb,var(--party) 60%,transparent)}
 .cg-legend b{color:var(--ink);font-weight:700}
 .empty-hemi{aspect-ratio:3/1}
+/* @mentions */
+.mention{color:var(--accent);font-weight:700;background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:6px;padding:0 3px}
+.mention.me{color:var(--accent-ink);background:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)}
+
+.mention-pop{position:fixed;z-index:95;max-height:280px;overflow:auto;padding:6px;border-radius:14px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border:1px solid var(--glass-line);box-shadow:0 24px 50px -20px rgba(0,0,0,.6);animation:mpIn .22s var(--spring) both;transform-origin:bottom left}
+:root[data-theme="light"] .mention-pop{background:rgba(255,255,255,.9)}
+.mention-pop .mp{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:none;color:var(--ink);text-align:start;cursor:pointer;font:inherit}
+.mention-pop .mp.on,.mention-pop .mp:hover{background:var(--accent-soft)}
+.mention-pop .mp b{display:block;font-size:14px}.mention-pop .mp small{display:block;font-size:12px;color:var(--muted)}
+.mention-pop .av{width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font:700 12px var(--f-body)}
+@keyframes mpIn{from{opacity:0;transform:translateY(8px) scale(.96)}}
+/* light catching the glass under the pointer */
+.panel,.c-stat,.qa,.tcard,.post{--mx:50%;--my:50%}
+.panel.lit,.c-stat.lit,.qa.lit,.tcard.lit,.post.lit{background-image:radial-gradient(420px circle at var(--mx) var(--my),rgba(255,255,255,.07),transparent 60%)!important}
+:root[data-theme="light"] .panel.lit,:root[data-theme="light"] .c-stat.lit,:root[data-theme="light"] .qa.lit,:root[data-theme="light"] .tcard.lit,:root[data-theme="light"] .post.lit{background-image:radial-gradient(420px circle at var(--mx) var(--my),rgba(255,255,255,.75),transparent 60%)!important}
+/* theme switch: the new look spreads out from the button */
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+::view-transition-new(root){animation:themeReveal .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes themeReveal{from{clip-path:circle(0 at var(--tx,90%) var(--ty,5%))}to{clip-path:circle(150vmax at var(--tx,90%) var(--ty,5%))}}
+.theme-btn .ic{transition:transform .5s var(--spring)}.theme-btn:hover .ic{transform:rotate(40deg) scale(1.1)}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -1229,7 +1249,7 @@ const initials = n => String(n || "?").trim().split(/\s+/).map(p => p[0]).slice(
 // Full motion by default; anyone can switch to calm motion from the header (remembered on this device).
 const reduced = () => document.documentElement.classList.contains("calm");
 try { document.documentElement.dataset.theme = localStorage.getItem("pa-theme") === "light" ? "light" : "dark"; } catch { document.documentElement.dataset.theme = "dark"; }
-try { const m = localStorage.getItem("pa-motion"); if (m === "calm" || (m !== "full" && matchMedia("(prefers-reduced-motion: reduce)").matches)) document.documentElement.classList.add("calm"); document.documentElement.classList.toggle("calm-pick", m === "calm"); } catch {}
+try { const m = localStorage.getItem("pa-motion"); if (m === "calm") document.documentElement.classList.add("calm"); document.documentElement.classList.toggle("calm-pick", m === "calm"); } catch {}
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 
 /* ---------- statuses ---------- */
@@ -1426,7 +1446,7 @@ async function cloudPut(coll, id, obj) {
 
       // A renamed volunteer keeps signing in with their new name.
       if (coll === "volunteers" && role() === "head") {
-        const ac = obj.head ? headAcc() : accFor(id);
+        const ac = obj.head ? headAcc() : signAcc(id);
         if (ac) await cloudAccount(ac[0], {});
       }
     }
@@ -1668,6 +1688,9 @@ const scAcc = name => Object.entries(S.accounts).find(([, a]) => a.role === "cou
 const canEditEv = e => !!e && e.council && e.status !== "done" && (e.by === session?.id || perm() === "events");
 const headAcc = () => Object.entries(S.accounts).find(([, a]) => a.role === "head");
 const accFor = vid => Object.entries(S.accounts).find(([, a]) => a.role === "volunteer" && a.vid === vid);
+// The council account linked to this roster row (by link, or by name while the link is being saved).
+const councilAccFor = vid => Object.entries(S.accounts).find(([, a]) => a.role === "council" && (a.vid ? a.vid === vid : councilVol(a) === vid));
+const signAcc = vid => councilAccFor(vid) || accFor(vid);
 function allowed(coll, id) {
   const r = role();
   if (r === "head" || ui.sys || mode === "loading") return true;
@@ -2702,6 +2725,8 @@ function bindAcct() {
   });
 }
 function signinHTML(vid) {
+  const ca = councilAccFor(vid), dup = ca && accFor(vid);
+  if (ca && ui.signinEdit !== vid) return `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tag ok">Sign-in active</span><span class="muted" style="font-size:13px">Signs in as Student Council · ${esc(ca[1].title || "Member")}</span><button class="btn small" data-act="vpw-edit" data-id="${vid}">Reset password</button></div>${dup ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><span class="muted" style="font-size:13px">Also has a separate volunteer sign-in.</span><button class="btn small primary" data-act="vpw-merge" data-id="${vid}">Merge into council sign-in</button></div>` : ""}`;
   const acc = accFor(vid);
   if (ui.signinEdit === vid) return `<div class="signin-edit"><input type="text" id="vPwNew" value="${genPassword()}" minlength="6" aria-label="Password"><button class="btn small primary" data-act="vpw-save" data-id="${vid}">Save</button><button class="btn small ghost" data-act="vpw-cancel">Cancel</button></div><div class="muted" style="font-size:12.5px">Signs in with their name and this password. Share it with them directly.</div>`;
   return acc ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tag ok">Sign-in active</span><button class="btn small" data-act="vpw-edit" data-id="${vid}">Reset password</button>${ui.confirm === "vpw" ? `<button class="btn small danger solid" data-act="vpw-del" data-id="${vid}">Confirm remove</button>` : `<button class="btn small ghost" data-act="vpw-ask" data-id="${vid}">Remove sign-in</button>`}</div>`
@@ -4009,7 +4034,7 @@ document.addEventListener("click", async e => {
     case "gov-filter": ui.gov = "missing"; go("roster"); break;
     case "new-event-go": go("events"); ui.eventId = null; ui.confirm = null; ui.modal = () => eventModal(null); renderOverlay(); break;
     case "import-go": go("roster"); setTimeout(() => $("#impFile")?.click(), 50); break;
-    case "theme": { const d = document.documentElement, dark = d.dataset.theme !== "dark"; d.dataset.theme = dark ? "dark" : "light"; try { localStorage.setItem("pa-theme", d.dataset.theme); } catch {} applyRealm(); renderBrandMeta(); toast(dark ? "Dark mode" : "Light mode"); break; }
+    case "theme": { const d = document.documentElement, dark = d.dataset.theme !== "dark", r = a.getBoundingClientRect(); const flip = () => { d.dataset.theme = dark ? "dark" : "light"; try { localStorage.setItem("pa-theme", d.dataset.theme); } catch {} applyRealm(); renderBrandMeta(); }; d.style.setProperty("--tx", (r.left + r.width / 2) + "px"); d.style.setProperty("--ty", (r.top + r.height / 2) + "px"); if (document.startViewTransition && !reduced()) document.startViewTransition(flip); else flip(); toast(dark ? "Dark mode" : "Light mode"); break; }
     case "motion": { const on = !document.documentElement.classList.toggle("calm"); document.documentElement.classList.toggle("calm-pick", !on); try { localStorage.setItem("pa-motion", on ? "full" : "calm"); } catch {} renderBrandMeta(); toast(on ? "Animations on" : "Calm motion"); break; }
     case "notice-ok": { const p = a.closest(".notice-panel"); ackNotices(); if (p && !reduced()) { p.classList.add("bye"); setTimeout(() => { p.remove(); renderTabs(true); }, 380); } else { p && p.remove(); renderTabs(true); } break; }
     case "callup-copy": { const t = callupText(S.events[id]); try { await navigator.clipboard.writeText(t); toast("Call-up copied · paste it in the group chat"); } catch { toast("Copy blocked by the browser"); } break; }
@@ -4064,7 +4089,8 @@ document.addEventListener("click", async e => {
     case "adm-del": { const n = S.accounts[id]?.name; await del("accounts", id); if ($("#acctBox")) { $("#acctBox").innerHTML = acctBox(); bindAcct(); } toast(`Removed ${n}`); break; }
     case "vpw-edit": ui.signinEdit = id; ui.confirm = null; $("#signinBox").innerHTML = signinHTML(id); $("#vPwNew")?.select(); break;
     case "vpw-cancel": ui.signinEdit = null; $("#signinBox").innerHTML = signinHTML(ui.drawer); break;
-    case "vpw-save": { const pw = $("#vPwNew").value; if (pw.length < 6) { toast("6+ characters"); break; } const ex = accFor(id); await put("accounts", ex ? ex[0] : uid(), { ...(ex ? ex[1] : { role: "volunteer", vid: id, created: new Date().toISOString() }), ...(await makeSecret(pw)) }); ui.signinEdit = null; $("#signinBox").innerHTML = signinHTML(id); toast(`Password set · ${pw}`); break; }
+    case "vpw-merge": { const ca = councilAccFor(id), ex = accFor(id); if (ca && ex) { if (!ca[1].vid && mode === "cloud") await cloudAccount(ca[0], { vid: id }); await del("accounts", ex[0]); } $("#signinBox").innerHTML = signinHTML(id); toast("Merged"); break; }
+    case "vpw-save": { const pw = $("#vPwNew").value; if (pw.length < 6) { toast("6+ characters"); break; } const ex = councilAccFor(id) || accFor(id); await put("accounts", ex ? ex[0] : uid(), { ...(ex ? ex[1] : { role: "volunteer", vid: id, created: new Date().toISOString() }), ...(await makeSecret(pw)) }); ui.signinEdit = null; $("#signinBox").innerHTML = signinHTML(id); toast(`Password set · ${pw}`); break; }
     case "vpw-ask": ui.confirm = "vpw"; $("#signinBox").innerHTML = signinHTML(id); break;
     case "vpw-del": { const ex = accFor(id); ui.confirm = null; if (ex) await del("accounts", ex[0]); $("#signinBox").innerHTML = signinHTML(id); toast("Sign-in removed"); break; }
     case "toggle-sec": { const k = a.dataset.sec, box = a.closest(".rsec"); ui.shut.has(k) ? ui.shut.delete(k) : ui.shut.add(k); box.classList.toggle("shut", ui.shut.has(k)); a.setAttribute("aria-expanded", String(!ui.shut.has(k))); break; }
@@ -4417,7 +4443,7 @@ function aMarkRead() {
 }
 function aListHTML() {
   const l = aMsgs(), sn = aSeen(), lastMine = [...l].reverse().find(m => m.by === session.id);
-  return l.length ? l.map(m => `<div class="m${m.by === session.id ? " me" : ""}"><span class="who">${esc(m.by === session.id ? "You" : m.role === "admin" ? (m.byName && m.byName !== "Administration" ? m.byName + " · Administration" : "Administration") : m.byName || "Head of Volunteers")} · ${esc(m.at ? new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "sending…")}${m.by === session.id ? `<button class="del" data-act="ach-del" data-id="${m.id}">Delete</button>` : ""}</span>${esc(m.text)}${lastMine && m.id === lastMine.id && sn && (sn.at || "") > (m.at || "") ? `<span class="who" style="margin:3px 0 0;text-align:right">Seen</span>` : ""}</div>`).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet.</div>`;
+  return l.length ? l.map(m => `<div class="m${m.by === session.id ? " me" : ""}"><span class="who">${esc(m.by === session.id ? "You" : m.role === "admin" ? (m.byName && m.byName !== "Administration" ? m.byName + " · Administration" : "Administration") : m.byName || "Head of Volunteers")} · ${esc(m.at ? new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "sending…")}${m.by === session.id ? `<button class="del" data-act="ach-del" data-id="${m.id}">Delete</button>` : ""}</span>${mentionHTML(m.text)}${lastMine && m.id === lastMine.id && sn && (sn.at || "") > (m.at || "") ? `<span class="who" style="margin:3px 0 0;text-align:right">Seen</span>` : ""}</div>`).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet.</div>`;
 }
 VIEWS.achat = () => `<div class="logwrap st"><section class="panel" style="--i:0"><div class="panel-head"><h2>${role() === "admin" ? "Chat with the Head of Volunteers" : "Chat with the school administration"}</h2></div>
   <div class="muted" style="font-size:13px;margin-bottom:8px">Private. Only the Head of Volunteers and the school administration can read this.</div>
@@ -4472,7 +4498,7 @@ function cgHemi() {
 }
 function cgSeatInfo() {
   const id = ui.cgSel, v = id && S.volunteers[id]; if (!v || !S.seats[id]) return `<div class="muted" style="text-align:center;font-size:13px">${cgSeats().length ? "Tap a seat to see who sits there." : "No seats yet."}</div>`;
-  const head = role() === "head", acc = accFor(id);
+  const head = role() === "head", acc = signAcc(id);
   return `<div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap"><b>${esc(v.name)}</b><span class="muted">${esc(cls(v))} · Seat ${S.seats[id].num || ""}</span>${head ? (acc ? `<span class="tag ok">Sign-in active</span>` : `<span class="tag warn">No sign-in yet · set one from the Roster</span>`) : ""}
     ${head ? (ui.cgConfirm === "seat:" + id ? `<button class="btn small danger solid" data-cg="unseat" data-id="${id}">Confirm remove seat</button><button class="btn small ghost" data-cg="noask">Cancel</button>` : `<button class="btn small ghost" data-cg="ask-unseat" data-id="${id}">Remove seat</button>`) : ""}</div>`;
 }
@@ -4513,7 +4539,7 @@ function cgBillCard(b, i) {
       ${votes.length ? `<div class="muted" style="font-size:13px;margin-bottom:8px">${["yes", "no", "abstain"].map(k => cnt(k) ? `<b>${k === "yes" ? "Yes" : k === "no" ? "No" : "Abstain"}:</b> ${names(votes.filter(c => c.vote === k).map(c => c.by))}` : "").filter(Boolean).join(" · ")}</div>` : ""}
       ${seated() && b.status === "voting" ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><span class="muted" style="align-self:center">Your vote:</span>${[["yes", "Yes"], ["no", "No"], ["abstain", "Abstain"]].map(([k, l]) => `<button class="btn small ${mine === k ? "primary" : ""}" data-cg="vote" data-id="${b.id}" data-v="${k}">${l}</button>`).join("")}</div>` : ""}
       <div class="eyebrow" style="margin:12px 0 6px">Questions</div>
-      ${msgs.length ? msgs.map(m => `<div style="margin-bottom:8px;font-size:14px"><b>${esc(m.byName || "")}${m.byTitle ? ` <span class="tag" style="margin-left:4px">${esc(m.byTitle)}</span>` : ""}</b> <span class="muted" style="font-size:12px">${m.at ? new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</span>${b.status === "voting" || role() === "head" ? ` <button class="btn small ghost" data-cg="reply" data-id="${m.id}" data-bill="${b.id}">Reply</button>` : ""}${m.by === mv || role() === "head" ? ` <button class="btn small ghost" data-cg="msgdel" data-id="${m.id}">Delete</button>` : ""}<br>${m.replyTo && S.cvotes[m.replyTo] ? `<span class="muted" style="font-size:12.5px;border-left:3px solid var(--line);padding-left:6px;display:inline-block;margin-bottom:2px">${esc(S.cvotes[m.replyTo].byName || "")}: ${esc(String(S.cvotes[m.replyTo].text).slice(0, 90))}</span><br>` : ""}${esc(m.text)}</div>`).join("") : `<div class="muted" style="font-size:13px">No questions yet.</div>`}
+      ${msgs.length ? msgs.map(m => `<div style="margin-bottom:8px;font-size:14px"><b>${esc(m.byName || "")}${m.byTitle ? ` <span class="tag" style="margin-left:4px">${esc(m.byTitle)}</span>` : ""}</b> <span class="muted" style="font-size:12px">${m.at ? new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</span>${b.status === "voting" || role() === "head" ? ` <button class="btn small ghost" data-cg="reply" data-id="${m.id}" data-bill="${b.id}">Reply</button>` : ""}${m.by === mv || role() === "head" ? ` <button class="btn small ghost" data-cg="msgdel" data-id="${m.id}">Delete</button>` : ""}<br>${m.replyTo && S.cvotes[m.replyTo] ? `<span class="muted" style="font-size:12.5px;border-left:3px solid var(--line);padding-left:6px;display:inline-block;margin-bottom:2px">${esc(S.cvotes[m.replyTo].byName || "")}: ${esc(String(S.cvotes[m.replyTo].text).slice(0, 90))}</span><br>` : ""}${mentionHTML(m.text)}</div>`).join("") : `<div class="muted" style="font-size:13px">No questions yet.</div>`}
       ${seated() && b.status === "voting" && (b.drafters || []).includes(mv) ? `<div style="margin-top:10px"><button class="btn small" data-cg="edit" data-id="${b.id}">Edit bill</button></div>` : ""}
       ${seated() || role() === "council" || role() === "head" ? `${ui.cgReply?.[b.id] && S.cvotes[ui.cgReply[b.id]] ? `<div class="muted" style="font-size:12.5px;margin-top:8px">Replying to ${esc(S.cvotes[ui.cgReply[b.id]].byName || "")}: “${esc(String(S.cvotes[ui.cgReply[b.id]].text).slice(0, 80))}” <button class="btn small ghost" data-cg="noreply" data-id="${b.id}">Cancel</button></div>` : ""}<form class="achform cgQ" data-bill="${b.id}"><textarea rows="1" maxlength="1500" required placeholder="Ask a question or answer one"></textarea><button class="btn small primary" type="submit">Send</button></form>` : ""}
       ${canDecide ? `<div class="cp-reply" style="margin-top:12px"><span class="eyebrow">Council decision</span><label class="field" style="margin-top:6px">Note (optional)<input type="text" id="cgNote-${b.id}" maxlength="500"></label><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn small" data-cg="decide" data-id="${b.id}" data-v="rejected">Not passed</button><button class="btn small primary" data-cg="decide" data-id="${b.id}" data-v="passed">Pass</button></div></div>` : ""}
@@ -4605,7 +4631,7 @@ function gMarkRead() { const l = gMsgs().at(-1); if (l && (store.get(gKey()) || 
 function gListHTML() {
   const l = gMsgs(), mv = cgMy();
   return l.length ? l.map(m => { const q = m.replyTo && S.cgchat[m.replyTo];
-    return `<div class="m${m.by === mv ? " me" : ""}"><span class="who">${esc(m.by === mv ? "You" : m.byName || "Congress")} · ${m.at ? esc(new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })) : "sending…"} ${gCanWrite() ? `<button class="del" data-cgc="reply" data-id="${m.id}">Reply</button>` : ""}${m.by === mv || role() === "head" ? `<button class="del" data-cgc="del" data-id="${m.id}">Delete</button>` : ""}</span>${q ? `<span class="who" style="border-left:3px solid currentColor;padding-left:6px;opacity:.7">${esc(q.byName || "")}: ${esc(String(q.text).slice(0, 90))}</span>` : ""}${esc(m.text)}</div>`; }).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet. Start the debate.</div>`;
+    return `<div class="m${m.by === mv ? " me" : ""}"><span class="who">${esc(m.by === mv ? "You" : m.byName || "Congress")} · ${m.at ? esc(new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })) : "sending…"} ${gCanWrite() ? `<button class="del" data-cgc="reply" data-id="${m.id}">Reply</button>` : ""}${m.by === mv || role() === "head" ? `<button class="del" data-cgc="del" data-id="${m.id}">Delete</button>` : ""}</span>${q ? `<span class="who" style="border-left:3px solid currentColor;padding-left:6px;opacity:.7">${esc(q.byName || "")}: ${esc(String(q.text).slice(0, 90))}</span>` : ""}${mentionHTML(m.text)}</div>`; }).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet. Start the debate.</div>`;
 }
 const gReplyBar = () => { const q = ui.gReply && S.cgchat[ui.gReply]; return q ? `<div class="muted" style="font-size:12.5px;margin-top:8px">Replying to ${esc(q.byName || "")}: “${esc(String(q.text).slice(0, 80))}” <button class="btn small ghost" data-cgc="noreply">Cancel</button></div>` : ""; };
 VIEWS.cgchat = () => `<div class="logwrap st"><section class="panel" style="--i:0"><div class="panel-head"><h2>Congress chat</h2></div>
@@ -4644,7 +4670,7 @@ const xUnread = () => { if (!session || !xOk()) return 0; const t = store.get(xK
 function xMarkRead() { const l = xMsgs().at(-1); if (l && (store.get(xKey()) || "") < l.at) { store.set(xKey(), l.at); renderTabs(true); } }
 function xListHTML() {
   const l = xMsgs();
-  return l.length ? l.map(m => `<div class="m${m.by === session.id ? " me" : ""}"><span class="who">${esc(m.by === session.id ? "You" : (m.byName || "") + (m.role === "admin" ? " · Administration" : m.title ? " · " + m.title : ""))} · ${m.at ? esc(new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })) : "sending…"}${m.by === session.id ? `<button class="del" data-xc="del" data-id="${m.id}">Delete</button>` : ""}</span>${esc(m.text)}</div>`).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet.</div>`;
+  return l.length ? l.map(m => `<div class="m${m.by === session.id ? " me" : ""}"><span class="who">${esc(m.by === session.id ? "You" : (m.byName || "") + (m.role === "admin" ? " · Administration" : m.title ? " · " + m.title : ""))} · ${m.at ? esc(new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })) : "sending…"}${m.by === session.id ? `<button class="del" data-xc="del" data-id="${m.id}">Delete</button>` : ""}</span>${mentionHTML(m.text)}</div>`).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet.</div>`;
 }
 VIEWS.cachat = () => `<div class="logwrap st"><section class="panel" style="--i:0"><div class="panel-head"><h2>Council and administration</h2></div>
   <div class="muted" style="font-size:13px;margin-bottom:8px">A shared chat between the Student Council and the school administration. The Head of Volunteers is in it too.</div>
@@ -4913,7 +4939,7 @@ function msgHTML(m, prev) {
   return `<div class="c-msg ${mine ? "mine" : ""} ${cont ? "cont" : ""}" data-mid="${m.id}">${cAv(m.by, name)}<div class="c-bub" tabindex="0">
     ${!mine && !cont ? `<span class="nm">${esc(name)} <small>${esc(title)}</small></span>` : ""}
     ${img ? `<img class="cimg" ${img.startsWith("data:") ? `src="${img}"` : `data-cimg="${esc(img)}"`} ${m.w && m.h ? `style="aspect-ratio:${m.w}/${m.h}"` : ""} alt="Photo from ${esc(name)}" data-cact="zoom">` : ""}
-    ${m.text ? `<span class="tx">${esc(m.text)}</span>` : ""}<span class="tm">${t}</span>${acts ? `<span class="acts">${acts}</span>` : ""}</div></div>`;
+    ${m.text ? `<span class="tx">${mentionHTML(m.text)}</span>` : ""}<span class="tm">${t}</span>${acts ? `<span class="acts">${acts}</span>` : ""}</div></div>`;
 }
 function msgsHTML() {
   const L = chatMsgs(); let out = "", day = "", prev = null;
@@ -5451,6 +5477,76 @@ function themeBtn() {
   document.body.insertAdjacentHTML("beforeend", `<div class="radar" aria-hidden="true"><i class="sweep"></i>${blips.map(([x, y, d]) => `<b style="left:${x}%;top:${y}%;--d:${d}s"></b>`).join("")}</div>`);
 }
 Object.assign(AR_UI, { "Light mode": "الوضع الفاتح", "Dark mode": "الوضع الداكن" });
+
+/* ---------- @mentions in the chats ---------- */
+const MENTION_BOX = { cText: "council", achText: "admin", gText: "congress", xText: "cadmin" };
+function mentionPeople(box) {
+  const acc = Object.values(S.accounts), hv = headVol(), out = new Map();
+  const add = (n, sub) => { n = (n || "").trim(); if (n && !out.has(n.toLowerCase())) out.set(n.toLowerCase(), { n, sub }); };
+  if (hv) add(hv.name, "Head");
+  if (box === "council" || box === "cadmin") acc.filter(a => a.role === "council").forEach(a => add(a.name, a.title || "Student Council"));
+  if (box === "admin" || box === "cadmin") acc.filter(a => a.role === "admin" && a.name && a.name !== "Administration").forEach(a => add(a.name, "Administration"));
+  if (box === "congress") cgSeats().forEach(m => { const v = S.volunteers[m.id]; v && add(v.name, cls(v)); });
+  return [...out.values()];
+}
+// Every name that can be tagged, longest first so "@Sara Ali Hassan" wins over "@Sara Ali".
+let mentionRx = null, mentionSig = "";
+function mentionRegex() {
+  const names = new Set();
+  Object.values(S.accounts).forEach(a => a.name && a.name !== "Administration" && names.add(a.name.trim()));
+  Object.values(S.volunteers).forEach(v => v.name && names.add(v.name.trim()));
+  const list = [...names].filter(n => n.length > 1).sort((a, b) => b.length - a.length), sig = list.join("|");
+  if (sig !== mentionSig) { mentionSig = sig; mentionRx = list.length ? new RegExp("@(" + list.map(n => esc(n).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")(?![\\p{L}\\p{N}])", "giu") : null; }
+  return mentionRx;
+}
+function mentionHTML(text) {
+  const h = esc(text || ""), rx = h.includes("@") && mentionRegex(); if (!rx) return h;
+  const mine = [me() && accName(me()), myVol()?.name].filter(Boolean).map(n => esc(n).toLowerCase());
+  return h.replace(rx, (all, n) => `<span class="mention${mine.includes(n.toLowerCase()) ? " me" : ""}">@${n}</span>`);
+}
+const mentionsMe = text => !!text && text.includes("@") && /class="mention me"/.test(mentionHTML(text));
+function mentionClose() { $("#mentionPop")?.remove(); ui.mention = null; }
+function mentionOpen(ta) {
+  const box = MENTION_BOX[ta.id], pos = ta.selectionStart, before = ta.value.slice(0, pos), m = before.match(/(^|\s)@([\p{L}\p{N} .'-]{0,24})$/u);
+  if (!box || !m) return mentionClose();
+  const q = m[2].toLowerCase().trim(), list = mentionPeople(box).filter(p => !q || p.n.toLowerCase().split(/\s+/).some(w => w.startsWith(q)) || p.n.toLowerCase().startsWith(q)).slice(0, 6);
+  if (!list.length) return mentionClose();
+  const sel = ui.mention && ui.mention.ta === ta ? Math.min(ui.mention.i, list.length - 1) : 0;
+  ui.mention = { ta, list, i: sel, from: pos - m[2].length - 1 };
+  let pop = $("#mentionPop"); if (!pop) { pop = document.createElement("div"); pop.id = "mentionPop"; pop.className = "mention-pop"; pop.setAttribute("role", "listbox"); document.body.appendChild(pop); }
+  pop.innerHTML = list.map((p, i) => `<button type="button" role="option" class="mp${i === sel ? " on" : ""}" data-i="${i}" aria-selected="${i === sel}"><span class="av">${esc(initials(p.n))}</span><span><b>${esc(p.n)}</b><small>${esc(p.sub || "")}</small></span></button>`).join("");
+  const r = ta.getBoundingClientRect(), w = Math.min(300, innerWidth - 24);
+  pop.style.width = w + "px"; pop.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left)) + "px"; pop.style.bottom = (innerHeight - r.top + 8) + "px";
+}
+function mentionPick(i) {
+  const M = ui.mention; if (!M) return; const p = M.list[i], ta = M.ta; if (!p) return;
+  const end = ta.selectionStart, ins = "@" + p.n + " ";
+  ta.value = ta.value.slice(0, M.from) + ins + ta.value.slice(end); const c = M.from + ins.length;
+  ta.setSelectionRange(c, c); ta.focus(); mentionClose(); ta.dispatchEvent(new Event("input", { bubbles: true }));
+}
+document.addEventListener("input", e => { if (MENTION_BOX[e.target.id]) mentionOpen(e.target); });
+document.addEventListener("keydown", e => {
+  const M = ui.mention; if (!M || e.target !== M.ta) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") { M.i = (M.i + (e.key === "ArrowDown" ? 1 : M.list.length - 1)) % M.list.length; e.preventDefault(); e.stopImmediatePropagation(); mentionOpen(M.ta); }
+  else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); e.stopImmediatePropagation(); mentionPick(M.i); }
+  else if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); mentionClose(); }
+}, true);
+document.addEventListener("pointerdown", e => { const b = e.target.closest && e.target.closest("#mentionPop .mp"); if (b) { e.preventDefault(); mentionPick(+b.dataset.i); } else if (ui.mention && e.target !== ui.mention.ta) mentionClose(); }, true);
+document.addEventListener("focusout", e => { if (ui.mention && e.target === ui.mention.ta) setTimeout(() => { if (ui.mention && document.activeElement !== ui.mention.ta) mentionClose(); }, 150); });
+addEventListener("resize", mentionClose);
+
+/* ---------- glass that catches the light under the pointer (desktop) ---------- */
+if (matchMedia("(hover:hover) and (pointer:fine)").matches) {
+  let lit = null;
+  document.addEventListener("pointermove", e => {
+    if (reduced()) return;
+    const p = e.target.closest && e.target.closest(".panel,.c-stat,.qa,.tcard,.post");
+    if (lit && lit !== p) lit.classList.remove("lit");
+    lit = p; if (!p) return;
+    const r = p.getBoundingClientRect(); p.style.setProperty("--mx", (e.clientX - r.left) + "px"); p.style.setProperty("--my", (e.clientY - r.top) + "px"); p.classList.add("lit");
+  }, { passive: true });
+}
+Object.assign(AR_UI, { "Signs in as Student Council": "يسجل الدخول كعضو في مجلس الطلبة", "Merge into council sign-in": "دمج مع حساب المجلس", "Also has a separate volunteer sign-in.": "لديه أيضًا حساب متطوع منفصل.", "Merged": "تم الدمج" });
 
 boot();
 })();

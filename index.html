@@ -1083,7 +1083,7 @@ async function cloudBoot() {
   catch { $("#view").innerHTML = `<div class="gate"><div class="gate-card panel"><img class="gate-crest" src="${crestSrc()}" alt=""><h2>Can't connect</h2><p class="muted gate-sub">Check your internet connection, then try again.</p><button class="btn primary big" onclick="location.reload()">Try again</button></div></div>`; return; }
   let x = null; try { x = JSON.parse(localStorage.getItem(SKEY)); } catch {}
   if (x && x.token) { session = x; try { await cloudPull(true); } catch { session = null; } if (session && !S.accounts[session.id]) session = null; }
-  saveSession(); render(true); setTimeout(migrateCouncil, 1500); setTimeout(provisionCouncil, 2500);
+  saveSession(); render(true); setTimeout(migrateCouncil, 1500); setTimeout(provisionCouncil, 2500); setTimeout(syncCouncil, 3500);
   setInterval(() => { if (session && !document.hidden) cloudPull(false); }, 15e3);
   document.addEventListener("visibilitychange", () => { if (!document.hidden && session) cloudPull(false); });
 }
@@ -1092,6 +1092,19 @@ async function migrateCouncil() {
   if (mode !== "cloud" || role() !== "head") return;
   try { if (localStorage.getItem("pa-scmig-1")) return; } catch {}
   try { for (const [id, a] of Object.entries(S.accounts)) if (a.role === "council") await cloudAccount(id, {}); localStorage.setItem("pa-scmig-1", "1"); } catch {}
+}
+// Council members who are also on the roster get linked to their volunteer record (matched on first and last name).
+// Same person if the first letter agrees and a key surname token of one name starts the same as a token of the other.
+const nameToks = n => normName(n).split(" ").filter(Boolean);
+function sameWho(a, b) {
+  const x = nameToks(a), y = nameToks(b); if (!x.length || !y.length || x[0][0] !== y[0][0]) return false;
+  const hit = (p, q) => q.slice(1).some(t => t.slice(0, 4) === p[p.length - 1].slice(0, 4));
+  return x.length > 1 && y.length > 1 && (hit(x, y) || hit(y, x));
+}
+const councilVol = a => { if (a.vid && S.volunteers[a.vid]) return a.vid; const m = Object.entries(S.volunteers).filter(([, v]) => !v.head && sameWho(a.name, v.name)); return m.length === 1 ? m[0][0] : null; };
+async function syncCouncil() {
+  if (mode !== "cloud" || role() !== "head") return;
+  try { for (const [id, a] of Object.entries(S.accounts)) if (a.role === "council" && !a.vid) { const v = councilVol(a); if (v) await cloudAccount(id, { vid: v }); } if (view === "settings") refresh(); } catch {}
 }
 // First time the Head opens the app online, every council member gets a permanent sign-in with a personal password. The Head sees the list once.
 async function provisionCouncil() {
@@ -1104,7 +1117,7 @@ async function provisionCouncil() {
 async function cloudSignIn(name, pw) {
   try {
     const r = await rpc("pa_login", { login: normName(name), pw });
-    session = { id: r.id, t: Date.now(), token: r.token }; await cloudPull(true); startSession(r.id, r.token); setTimeout(migrateCouncil, 1500); setTimeout(provisionCouncil, 2500); return "";
+    session = { id: r.id, t: Date.now(), token: r.token }; await cloudPull(true); startSession(r.id, r.token); setTimeout(migrateCouncil, 1500); setTimeout(provisionCouncil, 2500); setTimeout(syncCouncil, 3500); return "";
   } catch (e) { return e.code === "throttle" ? "Too many attempts. Wait 15 minutes." : e.code === "login" ? "Name or password incorrect." : "Can't reach the server. Try again."; }
 }
 
@@ -1439,7 +1452,7 @@ function alertNew() {
 }
 function renderTabs(soft) {
   const nav = $("#tabs"), list = tabsFor(), nNew = newCp() + openQ(), nAl = notices().length;
-  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "appeals" && apPending() ? `<span class="badge num">${apPending()}</span>` : ""}${k === "review" && rvPending() ? `<span class="badge num">${rvPending()}</span>` : ""}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}${k === "congress" && cgOpenBills() ? `<span class="badge num">${cgOpenBills()}</span>` : ""}${k === "cgchat" && gUnread() ? `<span class="badge num">${gUnread()}</span>` : ""}${k === "achat" && aUnread() ? `<span class="badge num">${aUnread()}</span>` : ""}${k === "c-chat" && chatUnread() ? `<span class="badge num">${chatUnread()}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
+  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "appeals" && apPending() ? `<span class="badge num">${apPending()}</span>` : ""}${k === "review" && rvPending() ? `<span class="badge num">${rvPending()}</span>` : ""}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}${k === "c-tasks" && myTaskN() ? `<span class="badge num">${myTaskN()}</span>` : ""}${k === "congress" && cgOpenBills() ? `<span class="badge num">${cgOpenBills()}</span>` : ""}${k === "cgchat" && gUnread() ? `<span class="badge num">${gUnread()}</span>` : ""}${k === "achat" && aUnread() ? `<span class="badge num">${aUnread()}</span>` : ""}${k === "c-chat" && chatUnread() ? `<span class="badge num">${chatUnread()}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
   if (nav.dataset.sig === html) return;
   nav.dataset.sig = html; nav.innerHTML = html;
   if (soft) moveInk();
@@ -2129,7 +2142,7 @@ function councilRows() {
   const extra = Object.entries(S.accounts).filter(([, a]) => a.role === "council" && !COUNCIL.some(([n]) => normName(n) === normName(a.name))).map(([id, a]) => ({ name: a.name, title: a.title, p: a.perm, acc: [id, a] }));
   return [...pre, ...extra].map((m, i) => {
     const tools = m.p ? `<span class="tag ${m.p === "pr" ? "sc" : "lead"}">${PERMS[m.p]}</span>` : "";
-    const who = `<span style="min-width:0"><b>${esc(m.name)}</b> <span class="muted" style="font-size:12.5px">${esc(m.title || "Student Council")}</span> ${tools}<span class="muted" style="font-size:12px;display:block">Username: <b>${esc(councilUser(m))}</b></span></span>`;
+    const who = `<span style="min-width:0"><b>${esc(m.name)}</b> <span class="muted" style="font-size:12.5px">${esc(m.title || "Student Council")}</span> ${tools}${m.acc && Object.entries(S.accounts).some(([i, o]) => i !== m.acc[0] && o.role === "council" && sameWho(o.name, m.acc[1].name)) ? `<span class="tag danger">Two accounts for this person</span> ` : ""}${m.acc && councilVol(m.acc[1]) ? `<span class="tag ok">Volunteer · ${esc(cls(S.volunteers[councilVol(m.acc[1])]))}</span> ` : m.acc ? `<span class="tag warn">Not on the roster</span> ` : ""}<span class="muted" style="font-size:12px;display:block">Username: <b>${esc(councilUser(m))}</b></span></span>`;
     if (m.acc) { const id = m.acc[0]; return `<div class="srow">${who}<span style="display:flex;gap:6px;align-items:center">${ui.acctReset === id ? `<input type="text" id="admPw-${id}" value="${genPassword()}" style="width:170px" aria-label="New password"><button class="btn small primary" data-act="adm-pw" data-id="${id}">Save</button>` : `<span class="tag ok">Sign-in active</span><button class="btn small" data-act="adm-reset" data-id="${id}">Reset password</button><button class="iconbtn" data-act="adm-del" data-id="${id}" aria-label="Remove ${esc(m.name)}">✕</button>`}</span></div>`; }
     return `<div class="srow">${who}<span style="display:flex;gap:6px;align-items:center">${ui.scMake === i ? `<input type="text" id="scMakePw" value="${genPassword()}" style="width:170px" aria-label="Password"><button class="btn small primary" data-act="sc-save" data-i="${i}">Save</button>` : `<span class="tag">No sign-in</span><button class="btn small primary" data-act="sc-make" data-i="${i}">Create sign-in</button>`}</span></div>`;
   }).join("");
@@ -2263,6 +2276,7 @@ ${GOV.map(([k, l, y, n]) => `<label class="field">${l}<select id="d-${k}"><optio
       <label class="field">Role<input type="text" id="dRole" value="${esc(v.role || "")}" placeholder="e.g. Shift lead" maxlength="40"></label>
     </div>
     <label class="field">Name<input type="text" id="dName" value="${esc(v.name)}"></label>
+    <label class="field">Arabic name<input type="text" id="dNameAr" dir="auto" value="${esc(v.nameAr || "")}"></label>
     ${role() === "head" && !v.head ? `<div class="field">Sign-in<div id="signinBox">${signinHTML(ui.drawer)}</div></div>` : ""}
     <label class="field">Notes<textarea id="dNotes" placeholder="Contact, availability, reasons for status…">${esc(v.notes || "")}</textarea></label>
     <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between">
@@ -2345,9 +2359,10 @@ function bindOverlay() {
       e.preventDefault(); const batches = ui.imp; ui.imp = null; closeOverlay();
       const by = {}; let n = 0;
       for (const b of batches) { if (!b.cls) continue; for (const x of b.names) if (x.on) {
-        await put("volunteers", uid(), { name: x.n, grade: Number(b.cls.slice(0, 2)), section: b.cls[2], rank: "probationary", status: "active", notes: "", joined: todayISO() });
+        await put("volunteers", uid(), { name: x.n, grade: Number(b.cls.slice(0, 2)), section: b.cls[2], rank: "probationary", status: "active", notes: "", joined: todayISO(), ...(x.ar ? { nameAr: x.ar } : {}) });
         n++; by[b.cls] = (by[b.cls] || 0) + 1; } }
       toast(`${n} added · ${Object.entries(by).map(([c, k]) => `${c} ${k}`).join(", ")}`);
+      syncCouncil();
     });
   }
   const vf = $("#volForm");
@@ -2459,6 +2474,7 @@ function bindOverlay() {
     $("#dRole").addEventListener("change", e => save({ role: e.target.value.trim() }));
     GOV.forEach(([k, l]) => $("#d-" + k).addEventListener("change", e => { save({ [k]: e.target.value }); toast(`${l} updated`); }));
     $("#dRank").addEventListener("change", e => setRank(id, e.target.value));
+    $("#dNameAr").addEventListener("change", e => save({ nameAr: e.target.value.trim() }));
     $("#dName").addEventListener("change", e => { const n = e.target.value.trim(); if (n) save({ name: n }); });
     $("#dNotes").addEventListener("change", e => save({ notes: e.target.value }));
   }
@@ -2505,13 +2521,15 @@ function tidyName(t) {
 }
 function extractNames(rows) {
   rows = rows.filter(r => Array.isArray(r) && r.some(c => String(c ?? "").trim()));
-  let hi = -1, cols = null;
+  let hi = -1, cols = null, arCol = -1;
   for (let i = 0; i < Math.min(6, rows.length) && !cols; i++) {
     const h = rows[i].map(c => String(c ?? "").trim().toLowerCase());
     const first = h.findIndex(c => /^(first|given)\s*name|^pr[ée]nom/.test(c));
     const last = h.findIndex(c => /^(last|family)\s*name|^surname|^nom( de famille)?$/.test(c));
-    const full = h.findIndex(c => /name|student|[ée]l[èe]ve|^nom/.test(c) && !/first|last|given|family|sur|pr[ée]nom|school|teacher|parent|guardian/.test(c));
-    if (first >= 0 && last >= 0) { hi = i; cols = [first, last]; }
+    const en = h.findIndex(c => /^english\s*name/.test(c)), ar = h.findIndex(c => /^arabic\s*name/.test(c));
+    const full = h.findIndex(c => /name|student|[ée]l[èe]ve|^nom/.test(c) && !/first|last|given|family|sur|pr[ée]nom|school|teacher|parent|guardian|number|arabic|birth|place|nationality|passport|iqama|id\b/.test(c));
+    if (en >= 0) { hi = i; cols = [en]; arCol = ar; }
+    else if (first >= 0 && last >= 0) { hi = i; cols = [first, last]; }
     else if (full >= 0) { hi = i; cols = [full]; }
   }
   if (!cols) {
@@ -2524,10 +2542,11 @@ function extractNames(rows) {
     const n = tidyName(cols.map(c => String(r[c] ?? "").trim()).filter(Boolean).join(" "));
     if (!looksName(n) || HEAD_RE.test(n) || LABEL_RE.test(n) || seen.has(normName(n))) continue;
     seen.add(normName(n)); out.push(n);
+    if (arCol >= 0) { const a = String(r[arCol] ?? "").replace(/\s+/g, " ").trim(); if (a && /[\u0600-\u06FF]/.test(a)) (out.ar = out.ar || {})[normName(n)] = a; }
   }
   return out;
 }
-const rosterHas = n => vols().some(v => normName(v.name) === normName(n));
+const rosterHas = n => vols().some(v => normName(v.name) === normName(n) || (v.head && sameWho(v.name, n)));
 async function importFiles(files) {
   files = [...files].filter(f => /\.(xlsx|xlsm|xls|csv|ods)$/i.test(f.name));
   if (!files.length) return toast("Excel or CSV files only.");
@@ -2539,7 +2558,7 @@ async function importFiles(files) {
     for (const sn of wb.SheetNames) {
       const names = extractNames(X.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, blankrows: false, defval: "" }));
       if (!names.length) continue;
-      batches.push({ src: wb.SheetNames.length > 1 ? `${f.name} › ${sn}` : f.name, cls: classFrom(sn) || fileCls, names: names.map(n => { const dup = rosterHas(n); return { n, dup, on: !dup && /\s/.test(n) }; }) });
+      batches.push({ src: wb.SheetNames.length > 1 ? `${f.name} › ${sn}` : f.name, cls: classFrom(sn) || fileCls, names: names.map(n => { const dup = rosterHas(n); return { n, dup, on: !dup && /\s/.test(n), ar: names.ar?.[normName(n)] || "" }; }) });
     }
   }
   if (!batches.length) return toast("No names found.");
@@ -3729,7 +3748,7 @@ async function monthPDF(ym) {
   y += 3; T("Top volunteers this month", 13, true, 7);
   const top = Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 10);
   if (!top.length) T("No hours logged this month.", 10.5, false, 6);
-  top.forEach(([id, h], i) => T(`${i + 1}.  ${S.volunteers[id].name} (${cls(S.volunteers[id])})  -  ${fmtH(h)} h`, 10.5, false, 5.8));
+  top.forEach(([id, h], i) => T(`${i + 1}.  ${S.volunteers[id].name}${S.volunteers[id].nameAr ? " / " + S.volunteers[id].nameAr : ""} (${cls(S.volunteers[id])})  -  ${fmtH(h)} h`, 10.5, false, 5.8));
   const pages = pdf.getNumberOfPages();
   for (let p = 1; p <= pages; p++) { pdf.setPage(p); pdf.setDrawColor(200, 205, 215); pdf.line(M, H - 17, W - M, H - 17); pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(110, 118, 135);
     pdf.text("Sponsored by Middle East International School. Under the supervision of the Ministry of Education.", M, H - 12); pdf.text(`${p} / ${pages}`, W - M, H - 12, { align: "right" }); }
@@ -4171,6 +4190,7 @@ function councilAllowed(coll, id) {
   if (coll === "cwork") return !S.cwork[id] || canDesk(S.cwork[id].kind);
   return false;
 }
+const myTaskN = () => !session || !inCouncilRole() ? 0 : Object.values(S.cwork).filter(t => t.kind === "task" && t.status !== "Done" && t.who === session.id && t.by !== session.id).length;
 const work = kind => Object.entries(S.cwork).map(([id, w]) => ({ id, ...w })).filter(w => w.kind === kind);
 const myStamp = () => ({ by: session.id, byName: cName(session.id), title: cMember(session.id)?.title || "", at: new Date().toISOString() });
 

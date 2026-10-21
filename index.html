@@ -893,8 +893,8 @@ const RANKS = [
 ];
 const TONES = ["teal", "violet", "rose", "blue", "brass", "grey"];
 const REPORT_KINDS = ["Event report", "Weekly summary", "Incident", "Audit"];
-const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, appeals: {}, cchat: {}, cmutes: {}, cwork: {}, achat: {}, seats: {}, bills: {}, cvotes: {}, cgchat: {}, settings: { ...DEFAULTS } };
-const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews", "appeals", "cchat", "cmutes", "cwork", "achat", "seats", "bills", "cvotes", "cgchat"];
+const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, appeals: {}, cchat: {}, cmutes: {}, cwork: {}, achat: {}, seats: {}, bills: {}, cvotes: {}, cgchat: {}, bans: {}, settings: { ...DEFAULTS } };
+const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews", "appeals", "cchat", "cmutes", "cwork", "achat", "seats", "bills", "cvotes", "cgchat", "bans"];
 let db = null, downloads = null, mode = "loading";
 const DESKTOP = !!window.PA_DESKTOP;
 let view = "dashboard";
@@ -974,7 +974,7 @@ function weeksLeft() { return Math.max(1, daysBetween(todayISO(), S.settings.yea
 
 /* ---------- persistence ---------- */
 const LKEY = "primum-auxilium-v1";
-function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, cchat: S.cchat, cmutes: S.cmutes, cwork: S.cwork, achat: S.achat, seats: S.seats, bills: S.bills, cvotes: S.cvotes, cgchat: S.cgchat, settings: S.settings }); }
+function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, cchat: S.cchat, cmutes: S.cmutes, cwork: S.cwork, achat: S.achat, seats: S.seats, bills: S.bills, cvotes: S.cvotes, cgchat: S.cgchat, bans: S.bans, settings: S.settings }); }
 async function put(coll, id, obj) {
   if (!allowed(coll, id)) { toast("View only"); return false; }
   if (mode === "cloud") return cloudPut(coll, id, obj);
@@ -1139,7 +1139,7 @@ async function boot() {
   } else {
     mode = "local";
     const saved = store.get(LKEY);
-    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, appeals: saved.appeals || {}, logs: saved.logs || {}, cchat: saved.cchat || {}, cmutes: saved.cmutes || {}, cwork: saved.cwork || {}, achat: saved.achat || {}, seats: saved.seats || {}, bills: saved.bills || {}, cvotes: saved.cvotes || {}, cgchat: saved.cgchat || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
+    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, appeals: saved.appeals || {}, logs: saved.logs || {}, cchat: saved.cchat || {}, cmutes: saved.cmutes || {}, cwork: saved.cwork || {}, achat: saved.achat || {}, seats: saved.seats || {}, bills: saved.bills || {}, cvotes: saved.cvotes || {}, cgchat: saved.cgchat || {}, bans: saved.bans || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
     else if (!DESKTOP) seedLocal();
     loadSession(); render(true);
   }
@@ -1187,8 +1187,8 @@ function moveInk() {
 /* ---------- sign-in ---------- */
 const TABS = {
   head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ["achat", "Administration"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["handbook", "Handbook"], ["settings", "Settings"]],
-  admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["appeals", "Appeals"], ["achat", "Chat with Head"], ["handbook", "Handbook"]],
-  council: [["cevents", "Events"], ["ccerts", "Certificates"], ["congress", "Congress"]],
+  admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["appeals", "Appeals"], ["achat", "Chat with Head"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["handbook", "Handbook"]],
+  council: [["cevents", "Events"], ["ccerts", "Certificates"], ["congress", "Congress"], ["cgchat", "Congress chat"]],
   volunteer: [["me", "My hours"], ["vevents", "Events"], ["vcerts", "Certificates"], ["handbook", "Handbook"], ["complain", "Questions & complaints"]]
 };
 let session = null, lastAct = Date.now(), fails = 0, lockUntil = 0;
@@ -1225,8 +1225,9 @@ function allowed(coll, id) {
   if (coll === "events") return r === "council" && (!S.events[id] || canEditEv(S.events[id]));
   if (coll === "accounts") return !!session && id === session.id;
   if (coll === "seats") return false;
+  if (coll === "bans") return r === "admin" && S.bans[id]?.status === "pending";
   if (coll === "cgchat") return r === "volunteer" && seated() && (!S.cgchat[id] || S.cgchat[id].by === myVol()?.id);
-  if (coll === "bills") return (r === "volunteer" && seated() && !S.bills[id]) || (r === "council" && S.bills[id]?.status === "voting");
+  if (coll === "bills") return (r === "volunteer" && seated() && (!S.bills[id] || (S.bills[id].status === "voting" && (S.bills[id].drafters || []).includes(myVol()?.id)))) || (r === "council" && S.bills[id]?.status === "voting");
   if (coll === "cvotes") { const c = S.cvotes[id]; return c ? (c.kind === "msg" && c.by === (myVol()?.id || session?.id)) : (r === "council" ? !id.startsWith("v:") : r === "volunteer" && seated()); }
   if (coll === "achat") return r === "admin" && (!S.achat[id] || S.achat[id].by === session.id);
   if (coll === "cchat" || coll === "cmutes" || coll === "cwork") return councilAllowed(coll, id);
@@ -1326,7 +1327,7 @@ function gateHTML() {
       <label class="field">Password<input type="password" id="gPw" required autocomplete="current-password"></label>
       <div class="gerr" id="gErr" role="alert"></div>
       <button class="btn primary big" type="submit">Sign in</button></form>
-      <p class="muted gate-note">No account? Ask the Head of Volunteers.</p>
+      <p class="muted gate-note">No account? Ask the Head of Volunteers.<br>Forgot your password? Contact the Head of Volunteers: <a href="tel:+966535346919" style="color:inherit;font-weight:700">0535346919</a></p>
       <div class="gate-links"><button class="linkbtn" data-act="gate-admin">School administration</button><button class="linkbtn" data-act="gate-recover">Head password lost</button></div>`);
 }
 function renderGate() {
@@ -1768,6 +1769,7 @@ after.log = () => {
 VIEWS.reports = () => `
   <div class="toolbar"><div style="flex:1"><h2 style="font-size:22px">Reports</h2><div class="muted" style="font-size:14px">Event reports · weekly summaries · incidents · audits</div></div>
     <button class="btn" data-act="month-open">Monthly report</button>
+    <button class="btn" data-act="export-xlsx">Export to Excel</button>
     <button class="btn" data-act="weekly">Weekly message</button>
     <button class="btn" data-act="new-report" data-audit="1">Draft audit summary</button>
     <button class="btn primary" data-act="new-report">+ New report</button></div>
@@ -2441,7 +2443,17 @@ function bindOverlay() {
   if (ui.drawer) {
     const id = ui.drawer;
     const save = patch => put("volunteers", id, { ...S.volunteers[id], ...patch });
-    $("#dStatus").addEventListener("change", e => { save({ status: e.target.value }); toast(`Status set to ${statusOf(e.target.value).label}`); });
+    $("#dStatus").addEventListener("change", async e => {
+      const v0 = S.volunteers[id], nv = e.target.value;
+      if (mode === "cloud" && nv === "blacklisted" && v0.status !== "blacklisted") {
+        e.target.value = v0.status || "active";
+        if (Object.values(S.bans).some(b => b.vid === id && b.status === "pending")) return toast("A request for this volunteer is already waiting for administration.");
+        const why = (prompt(`Why should ${v0.name} be blacklisted? The school administration has to approve it.`) || "").trim();
+        if (!why) return;
+        if (await put("bans", uid(), { vid: id, reason: why, status: "pending", by: session.id, created: new Date().toISOString() }) !== false) toast("Sent to the school administration for approval");
+        return;
+      }
+      save({ status: e.target.value }); toast(`Status set to ${statusOf(e.target.value).label}`); });
     $("#dGrade").addEventListener("change", e => { save({ grade: Number(e.target.value) }); renderOverlay(); });
     $("#dSection").addEventListener("change", e => { save({ section: e.target.value }); renderOverlay(); });
     $("#dRole").addEventListener("change", e => save({ role: e.target.value.trim() }));
@@ -3374,6 +3386,7 @@ document.addEventListener("click", async e => {
     case "ev-remove": { const ev = S.events[id]; await put("events", id, { ...ev, signups: (ev.signups || []).filter(x => x !== a.dataset.vid) }); break; }
     case "ics": icsDownload(id); break;
     case "open-log": ui.eventId = id; ui.modal = () => logModal(id); renderOverlay(); break;
+    case "export-xlsx": a.disabled = true; try { await exportXLSX(); } catch { toast("Couldn't make the file. Check your connection."); } a.disabled = false; break;
     case "month-open": ui.modal = monthModal; renderOverlay(); break;
     case "push-on": pushOn(); break;
     case "push-off": pushOff(); break;
@@ -3658,12 +3671,40 @@ function monthModal() {
     <div class="muted" style="font-size:13.5px">A PDF with hours, events, top volunteers and the shift-lead logs for that month.</div>
     <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn primary" type="submit">Download PDF</button></div></form></div>`;
 }
+// One workbook for audits: a row per volunteer, every logged hour, and every event.
+async function exportXLSX() {
+  const X = await loadXLSX(), wb = X.utils.book_new(), ents = entries().filter(x => S.volunteers[x.volunteerId]);
+  const evOf = x => (x.eventId && S.events[x.eventId]?.title) || "";
+  const rows = vols().filter(v => !v.head).sort((a, b) => cls(a).localeCompare(cls(b)) || a.name.localeCompare(b.name)).map(v => {
+    const mine = ents.filter(x => x.volunteerId === v.id && counts(x));
+    return { Name: v.name, Class: cls(v), Rank: v.rank || "", Status: statusOf(v.status).label, "Hours (signed off)": Math.round(hoursFor(v.id) * 100) / 100, "Events attended": new Set(mine.filter(x => x.eventId).map(x => x.eventId)).size, "Required hours": S.settings.goal, "Requirement met": isDone(v) ? "Yes" : "No" };
+  });
+  X.utils.book_append_sheet(wb, X.utils.json_to_sheet(rows), "Volunteers");
+  X.utils.book_append_sheet(wb, X.utils.json_to_sheet(ents.sort((a, b) => (a.date || "").localeCompare(b.date || "")).map(x => ({ Date: x.date, Volunteer: S.volunteers[x.volunteerId].name, Class: cls(S.volunteers[x.volunteerId]), Event: evOf(x), Hours: Number(x.hours) || 0, "Signed off": x.verifiedBy ? "Yes" : "No", Note: x.note || "" }))), "Hours log");
+  X.utils.book_append_sheet(wb, X.utils.json_to_sheet(Object.entries(S.events).map(([id, e]) => ({ id, ...e })).sort((a, b) => (a.date || "").localeCompare(b.date || "")).map(e => { const at = ents.filter(x => x.eventId === e.id); return { Date: e.date, Event: e.title, External: e.external ? "Yes" : "No", Location: e.location || "", Volunteers: new Set(at.map(x => x.volunteerId)).size, Hours: Math.round(at.reduce((t, x) => t + (Number(x.hours) || 0), 0) * 100) / 100 }; })), "Events");
+  await downloads.save({ filename: `primum-auxilium-audit-${todayISO()}.xlsx`, data: X.write(wb, { bookType: "xlsx", type: "array" }) });
+  toast("Excel file saved");
+}
 async function monthPDF(ym) {
   const { jsPDF } = await loadJsPDF(), pdf = new jsPDF({ unit: "mm", format: "a4" });
   const A = x => String(x || "").replace(/[–—]/g, "-").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[^\x20-\xFF]/g, "");
   const M = 16, W = 210, H = 297; let y = 20;
   const need = n => { if (y + n > H - 22) { pdf.addPage(); y = 20; } };
-  const T = (txt, size = 10.5, bold = false, gap = 5.5, x = M, col = [30, 38, 56]) => { pdf.setFont("helvetica", bold ? "bold" : "normal"); pdf.setFontSize(size); pdf.setTextColor(...col); pdf.splitTextToSize(A(txt), W - M - x).forEach(l => { need(gap); pdf.text(l, x, y); y += gap; }); };
+  const hasAr = t => /[\u0600-\u06FF\u0750-\u077F]/.test(t);
+  // The PDF font is Latin only, so any line holding Arabic is drawn by the browser (which shapes it correctly) and placed as an image.
+  const arT = (txt, size, bold, gap, x, col) => {
+    const PX = 10, mm = W - M - x, c = document.createElement("canvas"), g = c.getContext("2d"), px = size * 0.3528 * PX;
+    g.font = `${bold ? "700 " : ""}${px}px "Atkinson Hyperlegible", Tahoma, "Segoe UI", "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif`;
+    const lines = []; let cur = "";
+    for (const w of String(txt).replace(/[–—]/g, "-").split(/\s+/)) { const t = cur ? cur + " " + w : w; if (cur && g.measureText(t).width > mm * PX) { lines.push(cur); cur = w; } else cur = t; }
+    if (cur) lines.push(cur);
+    lines.forEach(l => {
+      need(gap); const lw = Math.min(mm * PX, Math.ceil(g.measureText(l).width) + 4), lh = Math.ceil(px * 1.5);
+      c.width = lw; c.height = lh; g.font = `${bold ? "700 " : ""}${px}px "Atkinson Hyperlegible", Tahoma, "Segoe UI", "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif`; g.fillStyle = `rgb(${col.join(",")})`; g.textBaseline = "alphabetic"; g.fillText(l, 0, px * 1.1);
+      pdf.addImage(c.toDataURL("image/png"), "PNG", x, y - size * 0.3528 * 1.05, lw / PX, lh / PX); y += gap;
+    });
+  };
+  const T = (txt, size = 10.5, bold = false, gap = 5.5, x = M, col = [30, 38, 56]) => { if (hasAr(String(txt))) return arT(txt, size, bold, gap, x, col); pdf.setFont("helvetica", bold ? "bold" : "normal"); pdf.setFontSize(size); pdf.setTextColor(...col); pdf.splitTextToSize(A(txt), W - M - x).forEach(l => { need(gap); pdf.text(l, x, y); y += gap; }); };
   const label = new Date(ym + "-01T12:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   try { pdf.addImage(crestSrc(), "PNG", M, 12, 18, 18); } catch {}
   pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.setTextColor(35, 50, 83); pdf.text("Primum Auxilium", M + 24, 20);
@@ -3780,13 +3821,18 @@ VIEWS.ccerts = () => {
 
 
 /* ---------- Head and administration chat (the server shows it to nobody else) ---------- */
-const aMsgs = () => Object.entries(S.achat).map(([id, m]) => ({ id, ...m })).sort((a, b) => (a.at || "").localeCompare(b.at || ""));
+const aSeen = () => Object.values(S.achat).find(m => m.kind === "seen" && m.by !== session?.id);
+const aMsgs = () => Object.entries(S.achat).map(([id, m]) => ({ id, ...m })).filter(m => m.kind !== "seen").sort((a, b) => (a.at || "").localeCompare(b.at || ""));
 const aKey = () => "pa-aread-" + session?.id;
 const aUnread = () => { if (!session || !["head", "admin"].includes(role())) return 0; const t = store.get(aKey()) || ""; return aMsgs().filter(m => m.by !== session.id && (m.at || "") > t).length; };
-function aMarkRead() { const l = aMsgs().at(-1); if (l && (store.get(aKey()) || "") < l.at) { store.set(aKey(), l.at); renderTabs(true); } }
+function aMarkRead() {
+  const l = aMsgs().at(-1); if (l && (store.get(aKey()) || "") < l.at) { store.set(aKey(), l.at); renderTabs(true); }
+  const mine = S.achat["seen:" + session.id];
+  if (mode === "cloud" && l && l.by !== session.id && (!mine || (mine.at || "") < l.at) && !ui.aSeenBusy) { ui.aSeenBusy = true; put("achat", "seen:" + session.id, {}).finally(() => { ui.aSeenBusy = false; }); }
+}
 function aListHTML() {
-  const l = aMsgs();
-  return l.length ? l.map(m => `<div class="m${m.by === session.id ? " me" : ""}"><span class="who">${esc(m.by === session.id ? "You" : m.role === "admin" ? "Administration" : m.byName || "Head of Volunteers")} · ${esc(m.at ? new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "sending…")}${m.by === session.id ? `<button class="del" data-act="ach-del" data-id="${m.id}">Delete</button>` : ""}</span>${esc(m.text)}</div>`).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet.</div>`;
+  const l = aMsgs(), sn = aSeen(), lastMine = [...l].reverse().find(m => m.by === session.id);
+  return l.length ? l.map(m => `<div class="m${m.by === session.id ? " me" : ""}"><span class="who">${esc(m.by === session.id ? "You" : m.role === "admin" ? "Administration" : m.byName || "Head of Volunteers")} · ${esc(m.at ? new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "sending…")}${m.by === session.id ? `<button class="del" data-act="ach-del" data-id="${m.id}">Delete</button>` : ""}</span>${esc(m.text)}${lastMine && m.id === lastMine.id && sn && (sn.at || "") > (m.at || "") ? `<span class="who" style="margin:3px 0 0;text-align:right">Seen</span>` : ""}</div>`).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet.</div>`;
 }
 VIEWS.achat = () => `<div class="logwrap st"><section class="panel" style="--i:0"><div class="panel-head"><h2>${role() === "admin" ? "Chat with the Head of Volunteers" : "Chat with the school administration"}</h2></div>
   <div class="muted" style="font-size:13px;margin-bottom:8px">Private. Only the Head of Volunteers and the school administration can read this.</div>
@@ -3845,13 +3891,14 @@ const cgFormat = () => `<details class="panel" style="--i:2;margin-top:12px"><su
 function cgBillForm() {
   if (!seated()) return "";
   if (!ui.cgDraft) return `<div style="margin:14px 0;display:flex;justify-content:flex-end"><button class="btn primary" data-cg="draft">Draft a bill</button></div>`;
-  const mv = myVol();
-  return `<form id="cgBillForm" class="panel stack-form" style="margin:14px 0"><div class="panel-head"><h2>Draft a bill</h2></div>
-    <label class="field">Bill title<input type="text" id="cbTitle" maxlength="150" required></label>
-    <label class="field">Full legal name<input type="text" id="cbName" maxlength="120" required value="${esc(mv ? mv.name : "")}"></label>
-    <label class="field">Proposal <span class="muted" id="cbCount" style="font-weight:400">0 of 5 paragraphs</span><textarea id="cbBody" rows="9" maxlength="8000" required placeholder="1 to 5 detailed paragraphs. Leave a blank line between paragraphs."></textarea></label>
-    <div class="field"><span>Congressmen involved <span class="muted" style="font-weight:400">(only those who helped draft it, at least 2)</span></span><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">${cgSeats().map(m => { const v = S.volunteers[m.id]; return `<label class="tag" style="display:flex;gap:6px;align-items:center;padding:6px 10px;font-size:13px"><input type="checkbox" name="cbDr" value="${m.id}" ${m.id === mv.id ? "checked disabled" : ""}>${esc(v.name)}</label>`; }).join("")}</div></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn ghost" data-cg="nodraft">Cancel</button><button class="btn primary" type="submit">Send to Congress</button></div></form>`;
+  const mv = myVol(), eb = typeof ui.cgDraft === "string" ? S.bills[ui.cgDraft] : null;
+  return `<form id="cgBillForm" class="panel stack-form" style="margin:14px 0"><div class="panel-head"><h2>${eb ? "Edit bill" : "Draft a bill"}</h2></div>
+    ${eb ? `<div class="notice"><div>Saving clears the votes so everyone votes on the new text.</div></div>` : ""}
+    <label class="field">Bill title<input type="text" id="cbTitle" maxlength="150" required value="${esc(eb ? eb.title : "")}"></label>
+    <label class="field">Full legal name<input type="text" id="cbName" maxlength="120" required value="${esc(eb ? eb.legalName : mv ? mv.name : "")}"></label>
+    <label class="field">Proposal <span class="muted" id="cbCount" style="font-weight:400">0 of 5 paragraphs</span><textarea id="cbBody" rows="9" maxlength="8000" required placeholder="1 to 5 detailed paragraphs. Leave a blank line between paragraphs.">${esc(eb ? eb.body : "")}</textarea></label>
+    <div class="field"><span>Congressmen involved <span class="muted" style="font-weight:400">(only those who helped draft it, at least 2)</span></span><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">${cgSeats().map(m => { const v = S.volunteers[m.id]; return `<label class="tag" style="display:flex;gap:6px;align-items:center;padding:6px 10px;font-size:13px"><input type="checkbox" name="cbDr" value="${m.id}" ${m.id === mv.id || (eb && (eb.drafters || []).includes(m.id)) ? "checked" : ""} ${m.id === mv.id ? "disabled" : ""}>${esc(v.name)}</label>`; }).join("")}</div></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn ghost" data-cg="nodraft">Cancel</button><button class="btn primary" type="submit">${eb ? "Save changes" : "Send to Congress"}</button></div></form>`;
 }
 function cgBillCard(b, i) {
   const t = CG_TAG[b.status] || CG_TAG.voting, vs = cgVotes(b.id), votes = vs.filter(c => c.kind === "vote"), msgs = vs.filter(c => c.kind === "msg").sort((x, y) => (x.at || "").localeCompare(y.at || ""));
@@ -3861,7 +3908,7 @@ function cgBillCard(b, i) {
   const paras = String(b.body || "").split(/\n\s*\n/).filter(x => x.trim());
   const canDecide = (role() === "council" || role() === "head") && b.status === "voting";
   return `<article class="panel cg-bill ${b.status}" style="--i:${i};margin-bottom:12px"><div class="panel-head" style="cursor:pointer" data-cg="open" data-id="${b.id}"><h2>${esc(b.title)}</h2><span class="tag ${t[1]}">${t[0]}</span></div>
-    <div class="muted" style="font-size:13px">${esc(b.legalName)} · ${b.created ? fmtDate(b.created.slice(0, 10)) : ""} · Drafted with ${names((b.drafters || []).filter(x => x !== b.by)) || "no one else"}</div>
+    <div class="muted" style="font-size:13px">${b.editedAt ? "edited · " : ""}${esc(b.legalName)} · ${b.created ? fmtDate(b.created.slice(0, 10)) : ""} · Drafted with ${names((b.drafters || []).filter(x => x !== b.by)) || "no one else"}</div>
     <div style="margin:10px 0 4px"><div class="cg-bar"><i class="y" style="width:${y / tot * 100}%"></i><i class="n" style="width:${n / tot * 100}%"></i><i class="a" style="width:${ab / tot * 100}%"></i></div><div class="muted" style="font-size:12.5px;margin-top:4px">${y} yes · ${n} no · ${ab} abstain · ${votes.length} of ${seatCount} voted</div></div>
     ${b.status !== "voting" ? `<div class="cp-reply"><span class="eyebrow">Council decision${b.decidedBy ? " · " + esc(b.decidedBy) + (b.decidedTitle ? ", " + esc(b.decidedTitle) : "") : ""}</span>${b.note ? esc(b.note) : (b.status === "passed" ? "Passed." : "Not passed.")}</div>` : ""}
     ${open ? `<div class="report-body" style="margin:12px 0">${paras.map(p => `<p style="margin:0 0 10px">${esc(p)}</p>`).join("")}</div>
@@ -3869,6 +3916,7 @@ function cgBillCard(b, i) {
       ${seated() && b.status === "voting" ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><span class="muted" style="align-self:center">Your vote:</span>${[["yes", "Yes"], ["no", "No"], ["abstain", "Abstain"]].map(([k, l]) => `<button class="btn small ${mine === k ? "primary" : ""}" data-cg="vote" data-id="${b.id}" data-v="${k}">${l}</button>`).join("")}</div>` : ""}
       <div class="eyebrow" style="margin:12px 0 6px">Questions</div>
       ${msgs.length ? msgs.map(m => `<div style="margin-bottom:8px;font-size:14px"><b>${esc(m.byName || "")}${m.byTitle ? ` <span class="tag" style="margin-left:4px">${esc(m.byTitle)}</span>` : ""}</b> <span class="muted" style="font-size:12px">${m.at ? new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</span>${b.status === "voting" || role() === "head" ? ` <button class="btn small ghost" data-cg="reply" data-id="${m.id}" data-bill="${b.id}">Reply</button>` : ""}${m.by === mv || role() === "head" ? ` <button class="btn small ghost" data-cg="msgdel" data-id="${m.id}">Delete</button>` : ""}<br>${m.replyTo && S.cvotes[m.replyTo] ? `<span class="muted" style="font-size:12.5px;border-left:3px solid var(--line);padding-left:6px;display:inline-block;margin-bottom:2px">${esc(S.cvotes[m.replyTo].byName || "")}: ${esc(String(S.cvotes[m.replyTo].text).slice(0, 90))}</span><br>` : ""}${esc(m.text)}</div>`).join("") : `<div class="muted" style="font-size:13px">No questions yet.</div>`}
+      ${seated() && b.status === "voting" && (b.drafters || []).includes(mv) ? `<div style="margin-top:10px"><button class="btn small" data-cg="edit" data-id="${b.id}">Edit bill</button></div>` : ""}
       ${seated() || role() === "council" || role() === "head" ? `${ui.cgReply?.[b.id] && S.cvotes[ui.cgReply[b.id]] ? `<div class="muted" style="font-size:12.5px;margin-top:8px">Replying to ${esc(S.cvotes[ui.cgReply[b.id]].byName || "")}: “${esc(String(S.cvotes[ui.cgReply[b.id]].text).slice(0, 80))}” <button class="btn small ghost" data-cg="noreply" data-id="${b.id}">Cancel</button></div>` : ""}<form class="achform cgQ" data-bill="${b.id}"><textarea rows="1" maxlength="1500" required placeholder="Ask a question or answer one"></textarea><button class="btn small primary" type="submit">Send</button></form>` : ""}
       ${canDecide ? `<div class="cp-reply" style="margin-top:12px"><span class="eyebrow">Council decision</span><label class="field" style="margin-top:6px">Note (optional)<input type="text" id="cgNote-${b.id}" maxlength="500"></label><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn small" data-cg="decide" data-id="${b.id}" data-v="rejected">Not passed</button><button class="btn small primary" data-cg="decide" data-id="${b.id}" data-v="passed">Pass</button></div></div>` : ""}
       ${role() === "head" ? (ui.cgConfirm === "bill:" + b.id ? `<div style="margin-top:10px"><button class="btn small danger solid" data-cg="billdel" data-id="${b.id}">Confirm delete bill</button> <button class="btn small ghost" data-cg="noask">Cancel</button></div>` : `<div style="margin-top:10px"><button class="btn small ghost" data-cg="ask-billdel" data-id="${b.id}">Delete bill</button></div>`) : ""}`
@@ -3893,15 +3941,18 @@ after.congress = () => {
     if (mode === "cloud") await cloudPull(false);
     ui.cgSel = id; ui.cgFresh = id; cgSeatFx(S.volunteers[id].name, S.seats[id]?.num || num); render(false); setTimeout(() => { ui.cgFresh = null; }, 2500);
   });
-  const body = $("#cbBody");
+  const body = $("#cbBody"); if (body) body.dispatchEvent(new Event("input"));
   body?.addEventListener("input", () => { const n = body.value.split(/\n\s*\n/).filter(x => x.trim()).length; const c = $("#cbCount"); if (c) { c.textContent = `${n} of 5 paragraphs`; c.style.color = n > 5 ? "var(--danger)" : ""; } });
   $("#cgBillForm")?.addEventListener("submit", async e => {
     e.preventDefault(); const mv = myVol(); if (!mv) return;
     const body2 = $("#cbBody").value.trim(), n = body2.split(/\n\s*\n/).filter(x => x.trim()).length, dr = [...new Set([mv.id, ...[...document.querySelectorAll('input[name=cbDr]:checked')].map(x => x.value)])];
     if (n < 1 || n > 5) return toast("The proposal needs 1 to 5 paragraphs.");
     if (dr.length < 2) return toast("A bill needs at least 2 congressmen.");
-    if (await put("bills", uid(), { title: $("#cbTitle").value.trim(), legalName: $("#cbName").value.trim(), body: body2, drafters: dr, by: mv.id, status: "voting", created: new Date().toISOString() }) === false) return;
-    ui.cgDraft = false; if (mode === "cloud") await cloudPull(false); toast("Bill sent to Congress"); render(false);
+    const eid = typeof ui.cgDraft === "string" ? ui.cgDraft : null, eb = eid && S.bills[eid];
+    if (await put("bills", eid || uid(), { title: $("#cbTitle").value.trim(), legalName: $("#cbName").value.trim(), body: body2, drafters: dr, by: eb ? eb.by : mv.id, status: "voting", created: eb ? eb.created : new Date().toISOString(), ...(eb ? { editedAt: new Date().toISOString() } : {}) }) === false) return;
+    if (eb && mode !== "cloud") for (const c of cgVotes(eid).filter(c => c.kind === "vote")) await del("cvotes", c.id);
+    ui.cgDraft = false; if (mode === "cloud") await cloudPull(false); toast(eb ? "Bill updated, votes cleared" : "Bill sent to Congress"); render(false);
+    if (eb) return;
     pushSend([{ vids: cgSeats().map(m => m.id).filter(x => x !== mv.id), staff: true, title: "New bill in Congress", body: $("#cbTitle")?.value || "A bill is open for voting", tag: "bill" }]);
   });
   document.querySelectorAll("form.cgQ").forEach(f => f.addEventListener("submit", async e => {
@@ -3927,6 +3978,7 @@ document.addEventListener("click", async e => {
     case "sel": ui.cgSel = ui.cgSel === id ? null : id; redraw(); break;
     case "open": ui.cgOpen = ui.cgOpen === id ? null : id; redraw(); break;
     case "draft": ui.cgDraft = true; redraw(); break;
+    case "edit": ui.cgDraft = id; redraw(); window.scrollTo({ top: 0, behavior: "smooth" }); break;
     case "nodraft": ui.cgDraft = false; redraw(); break;
     case "ask-unseat": ui.cgConfirm = "seat:" + id; redraw(); break;
     case "ask-billdel": ui.cgConfirm = "bill:" + id; redraw(); break;
@@ -3948,19 +4000,20 @@ document.addEventListener("click", async e => {
 /* ---------- Congress chat (Head and seated volunteers) ---------- */
 const gMsgs = () => Object.entries(S.cgchat).map(([id, m]) => ({ id, ...m })).sort((a, b) => (a.at || "").localeCompare(b.at || ""));
 const gKey = () => "pa-gread-" + session?.id;
-const gOk = () => role() === "head" || seated();
+const gOk = () => ["head", "council", "admin"].includes(role()) || seated();
+const gCanWrite = () => role() === "head" || seated();
 const gUnread = () => { if (!session || !gOk()) return 0; const t = store.get(gKey()) || ""; return gMsgs().filter(m => m.by !== cgMy() && (m.at || "") > t).length; };
 function gMarkRead() { const l = gMsgs().at(-1); if (l && (store.get(gKey()) || "") < l.at) { store.set(gKey(), l.at); renderTabs(true); } }
 function gListHTML() {
   const l = gMsgs(), mv = cgMy();
   return l.length ? l.map(m => { const q = m.replyTo && S.cgchat[m.replyTo];
-    return `<div class="m${m.by === mv ? " me" : ""}"><span class="who">${esc(m.by === mv ? "You" : m.byName || "Congress")} · ${m.at ? esc(new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })) : "sending…"} <button class="del" data-cgc="reply" data-id="${m.id}">Reply</button>${m.by === mv || role() === "head" ? `<button class="del" data-cgc="del" data-id="${m.id}">Delete</button>` : ""}</span>${q ? `<span class="who" style="border-left:3px solid currentColor;padding-left:6px;opacity:.7">${esc(q.byName || "")}: ${esc(String(q.text).slice(0, 90))}</span>` : ""}${esc(m.text)}</div>`; }).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet. Start the debate.</div>`;
+    return `<div class="m${m.by === mv ? " me" : ""}"><span class="who">${esc(m.by === mv ? "You" : m.byName || "Congress")} · ${m.at ? esc(new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })) : "sending…"} ${gCanWrite() ? `<button class="del" data-cgc="reply" data-id="${m.id}">Reply</button>` : ""}${m.by === mv || role() === "head" ? `<button class="del" data-cgc="del" data-id="${m.id}">Delete</button>` : ""}</span>${q ? `<span class="who" style="border-left:3px solid currentColor;padding-left:6px;opacity:.7">${esc(q.byName || "")}: ${esc(String(q.text).slice(0, 90))}</span>` : ""}${esc(m.text)}</div>`; }).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet. Start the debate.</div>`;
 }
 const gReplyBar = () => { const q = ui.gReply && S.cgchat[ui.gReply]; return q ? `<div class="muted" style="font-size:12.5px;margin-top:8px">Replying to ${esc(q.byName || "")}: “${esc(String(q.text).slice(0, 80))}” <button class="btn small ghost" data-cgc="noreply">Cancel</button></div>` : ""; };
 VIEWS.cgchat = () => `<div class="logwrap st"><section class="panel" style="--i:0"><div class="panel-head"><h2>Congress chat</h2></div>
-  <div class="muted" style="font-size:13px;margin-bottom:8px">Debate here. Only congressmen and the Head of Volunteers can read and write.</div>
+  <div class="muted" style="font-size:13px;margin-bottom:8px">Where Congress debates. The Head of Volunteers, the Student Council and the school administration can read it.</div>
   <div class="ach" id="gList">${gListHTML()}</div><div id="gReply">${gReplyBar()}</div>
-  <form class="achform" id="gForm"><textarea id="gText" rows="1" maxlength="2000" placeholder="Write a message" required></textarea><button class="btn primary" type="submit">Send</button></form></section></div>`;
+  ${gCanWrite() ? `<form class="achform" id="gForm"><textarea id="gText" rows="1" maxlength="2000" placeholder="Write a message" required></textarea><button class="btn primary" type="submit">Send</button></form>` : `<div class="muted" style="font-size:13px;margin-top:10px">You can read the debate. Only congressmen and the Head of Volunteers write here.</div>`}</section></div>`;
 after.cgchat = () => {
   const L = $("#gList"); if (L) L.scrollTop = L.scrollHeight; gMarkRead();
   const ta = $("#gText");
@@ -3987,7 +4040,8 @@ document.addEventListener("click", async e => {
 
 /* ---------- appeals ---------- */
 const apList = () => Object.entries(S.appeals).map(([id, a]) => ({ id, ...a })).sort((a, b) => (a.status === "pending" ? 0 : 1) - (b.status === "pending" ? 0 : 1) || (b.created || "").localeCompare(a.created || ""));
-const apPending = () => Object.values(S.appeals).filter(a => a.status === "pending").length;
+const bnList = () => Object.entries(S.bans).map(([id, b]) => ({ id, ...b })).sort((a, b) => (a.status === "pending" ? 0 : 1) - (b.status === "pending" ? 0 : 1) || (b.created || "").localeCompare(a.created || ""));
+const apPending = () => Object.values(S.appeals).filter(a => a.status === "pending").length + (role() === "admin" ? Object.values(S.bans).filter(b => b.status === "pending").length : 0);
 const AP_TAG = { pending: ["Waiting", "warn"], approved: ["Approved", "ok"], denied: ["Denied", "danger"] };
 VIEWS.appeal = () => {
   const mine = apList(), pend = mine.some(a => a.status === "pending");
@@ -4003,9 +4057,26 @@ after.appeal = () => {
     if (ok !== false) { toast("Appeal sent"); pushSend([{ staff: true, title: "New appeal", body: v ? v.name : "A volunteer", tag: "ap" }]); }
   });
 };
+function bnSection() {
+  const L = bnList(); if (!L.length) return "";
+  const t = { pending: ["Waiting for administration", "warn"], approved: ["Blacklisted", "danger"], denied: ["Not approved", "ok"] };
+  return `<div class="eyebrow sec-title">Blacklist requests</div><div class="muted" style="font-size:13px;margin:-4px 0 8px">The Head asks, the school administration approves. Nobody is blacklisted alone.</div><div class="st">${L.map((b, i) => { const v = S.volunteers[b.vid], tg = t[b.status] || t.pending;
+    return `<article class="panel" style="--i:${i};margin-bottom:12px"><div class="panel-head"><h2>${esc(v ? v.name : "Removed volunteer")} <span class="muted" style="font-size:13px">${v ? cls(v) : ""}</span></h2><span class="tag ${tg[1]}">${tg[0]}</span></div>
+    <div class="muted" style="font-size:13px">${b.created ? fmtDate(b.created.slice(0, 10)) : ""}</div><div class="report-body" style="margin:10px 0">${esc(b.reason)}</div>
+    ${b.status !== "pending" && b.note ? `<div class="cp-reply"><span class="eyebrow">Decision${b.decidedBy ? " · " + esc(b.decidedBy) : ""}</span>${esc(b.note)}</div>` : ""}
+    ${role() === "admin" && b.status === "pending" ? `<label class="field" style="margin-top:8px">Note (optional)<input type="text" id="bnn-${b.id}" maxlength="500"></label><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px"><button class="btn small" data-bn="no" data-id="${b.id}">Do not approve</button><button class="btn small danger solid" data-bn="ok" data-id="${b.id}">Approve blacklist</button></div>` : ""}
+    ${role() === "head" && b.status === "pending" ? `<div style="display:flex;justify-content:flex-end"><button class="btn small ghost" data-bn="cancel" data-id="${b.id}">Cancel request</button></div>` : ""}</article>`; }).join("")}</div>`;
+}
+document.addEventListener("click", async e => {
+  const a = e.target.closest("[data-bn]"); if (!a) return; const id = a.dataset.id, b = S.bans[id]; if (!b) return;
+  if (a.dataset.bn === "cancel") { if (await del("bans", id) !== false) { if (mode === "cloud") await cloudPull(false); toast("Request cancelled"); if (view === "appeals") refresh(); } return; }
+  const st = a.dataset.bn === "ok" ? "approved" : "denied";
+  if (await put("bans", id, { ...b, status: st, note: ($("#bnn-" + id)?.value || "").trim() }) === false) return;
+  if (mode === "cloud") await cloudPull(false); toast(st === "approved" ? "Blacklist approved" : "Not approved"); if (view === "appeals") refresh();
+});
 VIEWS.appeals = () => {
   const list = apList(), canDecide = role() === "head" || role() === "admin";
-  return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Appeals</h2><div class="muted" style="font-size:14px">From blacklisted volunteers${canDecide ? " · approving lifts the blacklist" : " · view only, the Head of Volunteers or administration decides"}</div></div></div>
+  return bnSection() + `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Appeals</h2><div class="muted" style="font-size:14px">From blacklisted volunteers${canDecide ? " · approving lifts the blacklist" : " · view only, the Head of Volunteers or administration decides"}</div></div></div>
   <div class="st">${list.length ? list.map((a, i) => { const v = S.volunteers[a.vid], t = AP_TAG[a.status] || AP_TAG.pending;
     return `<article class="panel" style="--i:${i};margin-bottom:12px"><div class="panel-head"><h2>${esc(v ? v.name : a.name || "Removed volunteer")} <span class="muted" style="font-size:13px">${v ? cls(v) : ""}</span></h2><span class="tag ${t[1]}">${t[0]}</span></div>
     <div class="muted" style="font-size:13px">${a.created ? fmtDate(a.created.slice(0, 10)) : ""}</div><div class="report-body" style="margin:10px 0">${esc(a.message)}</div>
@@ -4033,7 +4104,7 @@ function realm() {
   return ui.realm;
 }
 function setRealm(r) { realm(); ui.realm = r; store.set("pa-realm-" + session.id, r); }
-function councilTabs() { return [...C_TABS.map(([k, l]) => [k, l]), ...(role() === "head" ? [["cgchat", "Congress chat"]] : [])]; }
+function councilTabs() { return [...C_TABS.map(([k, l]) => [k, l]), ["cgchat", "Congress chat"]]; }
 function initRealm() { ui.realmFor = null; if (role() === "council") { setRealm("council"); ui.realmIntro = true; } }
 const cLogo = () => $("#councilLogo").src;
 const cLogoInk = () => $("#councilLogoInk").src;

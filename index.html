@@ -3200,7 +3200,8 @@ function idNumber(v) {
 const CARD_EMB = {
   president: "M3 18h18M4 18 3 7l5 4 4-7 4 7 5-4-1 11",
   vp: "M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6-4.4-4.2 6-.8z",
-  aide: "M9 4h6v3H9zM8 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2M8 12h8M8 16h5",
+  aide: "M12 1.4a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2zM12 4.2c-2.8 2-4 4.2-3.3 6.4.4 1.1 1.7 1.9 3.3 1.9s2.9-.8 3.3-1.9c.7-2.2-.5-4.4-3.3-6.4zM13.6 6.3l-2.3 2.9M9 12.5h6M10 12.5l-.9 5.5M14 12.5l.9 5.5M7.5 18h9M6 21.5h12M7 21.5l.5-3.5M17 21.5l-.5-3.5",
+  logistics: "M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9M8 5.3l8 4.5",
   newspaper: "M4 5h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2zM17 9h3v10a2 2 0 0 1-2 2M7 9h7M7 13h7M7 17h4",
   academics: "M2 9l10-5 10 5-10 5zM6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5M22 9v6",
   finance: "M12 2v20M17 6.5c-.8-1.6-2.7-2.5-5-2.5-2.8 0-5 1.4-5 3.6 0 5 10 2.6 10 7.6 0 2.2-2.2 3.8-5 3.8-2.6 0-4.6-1-5.4-2.8",
@@ -3225,25 +3226,26 @@ async function drawCard(canvas, vid) {
   const D = "'Cinzel', Georgia, serif", B = "'Atkinson Hyperlegible', system-ui, sans-serif", M = "'IBM Plex Mono', monospace", AR = "'Atkinson Hyperlegible', Tahoma, 'Segoe UI', 'Noto Naskh Arabic', 'Noto Sans Arabic', sans-serif";
   const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
   const spaced = (t, x, y, sp, align = "left") => { const w = [...t].reduce((a, c) => a + ctx.measureText(c).width + sp, -sp); let cx = align === "right" ? x - w : align === "center" ? x - w / 2 : x; ctx.textAlign = "left"; for (const c of t) { ctx.fillText(c, cx, y); cx += ctx.measureText(c).width + sp; } return w; };
-  const rk = rankOf(v), lead = v.head || /head/i.test(v.role || "");
+  const rk = rankOf(v), lead = v.head || /head/i.test(v.role || ""), lg = !cc && !lead && rk?.id === "logistics";
   // Accent per rank: gold for the Head, then the rank colours used across the app.
-  const acc = cc ? ["#F2B8BF", "#A3293A"] : lead ? ["#E9C46A", "#B8862B"] : { probationary: ["#D5DAE2", "#8A94A6"], elected: ["#5FD3D9", "#1C8C96"], supervisory: ["#C7A6F5", "#7A52C2"], logistics: ["#F2F2F2", "#7B7B7B"] }[rk?.id] || ["#D5DAE2", "#8A94A6"];
+  const acc = cc ? ["#F2B8BF", "#A3293A"] : lg ? ["#FFFFFF", "#8A8A8A"] : lead ? ["#E9C46A", "#B8862B"] : { probationary: ["#D5DAE2", "#8A94A6"], elected: ["#5FD3D9", "#1C8C96"], supervisory: ["#C7A6F5", "#7A52C2"], logistics: ["#F2F2F2", "#7B7B7B"] }[rk?.id] || ["#D5DAE2", "#8A94A6"];
   ctx.save(); rr(0, 0, W, H, 34); ctx.clip();
   // Night background with a soft glow in the rank colour
-  let g = ctx.createLinearGradient(0, 0, W, H); if (cc) { g.addColorStop(0, "#22090D"); g.addColorStop(.55, "#3B0F16"); g.addColorStop(1, "#120507"); } else { g.addColorStop(0, "#0E1830"); g.addColorStop(.55, "#15233F"); g.addColorStop(1, "#0A1122"); } ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  let g = ctx.createLinearGradient(0, 0, W, H); if (lg) { g.addColorStop(0, "#111111"); g.addColorStop(.55, "#1C1C1C"); g.addColorStop(1, "#030303"); } else if (cc) { g.addColorStop(0, "#22090D"); g.addColorStop(.55, "#3B0F16"); g.addColorStop(1, "#120507"); } else { g.addColorStop(0, "#0E1830"); g.addColorStop(.55, "#15233F"); g.addColorStop(1, "#0A1122"); } ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   g = ctx.createRadialGradient(W - 120, 40, 10, W - 120, 40, 520); g.addColorStop(0, acc[1] + "55"); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  g = ctx.createRadialGradient(80, H, 10, 80, H, 460); g.addColorStop(0, cc ? "rgba(91,20,27,.55)" : "rgba(102,117,137,.35)"); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(80, H, 10, 80, H, 460); g.addColorStop(0, lg ? "rgba(255,255,255,.08)" : cc ? "rgba(91,20,27,.55)" : "rgba(102,117,137,.35)"); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   // Security-print rings and a fine diagonal weave
   ctx.strokeStyle = "rgba(255,255,255,.05)"; ctx.lineWidth = 1;
   for (let r = 40; r < 900; r += 14) { ctx.beginPath(); ctx.arc(W - 150, H + 40, r, Math.PI, Math.PI * 2); ctx.stroke(); }
   ctx.strokeStyle = "rgba(255,255,255,.025)"; for (let x = -H; x < W; x += 9) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke(); }
+  if (lg) { ctx.strokeStyle = "rgba(255,255,255,.035)"; for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); } for (let y = 0; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); } }
   if (cc) { ctx.fillStyle = "rgba(242,184,191,.07)"; const star = (x, y, r) => { ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * .45 : r; ctx.lineTo(x + q * Math.cos(a), y + q * Math.sin(a)); } ctx.closePath(); ctx.fill(); }; for (let y = 30, row = 0; y < H; y += 90, row++) for (let x = (row % 2) * 70 + 30; x < W; x += 140) star(x, y, 9); }
   // Large faded crest
   if (cc && councilImg?.naturalWidth) { const cw = 640, ch = cw * councilImg.naturalHeight / councilImg.naturalWidth; ctx.globalAlpha = .08; ctx.drawImage(councilImg, W - cw + 120, 150, cw, ch); ctx.globalAlpha = 1; } else if (crestImg.naturalWidth) { const ch = 560, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.globalAlpha = .07; ctx.drawImage(crestImg, W - cw + 70, 70, cw, ch); ctx.globalAlpha = 1; }
   // Header: crest, team name, school
   if (crestImg.naturalWidth) { const ch = 84, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.save(); ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4; ctx.drawImage(crestImg, 48, 36, cw, ch); ctx.restore(); }
-  ctx.fillStyle = "#FFFFFF"; ctx.font = `700 30px ${D}`; ctx.textAlign = "left"; ctx.fillText(cc ? "STUDENT COUNCIL" : (S.settings.teamName || "Primum Auxilium").toUpperCase(), 130, 78);
-  ctx.fillStyle = cc ? "rgba(242,184,191,.8)" : "rgba(201,206,214,.75)"; ctx.font = `700 13px ${B}`; spaced(cc ? "M-EIS LA PASIÓN  ·  " + (S.settings.teamName || "Primum Auxilium").toUpperCase() + " VOLUNTEER" : "VOLUNTEERING TEAM  ·  " + SCHOOL.toUpperCase(), 131, 104, 2.4);
+  ctx.fillStyle = "#FFFFFF"; ctx.font = `700 30px ${D}`; ctx.textAlign = "left"; ctx.fillText(lg ? "LOGISTICS" : cc ? "STUDENT COUNCIL" : (S.settings.teamName || "Primum Auxilium").toUpperCase(), 130, 78);
+  ctx.fillStyle = cc ? "rgba(242,184,191,.8)" : "rgba(201,206,214,.75)"; ctx.font = `700 13px ${B}`; spaced(lg ? (S.settings.teamName || "Primum Auxilium").toUpperCase() + "  ·  VOLUNTEERING TEAM  ·  MEIS" : cc ? "M-EIS LA PASIÓN  ·  " + (S.settings.teamName || "Primum Auxilium").toUpperCase() + " VOLUNTEER" : "VOLUNTEERING TEAM  ·  " + SCHOOL.toUpperCase(), 131, 104, 2.4);
   // Year pill
   ctx.font = `600 18px ${M}`; const yr = s_year(), yw = ctx.measureText(yr).width + 34;
   rr(W - 48 - yw, 52, yw, 38, 19); ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.lineWidth = 1.5; ctx.stroke();
@@ -3252,10 +3254,11 @@ async function drawCard(canvas, vid) {
   const mx = 48, my = 172, ms = 150;
   ctx.save(); ctx.shadowColor = acc[1] + "AA"; ctx.shadowBlur = 30; rr(mx, my, ms, ms, 30); g = ctx.createLinearGradient(mx, my, mx + ms, my + ms); g.addColorStop(0, acc[0]); g.addColorStop(1, acc[1]); ctx.fillStyle = g; ctx.fill(); ctx.restore();
   rr(mx + 6, my + 6, ms - 12, ms - 12, 25); ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.lineWidth = 1.5; ctx.stroke();
-  if (cc && CARD_EMB[cc.perm]) {
-    ctx.save(); ctx.translate(mx + 27, my + 27); ctx.scale(4, 4); ctx.strokeStyle = "#3B0F16"; ctx.lineWidth = 1.9; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.stroke(new Path2D(CARD_EMB[cc.perm])); ctx.restore();
+  const emb = lg ? "logistics" : cc && cc.perm;
+  if (CARD_EMB[emb]) {
+    ctx.save(); ctx.translate(mx + 27, my + 27); ctx.scale(4, 4); ctx.strokeStyle = lg ? "#0A0A0A" : "#3B0F16"; ctx.lineWidth = 1.9; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.stroke(new Path2D(CARD_EMB[emb])); ctx.restore();
     // a small star on the tile marks it as a council emblem
-    ctx.fillStyle = "#FFFFFF"; ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 5 : 11; ctx.lineTo(mx + ms - 22 + q * Math.cos(a), my + 22 + q * Math.sin(a)); } ctx.closePath(); ctx.fill();
+    if (cc) { ctx.fillStyle = "#FFFFFF"; ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 5 : 11; ctx.lineTo(mx + ms - 22 + q * Math.cos(a), my + 22 + q * Math.sin(a)); } ctx.closePath(); ctx.fill(); }
   } else { ctx.fillStyle = cc ? "#3B0F16" : "#0E1830"; ctx.font = `700 62px ${D}`; ctx.textAlign = "center"; ctx.fillText(initials(v.name), mx + ms / 2, my + ms / 2 + 22); }
   // Name (up to two lines), Arabic name under it
   const nx = mx + ms + 36, maxW = W - nx - 48; let size = 54; ctx.textAlign = "left"; ctx.font = `700 ${size}px ${D}`;
@@ -3268,7 +3271,7 @@ async function drawCard(canvas, vid) {
   g = ctx.createLinearGradient(nx, 0, nx + 260, 0); g.addColorStop(0, acc[0]); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(nx, ruleY, 260, 3);
   if (v.nameAr) { ctx.save(); ctx.direction = "rtl"; ctx.textAlign = "left"; ctx.font = `600 26px ${AR}`; ctx.fillStyle = "rgba(201,206,214,.85)"; ctx.fillText(v.nameAr, nx, ruleY + 40); ctx.restore(); }
   // Details
-  const fields = cc ? [["CLASS", cls(v) || "—"], ["COUNCIL", "2026–27".replace("2026–27", s_year())], ["DESK", cc.title]] : [["CLASS", cls(v) || "—"], ["RANK", lead ? "Head" : rk ? rk.label.replace(/ Volunteer$/, "") : "Volunteer"], ["ROLE", v.role || (rk?.id === "logistics" ? "Logistics" : "Volunteer")]];
+  const fields = cc ? [["CLASS", cls(v) || "—"], ["COUNCIL", "2026–27".replace("2026–27", s_year())], ["DESK", cc.title]] : [["CLASS", cls(v) || "—"], ["RANK", lead ? "Head" : rk ? rk.label.replace(/ Volunteer$/, "") : "Volunteer"], ["ROLE", v.role || (lg ? "Head of Logistics" : "Volunteer")]];
   let fx = 48; const fy = 392;
   fields.forEach(([l, val], i) => {
     ctx.fillStyle = "rgba(201,206,214,.6)"; ctx.font = `700 13px ${B}`; spaced(l, fx, fy, 3);
@@ -3285,7 +3288,7 @@ async function drawCard(canvas, vid) {
   // Holographic seal
   const sx = W - 104, sy = by + 66, sr = 50;
   ctx.save(); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.clip();
-  if (ctx.createConicGradient) { g = ctx.createConicGradient(0.6, sx, sy); (cc ? ["#F2B8BF", "#C25661", "#FFE3C2", "#E6A1A9", "#F2B8BF"] : ["#9BE7FF", "#C7A6F5", "#FFD6A5", "#B5F5C8", "#9BE7FF"]).forEach((c, i) => g.addColorStop(i / 4, c)); } else { g = ctx.createLinearGradient(sx - sr, sy - sr, sx + sr, sy + sr); g.addColorStop(0, "#9BE7FF"); g.addColorStop(.5, "#C7A6F5"); g.addColorStop(1, "#FFD6A5"); }
+  if (ctx.createConicGradient) { g = ctx.createConicGradient(0.6, sx, sy); (lg ? ["#FFFFFF", "#8C8C8C", "#E6E6E6", "#5E5E5E", "#FFFFFF"] : cc ? ["#F2B8BF", "#C25661", "#FFE3C2", "#E6A1A9", "#F2B8BF"] : ["#9BE7FF", "#C7A6F5", "#FFD6A5", "#B5F5C8", "#9BE7FF"]).forEach((c, i) => g.addColorStop(i / 4, c)); } else { g = ctx.createLinearGradient(sx - sr, sy - sr, sx + sr, sy + sr); g.addColorStop(0, "#9BE7FF"); g.addColorStop(.5, "#C7A6F5"); g.addColorStop(1, "#FFD6A5"); }
   ctx.fillStyle = g; ctx.fillRect(sx - sr, sy - sr, sr * 2, sr * 2);
   ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1; for (let r = 8; r < sr; r += 6) { ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.stroke(); }
   if (cc && councilImg?.naturalWidth) { ctx.beginPath(); ctx.arc(sx, sy, 34, 0, Math.PI * 2); ctx.fillStyle = "#4A1219"; ctx.fill(); const cw = 60, ch = cw * councilImg.naturalHeight / councilImg.naturalWidth; ctx.drawImage(councilImg, sx - cw / 2, sy - ch / 2, cw, ch); } else if (crestImg.naturalWidth) { const ch = 58, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.globalAlpha = .9; ctx.drawImage(crestImg, sx - cw / 2, sy - ch / 2, cw, ch); ctx.globalAlpha = 1; }

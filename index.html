@@ -3201,41 +3201,75 @@ async function drawCard(canvas, vid) {
   fontsReady = fontsReady || Promise.all(["700 80px 'Cinzel'", "600 40px 'Cinzel'", "400 28px 'Atkinson Hyperlegible'", "700 28px 'Atkinson Hyperlegible'", "500 20px 'IBM Plex Mono'"].map(f => document.fonts ? document.fonts.load(f).catch(() => {}) : null));
   await fontsReady; await crestReady;
   const W = 1012, H = 638, ctx = canvas.getContext("2d"), k = canvas.width / W;
-  ctx.setTransform(k, 0, 0, k, 0, 0);
-  const D = "'Cinzel', Georgia, serif", B = "'Atkinson Hyperlegible', system-ui, sans-serif", M = "'IBM Plex Mono', monospace";
+  ctx.setTransform(k, 0, 0, k, 0, 0); ctx.clearRect(0, 0, W, H);
+  const D = "'Cinzel', Georgia, serif", B = "'Atkinson Hyperlegible', system-ui, sans-serif", M = "'IBM Plex Mono', monospace", AR = "'Atkinson Hyperlegible', Tahoma, 'Segoe UI', 'Noto Naskh Arabic', 'Noto Sans Arabic', sans-serif";
   const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
-  ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H); ctx.save(); rr(0, 0, W, H, 36); ctx.clip();
-  ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
-  const lw = 360;
-  ctx.fillStyle = CERT.green; ctx.fillRect(0, 0, lw, H * .66); ctx.fillStyle = CERT.brass; ctx.fillRect(0, H * .66, lw, H * .34);
-  ctx.fillStyle = CERT.silver; ctx.fillRect(lw, 0, 8, H);
-  if (crestImg.naturalWidth) { const ch = 330, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.save(); ctx.shadowColor = "rgba(0,0,0,.35)"; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6; ctx.drawImage(crestImg, lw / 2 - cw / 2, 70, cw, ch); ctx.restore(); }
-  ctx.textAlign = "center"; ctx.fillStyle = "#FFFFFF"; ctx.font = `700 22px ${B}`;
-  const spaced = (t, x, y, sp, align) => { const w = [...t].reduce((a, c) => a + ctx.measureText(c).width + sp, -sp); let cx = align === "left" ? x : x - w / 2; const prev = ctx.textAlign; ctx.textAlign = "left"; for (const c of t) { ctx.fillText(c, cx, y); cx += ctx.measureText(c).width + sp; } ctx.textAlign = prev; };
-  spaced("VOLUNTEER", lw / 2, 520, 8); ctx.font = `500 20px ${M}`; ctx.globalAlpha = .85; ctx.fillText(`${s_year()}`, lw / 2, 560); ctx.globalAlpha = 1;
-  const x0 = lw + 56; ctx.textAlign = "left";
-  ctx.fillStyle = CERT.brass; ctx.font = `700 20px ${B}`; spaced((S.settings.teamName || "Primum Auxilium").toUpperCase(), x0, 92, 5, "left");
-  let size = 64; ctx.font = `700 ${size}px ${D}`; const maxW = W - x0 - 50;
-  const words = v.name.split(" "); let l1 = v.name, l2 = "";
-  while (ctx.measureText(l1).width > maxW && size > 40) { size -= 4; ctx.font = `700 ${size}px ${D}`; }
-  if (ctx.measureText(l1).width > maxW && words.length > 1) { l1 = words.slice(0, Math.ceil(words.length / 2)).join(" "); l2 = words.slice(Math.ceil(words.length / 2)).join(" "); }
-  ctx.fillStyle = CERT.ink; ctx.fillText(l1, x0, 190); if (l2) ctx.fillText(l2, x0, 190 + size * 1.05);
-  let y = l2 ? 190 + size * 1.05 + 60 : 252;
-  ctx.fillStyle = CERT.muted; ctx.font = `700 26px ${B}`; ctx.fillText(`Class ${cls(v)}${v.role ? "  ·  " + v.role : ""}`, x0, y);
-  const rk = rankOf(v);
-  if (rk) {
-    y += 34; ctx.font = `700 19px ${B}`; const label = rk.label.toUpperCase(), tw = [...label].reduce((a, c) => a + ctx.measureText(c).width + 3, -3) + 32;
-    const pal = { probationary: ["#FFFFFF", CERT.muted, CERT.silver], elected: ["#D8EEF0", "#1C7480"], supervisory: ["#E9E1F5", "#6A4C9C"], logistics: ["#050505", "#F4F4F4"] }[rk.id];
-    rr(x0, y, tw, 40, 8); ctx.fillStyle = pal[0]; ctx.fill(); if (pal[2]) { ctx.strokeStyle = pal[2]; ctx.lineWidth = 2; ctx.stroke(); }
-    ctx.fillStyle = pal[1]; spaced(label, x0 + 16, y + 27, 3, "left");
-  }
-  ctx.strokeStyle = CERT.silver; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0, 470); ctx.lineTo(W - 50, 470); ctx.stroke();
-  ctx.fillStyle = CERT.muted; ctx.font = `700 15px ${B}`; spaced("ID NUMBER", x0, 505, 3, "left"); spaced("VALID", x0 + 300, 505, 3, "left");
-  ctx.fillStyle = CERT.ink; ctx.font = `600 30px ${M}`; ctx.fillText(idNumber({ ...v, id: vid }), x0, 545);
-  ctx.font = `600 26px ${M}`; ctx.fillText(`Until ${fmtDate(S.settings.yearEnd, { month: "short", year: "numeric" })}`, x0 + 300, 545);
-  ctx.fillStyle = CERT.green; ctx.fillRect(lw + 8, H - 26, W, 14); ctx.fillStyle = CERT.silver; ctx.fillRect(lw + 8, H - 12, W, 12);
+  const spaced = (t, x, y, sp, align = "left") => { const w = [...t].reduce((a, c) => a + ctx.measureText(c).width + sp, -sp); let cx = align === "right" ? x - w : align === "center" ? x - w / 2 : x; ctx.textAlign = "left"; for (const c of t) { ctx.fillText(c, cx, y); cx += ctx.measureText(c).width + sp; } return w; };
+  const rk = rankOf(v), lead = v.head || /head/i.test(v.role || "");
+  // Accent per rank: gold for the Head, then the rank colours used across the app.
+  const acc = lead ? ["#E9C46A", "#B8862B"] : { probationary: ["#D5DAE2", "#8A94A6"], elected: ["#5FD3D9", "#1C8C96"], supervisory: ["#C7A6F5", "#7A52C2"], logistics: ["#F2F2F2", "#7B7B7B"] }[rk?.id] || ["#D5DAE2", "#8A94A6"];
+  ctx.save(); rr(0, 0, W, H, 34); ctx.clip();
+  // Night background with a soft glow in the rank colour
+  let g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#0E1830"); g.addColorStop(.55, "#15233F"); g.addColorStop(1, "#0A1122"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(W - 120, 40, 10, W - 120, 40, 520); g.addColorStop(0, acc[1] + "55"); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(80, H, 10, 80, H, 460); g.addColorStop(0, "rgba(102,117,137,.35)"); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // Security-print rings and a fine diagonal weave
+  ctx.strokeStyle = "rgba(255,255,255,.05)"; ctx.lineWidth = 1;
+  for (let r = 40; r < 900; r += 14) { ctx.beginPath(); ctx.arc(W - 150, H + 40, r, Math.PI, Math.PI * 2); ctx.stroke(); }
+  ctx.strokeStyle = "rgba(255,255,255,.025)"; for (let x = -H; x < W; x += 9) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke(); }
+  // Large faded crest
+  if (crestImg.naturalWidth) { const ch = 560, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.globalAlpha = .07; ctx.drawImage(crestImg, W - cw + 70, 70, cw, ch); ctx.globalAlpha = 1; }
+  // Header: crest, team name, school
+  if (crestImg.naturalWidth) { const ch = 84, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.save(); ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4; ctx.drawImage(crestImg, 48, 36, cw, ch); ctx.restore(); }
+  ctx.fillStyle = "#FFFFFF"; ctx.font = `700 30px ${D}`; ctx.textAlign = "left"; ctx.fillText((S.settings.teamName || "Primum Auxilium").toUpperCase(), 130, 78);
+  ctx.fillStyle = "rgba(201,206,214,.75)"; ctx.font = `700 13px ${B}`; spaced("VOLUNTEERING TEAM  ·  " + SCHOOL.toUpperCase(), 131, 104, 2.4);
+  // Year pill
+  ctx.font = `600 18px ${M}`; const yr = s_year(), yw = ctx.measureText(yr).width + 34;
+  rr(W - 48 - yw, 52, yw, 38, 19); ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.fillText(yr, W - 48 - yw / 2, 77);
+  // Monogram tile in the rank colour
+  const mx = 48, my = 172, ms = 150;
+  ctx.save(); ctx.shadowColor = acc[1] + "AA"; ctx.shadowBlur = 30; rr(mx, my, ms, ms, 30); g = ctx.createLinearGradient(mx, my, mx + ms, my + ms); g.addColorStop(0, acc[0]); g.addColorStop(1, acc[1]); ctx.fillStyle = g; ctx.fill(); ctx.restore();
+  rr(mx + 6, my + 6, ms - 12, ms - 12, 25); ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = "#0E1830"; ctx.font = `700 62px ${D}`; ctx.textAlign = "center"; ctx.fillText(initials(v.name), mx + ms / 2, my + ms / 2 + 22);
+  // Name (up to two lines), Arabic name under it
+  const nx = mx + ms + 36, maxW = W - nx - 48; let size = 54; ctx.textAlign = "left"; ctx.font = `700 ${size}px ${D}`;
+  const words = v.name.trim().split(/\s+/); let lines = [v.name.trim()];
+  while (ctx.measureText(lines[0]).width > maxW && size > 40) { size -= 2; ctx.font = `700 ${size}px ${D}`; }
+  if (ctx.measureText(lines[0]).width > maxW && words.length > 1) { const h = Math.ceil(words.length / 2); lines = [words.slice(0, h).join(" "), words.slice(h).join(" ")]; size = 46; ctx.font = `700 ${size}px ${D}`; while (lines.some(l => ctx.measureText(l).width > maxW) && size > 30) { size -= 2; ctx.font = `700 ${size}px ${D}`; } }
+  const nameTop = lines.length > 1 ? my + 52 : my + 74;
+  ctx.fillStyle = "#FFFFFF"; lines.forEach((l, i) => ctx.fillText(l, nx, nameTop + i * size * 1.08));
+  const ruleY = nameTop + (lines.length - 1) * size * 1.08 + 26;
+  g = ctx.createLinearGradient(nx, 0, nx + 260, 0); g.addColorStop(0, acc[0]); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(nx, ruleY, 260, 3);
+  if (v.nameAr) { ctx.save(); ctx.direction = "rtl"; ctx.textAlign = "left"; ctx.font = `600 26px ${AR}`; ctx.fillStyle = "rgba(201,206,214,.85)"; ctx.fillText(v.nameAr, nx, ruleY + 40); ctx.restore(); }
+  // Details
+  const fields = [["CLASS", cls(v) || "—"], ["RANK", lead ? "Head" : rk ? rk.label.replace(/ Volunteer$/, "") : "Volunteer"], ["ROLE", v.role || (rk?.id === "logistics" ? "Logistics" : "Volunteer")]];
+  let fx = 48; const fy = 392;
+  fields.forEach(([l, val], i) => {
+    ctx.fillStyle = "rgba(201,206,214,.6)"; ctx.font = `700 13px ${B}`; spaced(l, fx, fy, 3);
+    ctx.fillStyle = i === 1 ? acc[0] : "#FFFFFF"; let fs = 26; ctx.font = `700 ${fs}px ${B}`; const lim = i === 2 ? W - fx - 48 : 230; while (ctx.measureText(val).width > lim && fs > 16) { fs -= 1; ctx.font = `700 ${fs}px ${B}`; }
+    ctx.textAlign = "left"; ctx.fillText(val, fx, fy + 36); fx += i === 0 ? 170 : 260;
+  });
+  // Bottom glass band
+  const by = 484;
+  ctx.fillStyle = "rgba(255,255,255,.06)"; ctx.fillRect(0, by, W, H - by);
+  ctx.fillStyle = "rgba(255,255,255,.14)"; ctx.fillRect(0, by, W, 1);
+  ctx.fillStyle = "rgba(201,206,214,.6)"; ctx.font = `700 13px ${B}`; spaced("ID NUMBER", 48, by + 44, 3); spaced("VALID UNTIL", 380, by + 44, 3);
+  ctx.fillStyle = "#FFFFFF"; ctx.font = `600 32px ${M}`; ctx.textAlign = "left"; ctx.fillText(idNumber({ ...v, id: vid }), 48, by + 88);
+  ctx.font = `600 28px ${M}`; ctx.fillText(fmtDate(S.settings.yearEnd, { month: "short", year: "numeric" }), 380, by + 88);
+  // Holographic seal
+  const sx = W - 104, sy = by + 66, sr = 50;
+  ctx.save(); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.clip();
+  if (ctx.createConicGradient) { g = ctx.createConicGradient(0.6, sx, sy); ["#9BE7FF", "#C7A6F5", "#FFD6A5", "#B5F5C8", "#9BE7FF"].forEach((c, i) => g.addColorStop(i / 4, c)); } else { g = ctx.createLinearGradient(sx - sr, sy - sr, sx + sr, sy + sr); g.addColorStop(0, "#9BE7FF"); g.addColorStop(.5, "#C7A6F5"); g.addColorStop(1, "#FFD6A5"); }
+  ctx.fillStyle = g; ctx.fillRect(sx - sr, sy - sr, sr * 2, sr * 2);
+  ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1; for (let r = 8; r < sr; r += 6) { ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.stroke(); }
+  if (crestImg.naturalWidth) { const ch = 58, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.globalAlpha = .9; ctx.drawImage(crestImg, sx - cw / 2, sy - ch / 2, cw, ch); ctx.globalAlpha = 1; }
   ctx.restore();
-  ctx.strokeStyle = "rgba(19,27,45,.15)"; ctx.lineWidth = 2; rr(1, 1, W - 2, H - 2, 35); ctx.stroke();
+  ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 2; ctx.stroke();
+  // Rank stripe along the bottom edge
+  g = ctx.createLinearGradient(0, 0, W, 0); g.addColorStop(0, acc[1]); g.addColorStop(.5, acc[0]); g.addColorStop(1, acc[1]); ctx.fillStyle = g; ctx.fillRect(0, H - 10, W, 10);
+  ctx.restore();
+  ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 2; rr(1, 1, W - 2, H - 2, 33); ctx.stroke();
 }
 const s_year = () => `${S.settings.yearStart.slice(0, 4)}–${S.settings.yearEnd.slice(2, 4)}`;
 function cardModal() {

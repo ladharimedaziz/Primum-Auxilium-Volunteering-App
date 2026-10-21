@@ -1,1 +1,1 @@
-{"version":"1.2.10","notes":"Co-Head of Media edits the Media desk.","minApp":"1.2.0","file":"ui-1.2.10.json"}
+{"version":"1.2.11","notes":"Fixes the failed install on the desktop app. Updates now show the real error if anything goes wrong.","minApp":"1.2.0","file":"ui-1.2.11.json"}

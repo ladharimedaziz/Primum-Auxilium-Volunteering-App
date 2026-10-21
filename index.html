@@ -2998,6 +2998,11 @@ function bindOverlay() {
     $("#dStatus").addEventListener("change", async e => {
       const v0 = S.volunteers[id], nv = e.target.value;
       if (mode === "cloud" && nv === "blacklisted" && v0.status !== "blacklisted") {
+        // The Head of Volunteers blacklists directly. Only a server still on the old two-person rule sends it to administration instead.
+        if (role() === "head") {
+          try { const nv0 = { ...v0, status: "blacklisted" }; await rpc("pa_put", { token: tok(), coll: "volunteers", id, data: nv0 }); S.volunteers[id] = nv0; toast(`${v0.name} is blacklisted`); clearTimeout(cloudPut.t); cloudPut.t = setTimeout(() => cloudPull(false), 900); refresh(); return; }
+          catch (err) { if (err.code !== "twoperson") { e.target.value = v0.status || "active"; return cloudErr(err); } }
+        }
         e.target.value = v0.status || "active";
         if (Object.values(S.bans).some(b => b.vid === id && b.status === "pending")) return toast("A request for this volunteer is already waiting for administration.");
         const why = (prompt(`Why should ${v0.name} be blacklisted? The school administration has to approve it.`) || "").trim();

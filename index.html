@@ -453,6 +453,7 @@ body.gated .tabbar{display:none}
 .chip.out:hover{background:rgba(255,255,255,.2)}
 /* read-only roles */
 body.ro [data-act="add-vol"],body.ro [data-act="import"],body.ro [data-act="new-event"],body.ro [data-act="edit-event"],body.ro [data-act="attendance"],body.ro [data-act="ev-signup"],body.ro [data-act="ev-remove"],body.ro [data-act="promote"],body.ro [data-act="promo-skip"],body.ro [data-act="new-report"],body.ro [data-act="verify-entry"],body.ro [data-act="del-entry"],body.ro [data-act="log-for"],body.ro [data-act="event-certs"],body.ro [data-act="pdf-pick"],body.ro [data-act="pdf-del"],body.ro [data-act="clear-examples"],body.ro [data-act="weekly"],body.ro [data-act="ask-del-vol"],body.ro [data-go="log"],body.ro .signup,body.ro .drop-hint,body.ro [data-assign]{display:none!important}
+body.ra [data-act="add-vol"],body.ra [data-act="import"],body.ra [data-act="attendance"],body.ra [data-act="promote"],body.ra [data-act="promo-skip"],body.ra [data-act="new-report"],body.ra [data-act="verify-entry"],body.ra [data-act="del-entry"],body.ra [data-act="log-for"],body.ra [data-act="event-certs"],body.ra [data-act="pdf-pick"],body.ra [data-act="pdf-del"],body.ra [data-act="clear-examples"],body.ra [data-act="weekly"],body.ra [data-act="ask-del-vol"],body.ra [data-go="log"]{display:none!important}
 /* volunteer views */
 .me-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
 .me-hero{grid-column:1/-1}
@@ -894,8 +895,8 @@ const RANKS = [
 ];
 const TONES = ["teal", "violet", "rose", "blue", "brass", "grey"];
 const REPORT_KINDS = ["Event report", "Weekly summary", "Incident", "Audit"];
-const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, appeals: {}, cchat: {}, cmutes: {}, cwork: {}, achat: {}, seats: {}, bills: {}, cvotes: {}, cgchat: {}, bans: {}, settings: { ...DEFAULTS } };
-const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews", "appeals", "cchat", "cmutes", "cwork", "achat", "seats", "bills", "cvotes", "cgchat", "bans"];
+const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, appeals: {}, cchat: {}, cmutes: {}, cwork: {}, achat: {}, seats: {}, bills: {}, cvotes: {}, cgchat: {}, bans: {}, cachat: {}, settings: { ...DEFAULTS } };
+const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews", "appeals", "cchat", "cmutes", "cwork", "achat", "seats", "bills", "cvotes", "cgchat", "bans", "cachat"];
 let db = null, downloads = null, mode = "loading";
 const DESKTOP = !!window.PA_DESKTOP;
 let view = "dashboard";
@@ -976,7 +977,7 @@ function weeksLeft() { return Math.max(1, daysBetween(todayISO(), S.settings.yea
 
 /* ---------- persistence ---------- */
 const LKEY = "primum-auxilium-v1";
-function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, cchat: S.cchat, cmutes: S.cmutes, cwork: S.cwork, achat: S.achat, seats: S.seats, bills: S.bills, cvotes: S.cvotes, cgchat: S.cgchat, bans: S.bans, settings: S.settings }); }
+function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, cchat: S.cchat, cmutes: S.cmutes, cwork: S.cwork, achat: S.achat, seats: S.seats, bills: S.bills, cvotes: S.cvotes, cgchat: S.cgchat, bans: S.bans, cachat: S.cachat, settings: S.settings }); }
 async function put(coll, id, obj) {
   if (!allowed(coll, id)) { toast("View only"); return false; }
   if (mode === "cloud") return cloudPut(coll, id, obj);
@@ -1154,7 +1155,7 @@ async function boot() {
   } else {
     mode = "local";
     const saved = store.get(LKEY);
-    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, appeals: saved.appeals || {}, logs: saved.logs || {}, cchat: saved.cchat || {}, cmutes: saved.cmutes || {}, cwork: saved.cwork || {}, achat: saved.achat || {}, seats: saved.seats || {}, bills: saved.bills || {}, cvotes: saved.cvotes || {}, cgchat: saved.cgchat || {}, bans: saved.bans || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
+    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, appeals: saved.appeals || {}, logs: saved.logs || {}, cchat: saved.cchat || {}, cmutes: saved.cmutes || {}, cwork: saved.cwork || {}, achat: saved.achat || {}, seats: saved.seats || {}, bills: saved.bills || {}, cvotes: saved.cvotes || {}, cgchat: saved.cgchat || {}, bans: saved.bans || {}, cachat: saved.cachat || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
     else if (!DESKTOP) seedLocal();
     loadSession(); render(true);
   }
@@ -1201,9 +1202,9 @@ function moveInk() {
 
 /* ---------- sign-in ---------- */
 const TABS = {
-  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ["achat", "Administration"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["handbook", "Handbook"], ["settings", "Settings"]],
-  admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["appeals", "Appeals"], ["achat", "Chat with Head"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["handbook", "Handbook"]],
-  council: [["cevents", "Events"], ["ccerts", "Certificates"], ["congress", "Congress"], ["cgchat", "Congress chat"]],
+  head: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["log", "Log hours"], ["certs", "Certificates"], ["reports", "Reports"], ["pr", "Announcements"], ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ["achat", "Administration"], ["cachat", "Council–admin chat"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["handbook", "Handbook"], ["settings", "Settings"]],
+  admin: [["dashboard", "Overview"], ["roster", "Roster"], ["events", "Events"], ["certs", "Certificates"], ["reports", "Reports"], ["appeals", "Appeals"], ["achat", "Chat with Head"], ["cachat", "Council chat"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["handbook", "Handbook"]],
+  council: [["cevents", "Events"], ["ccerts", "Certificates"], ["congress", "Congress"], ["cgchat", "Congress chat"], ["cachat", "Admin chat"]],
   volunteer: [["me", "My hours"], ["vevents", "Events"], ["vcerts", "Certificates"], ["handbook", "Handbook"], ["complain", "Questions & complaints"]]
 };
 let session = null, lastAct = Date.now(), fails = 0, lockUntil = 0;
@@ -1237,10 +1238,11 @@ function allowed(coll, id) {
   if (coll === "appeals") return (r === "volunteer" && held() && !S.appeals[id]) || (r === "admin" && !!S.appeals[id]);
   if (coll === "reviews") return r === "volunteer" && !S.reviews[id] && myVol()?.rank === "supervisory";
   if (coll === "logs") { const e = S.events[id], v = myVol(); return r === "volunteer" && !!e && !!v && (e.leads || []).includes(v.id) && e.status !== "done"; }
-  if (coll === "events") return r === "council" && (!S.events[id] || canEditEv(S.events[id]));
+  if (coll === "events") return (r === "admin" && (!S.events[id] || S.events[id].status !== "done")) || (r === "council" && (!S.events[id] || canEditEv(S.events[id])));
   if (coll === "accounts") return !!session && id === session.id;
   if (coll === "seats") return false;
-  if (coll === "bans") return r === "admin" && S.bans[id]?.status === "pending";
+  if (coll === "bans") return r === "admin" && (!S.bans[id] || (S.bans[id].status === "pending" && S.bans[id].byRole !== "admin"));
+  if (coll === "cachat") return ["council", "admin"].includes(r) && (!S.cachat[id] || S.cachat[id].by === session?.id);
   if (coll === "cgchat") return r === "volunteer" && seated() && (!S.cgchat[id] || S.cgchat[id].by === myVol()?.id);
   if (coll === "bills") return (r === "volunteer" && seated() && (!S.bills[id] || (S.bills[id].status === "voting" && (S.bills[id].drafters || []).includes(myVol()?.id)))) || (r === "council" && S.bills[id]?.status === "voting");
   if (coll === "cvotes") { const c = S.cvotes[id]; return c ? (c.kind === "msg" && c.by === (myVol()?.id || session?.id)) : (r === "council" ? !id.startsWith("v:") : r === "volunteer" && seated()); }
@@ -1454,7 +1456,7 @@ function alertNew() {
 }
 function renderTabs(soft) {
   const nav = $("#tabs"), list = tabsFor(), nNew = newCp() + openQ(), nAl = notices().length;
-  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "appeals" && apPending() ? `<span class="badge num">${apPending()}</span>` : ""}${k === "review" && rvPending() ? `<span class="badge num">${rvPending()}</span>` : ""}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}${k === "c-tasks" && myTaskN() ? `<span class="badge num">${myTaskN()}</span>` : ""}${k === "congress" && cgOpenBills() ? `<span class="badge num">${cgOpenBills()}</span>` : ""}${k === "cgchat" && gUnread() ? `<span class="badge num">${gUnread()}</span>` : ""}${k === "achat" && aUnread() ? `<span class="badge num">${aUnread()}</span>` : ""}${k === "c-chat" && chatUnread() ? `<span class="badge num">${chatUnread()}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
+  const html = list.map(([k, l]) => `<button class="tab" role="tab" data-view="${k}" aria-selected="${k === view}">${l}${k === "appeals" && apPending() ? `<span class="badge num">${apPending()}</span>` : ""}${k === "review" && rvPending() ? `<span class="badge num">${rvPending()}</span>` : ""}${k === "inbox" && nNew ? `<span class="badge num">${nNew}</span>` : ""}${(k === "vevents" || k === "me") && nAl ? `<span class="badge num">${nAl}</span>` : ""}${k === "cachat" && xUnread() ? `<span class="badge num">${xUnread()}</span>` : ""}${k === "c-tasks" && myTaskN() ? `<span class="badge num">${myTaskN()}</span>` : ""}${k === "congress" && cgOpenBills() ? `<span class="badge num">${cgOpenBills()}</span>` : ""}${k === "cgchat" && gUnread() ? `<span class="badge num">${gUnread()}</span>` : ""}${k === "achat" && aUnread() ? `<span class="badge num">${aUnread()}</span>` : ""}${k === "c-chat" && chatUnread() ? `<span class="badge num">${chatUnread()}</span>` : ""}</button>`).join("") + `<span class="tab-ink" id="tabInk"></span>`;
   if (nav.dataset.sig === html) return;
   nav.dataset.sig = html; nav.innerHTML = html;
   if (soft) moveInk();
@@ -1465,7 +1467,7 @@ function render(animate) {
   applyRealm();
   renderBrandMeta();
   if (!session || ui.gate) return renderGate();
-  document.body.classList.remove("gated"); document.body.classList.toggle("ro", role() !== "head"); document.body.dataset.role = role();
+  document.body.classList.remove("gated"); document.body.classList.toggle("ro", role() !== "head" && role() !== "admin"); document.body.classList.toggle("ra", role() === "admin"); document.body.dataset.role = role();
   if (!tabsFor().some(t => t[0] === view)) view = tabsFor()[0][0];
   renderTabs();
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === view));
@@ -1498,6 +1500,7 @@ function refresh() {
   else if (view === "congress") { const sig = JSON.stringify([S.seats, S.bills, S.cvotes, S.volunteers, ui.cgOpen, ui.cgConfirm, ui.cgSel]), ae = document.activeElement; if (el.dataset.cgsig !== sig && !(ae && el.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName))) { el.innerHTML = VIEWS.congress(); el.dataset.cgsig = sig; after.congress(); } }
   else if (view === "achat") achatRefresh();
   else if (view === "cgchat") gchatRefresh();
+  else if (view === "cachat") xchatRefresh();
   else if (view === "cevents" || view === "pr") el.innerHTML = VIEWS[view]();
   else if (view.startsWith("c-")) councilRefresh();
   else if (view === "settings") { const r = $("#statusList"); const ac = $("#acctBox"); if (ac && !(document.activeElement && ac.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) { ac.innerHTML = acctBox(); bindAcct(); } if (r) r.innerHTML = statusRows(); const i = $("#dataInfo"); if (i) i.innerHTML = dataInfo(); }
@@ -2239,7 +2242,7 @@ function renderOverlay() {
   else if (ui.modal) host.innerHTML = `<div class="overlay" data-close>${ui.modal()}</div>`;
   else { host.innerHTML = ""; return; }
   document.body.style.overflow = "hidden";
-  if (role() !== "head" && !host.querySelector("#scForm, #logForm, #monthForm, .free")) host.querySelectorAll(".drawer input,.drawer select,.drawer textarea,.modal form input,.modal form select,.modal form textarea,.modal form button[type=submit]").forEach(x => { if (!x.closest("#impForm")) x.disabled = true; });
+  if (role() !== "head" && !host.querySelector("#scForm, #logForm, #monthForm, .free") && !(role() === "admin" && host.querySelector("#evForm, #apForm"))) host.querySelectorAll(".drawer input,.drawer select,.drawer textarea,.modal form input,.modal form select,.modal form textarea,.modal form button[type=submit]").forEach(x => { if (!x.closest("#impForm")) x.disabled = true; });
   host.querySelector("[autofocus]")?.focus();
   bindOverlay();
 }
@@ -2266,12 +2269,26 @@ function swap(fn, dir = "fwd") {
   }, 160);
 }
 
+function srBox(v) {
+  const pend = Object.values(S.bans).find(b => b.vid === ui.drawer && b.status === "pending");
+  return `<section class="panel free" style="margin:12px 0"><div class="eyebrow">Ask the Head to change this status</div>
+    ${pend ? `<div class="muted" style="font-size:13.5px;margin-top:6px">A request is waiting: ${esc(statusOf(pend.to || "blacklisted").label)}.</div>` : `<div class="grid2" style="margin-top:8px"><label class="field">New status<select id="srTo">${statuses().filter(s => s.id !== (v.status || "active")).map(s => `<option value="${s.id}">${esc(s.label)}</option>`).join("")}</select></label>
+    <label class="field">Reason<input type="text" id="srWhy" maxlength="500"></label></div><div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn small primary" data-sr="send" data-id="${ui.drawer}">Send request</button></div>`}</section>`;
+}
+document.addEventListener("click", async e => {
+  const a = e.target.closest("[data-sr]"); if (!a) return; const id = a.dataset.id, why = ($("#srWhy")?.value || "").trim();
+  if (!why) return toast("Add a reason.");
+  if (await put("bans", uid(), { vid: id, to: $("#srTo").value, reason: why, status: "pending", by: session.id, byRole: "admin", byName: accName(me()), created: new Date().toISOString() }) !== false) {
+    if (mode === "cloud") await cloudPull(false); toast("Sent to the Head of Volunteers"); if (ui.drawer) { const d = $(".drawer"); if (d) d.outerHTML = drawerHTML(); }
+  }
+});
 function drawerHTML() {
   const v = S.volunteers[ui.drawer];
   return `<aside class="drawer" role="dialog" aria-label="${esc(v.name)}">
     <div class="top"><span class="avatar ${v.head ? "hd" : v.grade === 12 ? "g12" : ""}">${esc(initials(v.name))}</span><div style="flex:1;min-width:0"><h2>${esc(v.name)}</h2><div class="muted" style="font-size:13.5px">${rankBadge(v)}${v.role ? `<span class="role" style="margin-left:0;margin-right:8px">${esc(v.role)}</span>` : ""}${v.grade === 12 ? `<span class="prio">${cls(v)} · Grade 12 priority</span>` : `Class ${cls(v)}`}${v.example ? `<span class="ex-tag">Example</span>` : ""}</div></div><button class="iconbtn" data-close aria-label="Close">✕</button></div>
     <div id="drawerStats">${drawerStats()}</div>
-    <div class="grid2">
+    ${role() === "admin" ? srBox(v) : ""}
+    <fieldset ${role() === "admin" ? "disabled" : ""} style="border:0;padding:0;margin:0;min-width:0"><div class="grid2">
       <label class="field">Status<select id="dStatus">${statuses().map(s => `<option value="${s.id}" ${(v.status || "active") === s.id ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select></label>
       <label class="field">Grade<select id="dGrade">${[12, 11].map(g => `<option value="${g}" ${v.grade === g ? "selected" : ""}>Grade ${g}</option>`).join("")}${[12, 11].includes(v.grade) ? "" : `<option selected disabled>Grade ${v.grade}</option>`}</select></label>
       <label class="field">Class<select id="dSection">${SECTIONS.map(x => `<option value="${x}" ${(v.section || "") === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>
@@ -2282,7 +2299,7 @@ ${GOV.map(([k, l, y, n]) => `<label class="field">${l}<select id="d-${k}"><optio
     <label class="field">Name<input type="text" id="dName" value="${esc(v.name)}"></label>
     <label class="field">Arabic name<input type="text" id="dNameAr" dir="auto" value="${esc(v.nameAr || "")}"></label>
     ${role() === "head" && !v.head ? `<div class="field">Sign-in<div id="signinBox">${signinHTML(ui.drawer)}</div></div>` : ""}
-    <label class="field">Notes<textarea id="dNotes" placeholder="Contact, availability, reasons for status…">${esc(v.notes || "")}</textarea></label>
+    <label class="field">Notes<textarea id="dNotes" placeholder="Contact, availability, reasons for status…">${esc(v.notes || "")}</textarea></label></fieldset>
     <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between">
       <button class="btn primary" data-act="log-for" data-id="${ui.drawer}">Log hours for ${esc(v.name.split(" ")[0])}</button>
       ${ui.confirm === "vol" ? "" : `<button class="btn danger" data-act="ask-del-vol">Remove volunteer</button>`}
@@ -4061,10 +4078,45 @@ document.addEventListener("click", async e => {
   else if (a.dataset.cgc === "del") { if (await del("cgchat", a.dataset.id) !== false) { if (mode === "cloud") await cloudPull(false); gchatRefresh(); } }
 });
 
+/* ---------- Council and administration chat (the Head reads and writes too) ---------- */
+const xMsgs = () => Object.entries(S.cachat).map(([id, m]) => ({ id, ...m })).sort((a, b) => (a.at || "").localeCompare(b.at || ""));
+const xKey = () => "pa-xread-" + session?.id;
+const xOk = () => ["head", "council", "admin"].includes(role());
+const xUnread = () => { if (!session || !xOk()) return 0; const t = store.get(xKey()) || ""; return xMsgs().filter(m => m.by !== session.id && (m.at || "") > t).length; };
+function xMarkRead() { const l = xMsgs().at(-1); if (l && (store.get(xKey()) || "") < l.at) { store.set(xKey(), l.at); renderTabs(true); } }
+function xListHTML() {
+  const l = xMsgs();
+  return l.length ? l.map(m => `<div class="m${m.by === session.id ? " me" : ""}"><span class="who">${esc(m.by === session.id ? "You" : (m.byName || "") + (m.role === "admin" ? " · Administration" : m.title ? " · " + m.title : ""))} · ${m.at ? esc(new Date(m.at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })) : "sending…"}${m.by === session.id ? `<button class="del" data-xc="del" data-id="${m.id}">Delete</button>` : ""}</span>${esc(m.text)}</div>`).join("") : `<div class="muted" style="text-align:center;padding:24px 0">No messages yet.</div>`;
+}
+VIEWS.cachat = () => `<div class="logwrap st"><section class="panel" style="--i:0"><div class="panel-head"><h2>Council and administration</h2></div>
+  <div class="muted" style="font-size:13px;margin-bottom:8px">A shared chat between the Student Council and the school administration. The Head of Volunteers is in it too.</div>
+  <div class="ach" id="xList">${xListHTML()}</div>
+  <form class="achform" id="xForm"><textarea id="xText" rows="1" maxlength="2000" placeholder="Write a message" required></textarea><button class="btn primary" type="submit">Send</button></form></section></div>`;
+after.cachat = () => {
+  const L = $("#xList"); if (L) L.scrollTop = L.scrollHeight; xMarkRead();
+  const ta = $("#xText");
+  const send = async () => {
+    const text = ta.value.trim(); if (!text || ui.xSending) return; ui.xSending = true;
+    const m = { text, ...(mode === "cloud" && role() !== "head" ? {} : { by: session.id, byName: accName(me()), role: role(), title: role() === "council" ? me().title || "" : role() === "head" ? "Head of Volunteers" : "", at: new Date().toISOString() }) };
+    try { if (await put("cachat", uid(), m) !== false) { ta.value = ""; if (mode === "cloud") await cloudPull(false); xchatRefresh(true); } } catch (e) { toast(e && e.code === "muted" ? "You're muted." : "Couldn't send."); } finally { ui.xSending = false; }
+  };
+  $("#xForm")?.addEventListener("submit", e => { e.preventDefault(); send(); });
+  ta?.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+};
+function xchatRefresh(force) {
+  const L = $("#xList"); if (!L) return;
+  const html = xListHTML(); if (L.dataset.sig !== html) { const near = L.scrollHeight - L.scrollTop - L.clientHeight < 120; L.dataset.sig = html; L.innerHTML = html; if (near || force) L.scrollTop = L.scrollHeight; }
+  if (document.visibilityState === "visible") xMarkRead();
+}
+document.addEventListener("click", async e => {
+  const a = e.target.closest("[data-xc]"); if (!a) return;
+  if (await del("cachat", a.dataset.id) !== false) { if (mode === "cloud") await cloudPull(false); xchatRefresh(); }
+});
+
 /* ---------- appeals ---------- */
 const apList = () => Object.entries(S.appeals).map(([id, a]) => ({ id, ...a })).sort((a, b) => (a.status === "pending" ? 0 : 1) - (b.status === "pending" ? 0 : 1) || (b.created || "").localeCompare(a.created || ""));
 const bnList = () => Object.entries(S.bans).map(([id, b]) => ({ id, ...b })).sort((a, b) => (a.status === "pending" ? 0 : 1) - (b.status === "pending" ? 0 : 1) || (b.created || "").localeCompare(a.created || ""));
-const apPending = () => Object.values(S.appeals).filter(a => a.status === "pending").length + (role() === "admin" ? Object.values(S.bans).filter(b => b.status === "pending").length : 0);
+const apPending = () => Object.values(S.appeals).filter(a => a.status === "pending").length + (role() === "admin" ? Object.values(S.bans).filter(b => b.status === "pending" && b.byRole !== "admin").length : role() === "head" ? Object.values(S.bans).filter(b => b.status === "pending" && b.byRole === "admin").length : 0);
 const AP_TAG = { pending: ["Waiting", "warn"], approved: ["Approved", "ok"], denied: ["Denied", "danger"] };
 VIEWS.appeal = () => {
   const mine = apList(), pend = mine.some(a => a.status === "pending");
@@ -4082,13 +4134,13 @@ after.appeal = () => {
 };
 function bnSection() {
   const L = bnList(); if (!L.length) return "";
-  const t = { pending: ["Waiting for administration", "warn"], approved: ["Blacklisted", "danger"], denied: ["Not approved", "ok"] };
-  return `<div class="eyebrow sec-title">Blacklist requests</div><div class="muted" style="font-size:13px;margin:-4px 0 8px">The Head asks, the school administration approves. Nobody is blacklisted alone.</div><div class="st">${L.map((b, i) => { const v = S.volunteers[b.vid], tg = t[b.status] || t.pending;
-    return `<article class="panel" style="--i:${i};margin-bottom:12px"><div class="panel-head"><h2>${esc(v ? v.name : "Removed volunteer")} <span class="muted" style="font-size:13px">${v ? cls(v) : ""}</span></h2><span class="tag ${tg[1]}">${tg[0]}</span></div>
-    <div class="muted" style="font-size:13px">${b.created ? fmtDate(b.created.slice(0, 10)) : ""}</div><div class="report-body" style="margin:10px 0">${esc(b.reason)}</div>
+  const t = { pending: ["Waiting", "warn"], approved: ["Approved", "danger"], denied: ["Not approved", "ok"] };
+  return `<div class="eyebrow sec-title">Status requests</div><div class="muted" style="font-size:13px;margin:-4px 0 8px">The Head and the school administration check each other: a request from one is decided by the other.</div><div class="st">${L.map((b, i) => { const v = S.volunteers[b.vid], tg = t[b.status] || t.pending;
+    return `<article class="panel" style="--i:${i};margin-bottom:12px"><div class="panel-head"><h2>${esc(v ? v.name : "Removed volunteer")} <span class="muted" style="font-size:13px">${v ? cls(v) : ""}</span></h2><span class="tag ${tg[1]}">${b.status === "pending" ? (b.byRole === "admin" ? "Waiting for the Head" : "Waiting for administration") : tg[0]}</span></div>
+    <div class="muted" style="font-size:13px">${b.created ? fmtDate(b.created.slice(0, 10)) : ""} · ${b.byRole === "admin" ? esc((b.byName || "Administration") + " asks") : "Head asks"} for <b>${esc(statusOf(b.to || "blacklisted").label)}</b></div><div class="report-body" style="margin:10px 0">${esc(b.reason)}</div>
     ${b.status !== "pending" && b.note ? `<div class="cp-reply"><span class="eyebrow">Decision${b.decidedBy ? " · " + esc(b.decidedBy) : ""}</span>${esc(b.note)}</div>` : ""}
-    ${role() === "admin" && b.status === "pending" ? `<label class="field" style="margin-top:8px">Note (optional)<input type="text" id="bnn-${b.id}" maxlength="500"></label><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px"><button class="btn small" data-bn="no" data-id="${b.id}">Do not approve</button><button class="btn small danger solid" data-bn="ok" data-id="${b.id}">Approve blacklist</button></div>` : ""}
-    ${role() === "head" && b.status === "pending" ? `<div style="display:flex;justify-content:flex-end"><button class="btn small ghost" data-bn="cancel" data-id="${b.id}">Cancel request</button></div>` : ""}</article>`; }).join("")}</div>`;
+    ${b.status === "pending" && ((role() === "admin" && b.byRole !== "admin") || (role() === "head" && b.byRole === "admin")) ? `<label class="field" style="margin-top:8px">Note (optional)<input type="text" id="bnn-${b.id}" maxlength="500"></label><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px"><button class="btn small" data-bn="no" data-id="${b.id}">Do not approve</button><button class="btn small solid ${(b.to || "blacklisted") === "blacklisted" ? "danger" : "primary"}" data-bn="ok" data-id="${b.id}">Approve</button></div>` : ""}
+    ${role() === "head" && b.status === "pending" && b.byRole !== "admin" ? `<div style="display:flex;justify-content:flex-end"><button class="btn small ghost" data-bn="cancel" data-id="${b.id}">Cancel request</button></div>` : ""}</article>`; }).join("")}</div>`;
 }
 document.addEventListener("click", async e => {
   const a = e.target.closest("[data-bn]"); if (!a) return; const id = a.dataset.id, b = S.bans[id]; if (!b) return;
@@ -4127,7 +4179,7 @@ function realm() {
   return ui.realm;
 }
 function setRealm(r) { realm(); ui.realm = r; store.set("pa-realm-" + session.id, r); }
-function councilTabs() { return [...C_TABS.map(([k, l]) => [k, l]), ["cgchat", "Congress chat"]]; }
+function councilTabs() { return [...C_TABS.map(([k, l]) => [k, l]), ["cgchat", "Congress chat"], ["cachat", role() === "head" ? "Council–admin chat" : "Admin chat"]]; }
 function initRealm() { ui.realmFor = null; if (role() === "council") { setRealm("council"); ui.realmIntro = true; } }
 const cLogo = () => $("#councilLogo").src;
 const cLogoInk = () => $("#councilLogoInk").src;

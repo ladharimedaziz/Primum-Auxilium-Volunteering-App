@@ -1144,6 +1144,16 @@ html.calm .radar b{opacity:.5}
 }
 :root[data-theme="light"] .kpi.hero{background:linear-gradient(135deg,var(--navy),color-mix(in srgb,var(--navy) 72%,var(--glow1)))!important}
 
+
+/* Congress: class blocs */
+.cg-hemi{container-type:inline-size}
+.cg-hemi .cg-seat.on{--accent:var(--party);background:var(--party);border-color:color-mix(in srgb,var(--party) 70%,#000);color:#14181F;font-size:calc(var(--szn) * .36cqw);box-shadow:0 2px 0 color-mix(in srgb,var(--party) 55%,#000),0 6px 12px -6px rgba(0,0,0,.45)}
+.cg-hemi .cg-seat.on:hover,.cg-hemi .cg-seat.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--party) 45%,transparent),0 0 18px color-mix(in srgb,var(--party) 60%,transparent);z-index:2}
+.cg-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin:10px 0 6px;font-size:13px;color:var(--muted)}
+.cg-legend span{display:inline-flex;align-items:center;gap:6px}
+.cg-legend i{width:12px;height:12px;border-radius:50%;background:var(--party);box-shadow:0 0 8px color-mix(in srgb,var(--party) 60%,transparent)}
+.cg-legend b{color:var(--ink);font-weight:700}
+.empty-hemi{aspect-ratio:3/1}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -4435,15 +4445,28 @@ const cgVotes = bid => Object.entries(S.cvotes).map(([id, c]) => ({ id, ...c }))
 const cgMy = () => myVol()?.id || session?.id;
 function cgOpenBills() { if (!session) return 0; const mv = myVol()?.id; return Object.entries(S.bills).filter(([id, b]) => b.status === "voting" && (role() === "volunteer" ? !S.cvotes[`v:${id}:${mv}`] : role() === "council")).length; }
 const CG_TAG = { voting: ["Voting", "warn"], passed: ["Passed", "ok"], rejected: ["Not passed", "danger"] };
+// Parliament layout: only filled seats, packed in rows, each class sitting together as its own bloc.
+const CG_COLS = ["#E2B159", "#5AA9FF", "#E46A6A", "#4FC38A", "#B48CF0", "#F08A4B", "#3FC1C9", "#E77FB3", "#C9D46B", "#9AA7B8"];
+function cgBlocs(L = cgSeats()) {
+  const by = {}; L.forEach(m => { const k = cls(S.volunteers[m.id]) || "No class"; (by[k] = by[k] || []).push(m); });
+  return Object.keys(by).sort((a, b) => (parseInt(b) || 0) - (parseInt(a) || 0) || a.localeCompare(b)).map((k, i) => ({ k, col: CG_COLS[i % CG_COLS.length], list: by[k] }));
+}
 function cgHemi() {
-  const L = cgSeats(), n = L.length, caps = []; let tot = 0;
-  for (let r = 0, c = 8; tot < n + 2 || r < 2; r++, c += 4) { caps.push(c); tot += c; }
-  const R = caps.length, pos = [];
-  caps.forEach((c, r) => { const rad = 0.42 + 0.58 * (r + 1) / R; for (let i = 0; i < c; i++) { const th = Math.PI * (1 - (i + 0.5) / c); pos.push({ th, r, x: 50 + 46 * rad * Math.cos(th), y: 92 - 80 * rad * Math.sin(th) }); } });
-  pos.sort((a, b) => b.th - a.th || a.r - b.r);
-  const sz = Math.max(5.2, Math.min(12, 70 / (Math.max(...caps) + 2)));
-  const fresh = ui.cgFresh;
-  return `<div class="cg-hemi">${pos.map((p, i) => { const m = L[i], v = m && S.volunteers[m.id]; return `<button class="cg-seat${m ? " on" : ""}${m && ui.cgSel === m.id ? " sel" : ""}${m && fresh === m.id ? " fresh" : ""}" ${m ? `data-cg="sel" data-id="${m.id}" title="${esc(v.name)}"` : "disabled"} style="left:${p.x.toFixed(2)}%;top:${p.y.toFixed(2)}%;--sz:${sz}%;--k:${i}">${m ? esc(initials(v.name)) : ""}</button>`; }).join("")}<div class="cg-podium">Congress</div></div>`;
+  const blocs = cgBlocs(), n = blocs.reduce((t, b) => t + b.list.length, 0);
+  if (!n) return `<div class="cg-hemi empty-hemi"><div class="cg-podium">Congress</div></div>`;
+  // Rows and seat pitch chosen so the seats touch along each row and between rows (outer edge fixed).
+  const R = Math.max(1, Math.floor(Math.sqrt(0.96 * n / Math.PI))), d = Math.min(0.27, Math.PI * R / (n + Math.PI * R * R / 2));
+  const radii = Array.from({ length: R }, (_, k) => R === 1 ? Math.max(0.45, Math.min(1 - d / 2, n * d / Math.PI)) : Math.max(0.5, 1 - d * (R - k - 0.5)));
+  const sum = radii.reduce((t, r) => t + r, 0), caps = radii.map(r => Math.floor(n * r / sum));
+  for (let left = n - caps.reduce((t, c) => t + c, 0), k = R - 1; left > 0; left--, k = (k + R - 1) % R) caps[k]++;
+  const pitch = Math.min(d, ...radii.map((r, k) => caps[k] ? Math.PI * r / caps[k] : 1));
+  const pos = [];
+  caps.forEach((c, k) => { for (let i = 0; i < c; i++) { const th = c === 1 ? Math.PI / 2 : Math.PI * (1 - (i + 0.5) / c); pos.push({ th, k, x: 50 + 46 * radii[k] * Math.cos(th), y: 92 - 82 * radii[k] * Math.sin(th) }); } });
+  pos.sort((a, b) => b.th - a.th || a.k - b.k);
+  const sz = Math.min(11, pitch * 46 * 0.9), fresh = ui.cgFresh;
+  const L = blocs.flatMap(b => b.list.map(m => ({ m, col: b.col })));
+  return `<div class="cg-hemi">${pos.map((p, i) => { const { m, col } = L[i], v = S.volunteers[m.id]; return `<button class="cg-seat on${ui.cgSel === m.id ? " sel" : ""}${fresh === m.id ? " fresh" : ""}" data-cg="sel" data-id="${m.id}" title="${esc(v.name)} · ${esc(cls(v))}" style="left:${p.x.toFixed(2)}%;top:${p.y.toFixed(2)}%;--sz:${sz.toFixed(2)}%;--szn:${sz.toFixed(2)};--k:${i};--party:${col}">${sz >= 3.4 ? esc(initials(v.name)) : ""}</button>`; }).join("")}<div class="cg-podium">Congress</div></div>
+  <div class="cg-legend">${blocs.map(b => `<span style="--party:${b.col}"><i></i>${esc(b.k)} <b>${b.list.length}</b></span>`).join("")}</div>`;
 }
 function cgSeatInfo() {
   const id = ui.cgSel, v = id && S.volunteers[id]; if (!v || !S.seats[id]) return `<div class="muted" style="text-align:center;font-size:13px">${cgSeats().length ? "Tap a seat to see who sits there." : "No seats yet."}</div>`;

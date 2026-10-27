@@ -1548,10 +1548,11 @@ document.addEventListener("input", e => {
   const el = e.target; if (!draftable(el)) return; const k = draftKey(el); if (!k) return;
   try { el.value.trim() ? localStorage.setItem(k, JSON.stringify({ v: el.value, at: Date.now() })) : localStorage.removeItem(k); } catch {}
 }, true);
-// After a send, a box that emptied or closed drops its draft; one still holding the text (the send failed) keeps it.
+// A send drops the draft at once, so a redrawn box can't bring the sent text back; if the send failed and the box still holds the text, it is kept again.
 document.addEventListener("submit", e => {
   const f = e.target, l = [...f.querySelectorAll("textarea,input")].filter(draftable).map(el => [el, draftKey(el), el.value]).filter(x => x[1]);
-  setTimeout(() => { for (const [el, k, v] of l) if (!el.isConnected || el.value !== v || el.value === el.defaultValue) try { localStorage.removeItem(k); } catch {} }, 2500);
+  for (const [, k] of l) try { localStorage.removeItem(k); } catch {}
+  setTimeout(() => { for (const [el, k, v] of l) if (el.isConnected && v.trim() && el.value === v) try { localStorage.setItem(k, JSON.stringify({ v, at: Date.now() })); } catch {} }, 2500);
 }, true);
 function draftRestore(root) {
   if (!session || !root.querySelectorAll) return;
@@ -1563,6 +1564,15 @@ function draftRestore(root) {
     el.value = d.v; el.classList.add("drafted"); el.title = "Draft kept from earlier";
   });
 }
+// A message that was sent is no longer a draft.
+const draftDrop = el => { const k = el && draftKey(el); if (k) try { localStorage.removeItem(k); } catch {} };
+// Ten quick taps on the sign-in crest show the Head's recovery link.
+let crestTaps = 0, crestAt = 0;
+document.addEventListener("click", e => {
+  if (!e.target.closest || !e.target.closest(".gate-crest") || !$("#gRec")) return;
+  const now = Date.now(); crestTaps = now - crestAt < 1500 ? crestTaps + 1 : 1; crestAt = now;
+  if (crestTaps >= 10) { crestTaps = 0; ui.recShown = true; $("#gRec").hidden = false; }
+});
 // Drafts belong to the person who typed them: signing out clears them from this device.
 function draftsClear(acc) { try { Object.keys(localStorage).filter(k => k.startsWith("pa-draft:" + (acc ? acc + ":" : ""))).forEach(k => localStorage.removeItem(k)); } catch {} }
 async function cloudBoot() {
@@ -1851,7 +1861,7 @@ function gateHTML() {
       <button class="btn primary big" type="submit">Sign in</button></form>
       <p class="muted gate-note">No account? Ask the Head of Volunteers.</p>
       ${ui.forgot ? `<p class="muted gate-note" id="forgotNote">Contact the Head of Volunteers to reset it: <a href="tel:+966${HEAD_TEL.slice(1)}" style="color:inherit;font-weight:700" class="num">${HEAD_TEL}</a></p>` : `<button class="linkbtn" data-act="gate-forgot" style="margin:2px auto 0;display:block">I forgot my password</button>`}
-      <div class="gate-links"><button class="linkbtn" data-act="gate-admin">School administration</button><button class="linkbtn" data-act="gate-recover">Head password lost</button><button class="linkbtn" data-act="privacy">Privacy</button></div>`);
+      <div class="gate-links"><button class="linkbtn" data-act="gate-admin">School administration</button><button class="linkbtn" data-act="gate-recover" id="gRec" ${ui.recShown ? "" : "hidden"}>Head password lost</button><button class="linkbtn" data-act="privacy">Privacy</button></div>`);
 }
 // The Head's number only appears after "I forgot my password", and is kept in pieces so it can't be lifted from the page text.
 const HEAD_TEL = ["05", "353", "46", "919"].join("");
@@ -4677,7 +4687,7 @@ after.achat = () => {
   const send = async () => {
     const text = ta.value.trim(); if (!text || ui.aSending) return; ui.aSending = true;
     const m = { text, ...(mode === "cloud" ? {} : { by: session.id, byName: accName(me()), role: role(), at: new Date().toISOString() }) };
-    try { if (await put("achat", uid(), m) !== false) { ta.value = ""; if (mode === "cloud") await cloudPull(false); achatRefresh(true); } } finally { ui.aSending = false; }
+    try { if (await put("achat", uid(), m) !== false) { draftDrop(ta); ta.value = ""; if (mode === "cloud") await cloudPull(false); achatRefresh(true); } } finally { ui.aSending = false; }
   };
   $("#achForm")?.addEventListener("submit", e => { e.preventDefault(); send(); });
   ta?.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
@@ -4866,7 +4876,7 @@ after.cgchat = () => {
   const send = async () => {
     const text = ta.value.trim(); if (!text || ui.gSending) return; ui.gSending = true;
     const m = { text, ...(ui.gReply ? { replyTo: ui.gReply } : {}), ...(mode === "cloud" && role() !== "head" ? {} : { by: cgMy(), byName: accName(me()), at: new Date().toISOString() }) };
-    try { if (await put("cgchat", uid(), m) !== false) { ta.value = ""; ui.gReply = null; if (mode === "cloud") await cloudPull(false); gchatRefresh(true); } } finally { ui.gSending = false; }
+    try { if (await put("cgchat", uid(), m) !== false) { draftDrop(ta); ta.value = ""; ui.gReply = null; if (mode === "cloud") await cloudPull(false); gchatRefresh(true); } } finally { ui.gSending = false; }
   };
   $("#gForm")?.addEventListener("submit", e => { e.preventDefault(); send(); });
   ta?.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
@@ -4904,7 +4914,7 @@ after.cachat = () => {
   const send = async () => {
     const text = ta.value.trim(); if (!text || ui.xSending) return; ui.xSending = true;
     const m = { text, ...(mode === "cloud" && role() !== "head" ? {} : { by: session.id, byName: accName(me()), role: role(), title: role() === "council" ? me().title || "" : role() === "head" ? "Head of Volunteers" : "", at: new Date().toISOString() }) };
-    try { if (await put("cachat", uid(), m) !== false) { ta.value = ""; if (mode === "cloud") await cloudPull(false); xchatRefresh(true); } } catch (e) { toast(e && e.code === "muted" ? "You're muted." : "Couldn't send."); } finally { ui.xSending = false; }
+    try { if (await put("cachat", uid(), m) !== false) { draftDrop(ta); ta.value = ""; if (mode === "cloud") await cloudPull(false); xchatRefresh(true); } } catch (e) { toast(e && e.code === "muted" ? "You're muted." : "Couldn't send."); } finally { ui.xSending = false; }
   };
   $("#xForm")?.addEventListener("submit", e => { e.preventDefault(); send(); });
   ta?.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
@@ -5276,7 +5286,7 @@ async function sendMsg() {
     if (pend) img = await cUpload(pend.file);
     const id = uid(), msg = { ...myStamp(), ...(text ? { text } : {}), ...(img ? (img.ref.startsWith("data:") ? { imgData: img.ref } : { img: img.ref }) : {}), ...(img ? { w: img.w, h: img.h } : {}) };
     if (await put("cchat", id, msg) === false) return;
-    ui.cDraft = ""; if (ui.cPending) URL.revokeObjectURL(ui.cPending.url); ui.cPending = null;
+    draftDrop(ta); ui.cDraft = ""; if (ui.cPending) URL.revokeObjectURL(ui.cPending.url); ui.cPending = null;
     $("#cComposer").innerHTML = composerHTML(); $("#cText")?.focus();
     pushSend([{ staff: true, title: "Council chat", body: `${cName(session.id)}: ${text ? text.slice(0, 120) : "📷 Photo"}`, tag: "cchat" }]);
   } catch (e) { toast(e && e.code === "muted" ? "You're muted." : "Couldn't send. Try again."); }

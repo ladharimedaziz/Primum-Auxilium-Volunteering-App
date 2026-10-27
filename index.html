@@ -1198,6 +1198,14 @@ html.calm .vrow.bl,html.calm .tcard.bl{animation:none}
 /* readable maroon tags on dark backgrounds */
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tag.maroon{color:#F0A3AB}}
 :root[data-theme="dark"] .tag.maroon{color:#F0A3AB}
+
+/* ID card and lanyard side by side */
+.idmodal{width:min(900px,100%)}
+.idpair{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:24px;align-items:end}
+.idfig{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.idfig figcaption{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;align-items:baseline}
+.idfig-acts{display:flex;gap:8px}.idfig-acts .btn{flex:1;justify-content:center;text-align:center}
+@media (max-width:720px){.idpair{grid-template-columns:1fr}.idfig.lan{width:min(240px,70%);margin:6px auto 0}}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -2163,7 +2171,7 @@ VIEWS.roster = () => `
     <select id="rosterRank" aria-label="Rank filter"><option value="all">Every rank</option>${RANKS.map(k => `<option value="${k.id}" ${ui.rank === k.id ? "selected" : ""}>${k.label}</option>`).join("")}</select>
     <select id="rosterGov" aria-label="Absher and Nafath filter"><option value="all">Absher · Nafath</option><option value="missing" ${ui.gov === "missing" ? "selected" : ""}>Missing or unknown</option><option value="ready" ${ui.gov === "ready" ? "selected" : ""}>Both ready</option></select>
     <select id="rosterStatus" aria-label="Status filter"><option value="all">Every status</option>${statuses().map(s => `<option value="${s.id}" ${ui.status === s.id ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select></div>
-    <div class="tb-acts"><button class="btn" data-act="all-cards">Print ID cards</button>
+    <div class="tb-acts"><button class="btn" data-act="all-cards">Print ID cards</button><button class="btn" data-act="all-lanyards">Print lanyard IDs</button>
     <button class="btn" data-act="import">Import class list</button><input type="file" id="impFile" accept=".xlsx,.xls,.xlsm,.csv,.ods" multiple hidden>
     <button class="btn primary" data-act="add-vol">+ Add volunteer</button></div>
   </div>
@@ -3254,20 +3262,24 @@ function cardCouncil(vid) {
   return p ? { title: p[1], perm: p[2] } : null;
 }
 let councilImg = null;
+async function cardLook(v, vid) {
+  const cc = cardCouncil(vid);
+  if (cc && !councilImg) { councilImg = new Image(); councilImg.src = cLogoInk(); await (councilImg.decode ? councilImg.decode().catch(() => {}) : null); }
+  const rk = rankOf(v), lead = v.head || /head/i.test(v.role || ""), lg = !cc && !lead && rk?.id === "logistics", bl = statusOf(v.status).rule === "block";
+  // Accent per rank: gold for the Head, then the rank colours used across the app.
+  const acc = cc ? ["#F2B8BF", "#A3293A"] : lg ? ["#FFFFFF", "#8A8A8A"] : lead ? ["#E9C46A", "#B8862B"] : { probationary: ["#D5DAE2", "#8A94A6"], elected: ["#5FD3D9", "#1C8C96"], supervisory: ["#C7A6F5", "#7A52C2"], logistics: ["#F2F2F2", "#7B7B7B"] }[rk?.id] || ["#D5DAE2", "#8A94A6"];
+  return { cc, rk, lead, lg, bl, acc };
+}
 async function drawCard(canvas, vid) {
   const v = S.volunteers[vid]; if (!canvas || !v) return;
   fontsReady = fontsReady || Promise.all(["700 80px 'Cinzel'", "600 40px 'Cinzel'", "400 28px 'Atkinson Hyperlegible'", "700 28px 'Atkinson Hyperlegible'", "500 20px 'IBM Plex Mono'"].map(f => document.fonts ? document.fonts.load(f).catch(() => {}) : null));
   await fontsReady; await crestReady;
-  const cc = cardCouncil(vid);
-  if (cc && !councilImg) { councilImg = new Image(); councilImg.src = cLogoInk(); await (councilImg.decode ? councilImg.decode().catch(() => {}) : null); }
+  const { cc, rk, lead, lg, bl, acc } = await cardLook(v, vid);
   const W = 1012, H = 638, ctx = canvas.getContext("2d"), k = canvas.width / W;
   ctx.setTransform(k, 0, 0, k, 0, 0); ctx.clearRect(0, 0, W, H);
   const D = "'Cinzel', Georgia, serif", B = "'Atkinson Hyperlegible', system-ui, sans-serif", M = "'IBM Plex Mono', monospace", AR = "'Atkinson Hyperlegible', Tahoma, 'Segoe UI', 'Noto Naskh Arabic', 'Noto Sans Arabic', sans-serif";
   const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
   const spaced = (t, x, y, sp, align = "left") => { const w = [...t].reduce((a, c) => a + ctx.measureText(c).width + sp, -sp); let cx = align === "right" ? x - w : align === "center" ? x - w / 2 : x; ctx.textAlign = "left"; for (const c of t) { ctx.fillText(c, cx, y); cx += ctx.measureText(c).width + sp; } return w; };
-  const rk = rankOf(v), lead = v.head || /head/i.test(v.role || ""), lg = !cc && !lead && rk?.id === "logistics", bl = statusOf(v.status).rule === "block";
-  // Accent per rank: gold for the Head, then the rank colours used across the app.
-  const acc = cc ? ["#F2B8BF", "#A3293A"] : lg ? ["#FFFFFF", "#8A8A8A"] : lead ? ["#E9C46A", "#B8862B"] : { probationary: ["#D5DAE2", "#8A94A6"], elected: ["#5FD3D9", "#1C8C96"], supervisory: ["#C7A6F5", "#7A52C2"], logistics: ["#F2F2F2", "#7B7B7B"] }[rk?.id] || ["#D5DAE2", "#8A94A6"];
   ctx.save(); rr(0, 0, W, H, 34); ctx.clip();
   // Night background with a soft glow in the rank colour
   let g = ctx.createLinearGradient(0, 0, W, H); if (lg) { g.addColorStop(0, "#111111"); g.addColorStop(.55, "#1C1C1C"); g.addColorStop(1, "#030303"); } else if (cc) { g.addColorStop(0, "#22090D"); g.addColorStop(.55, "#3B0F16"); g.addColorStop(1, "#120507"); } else { g.addColorStop(0, "#0E1830"); g.addColorStop(.55, "#15233F"); g.addColorStop(1, "#0A1122"); } ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -3352,28 +3364,119 @@ async function drawCard(canvas, vid) {
   ctx.restore();
   ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 2; rr(1, 1, W - 2, H - 2, 33); ctx.stroke();
 }
+// Lanyard ID: portrait insert for a 65 x 115 mm holder, same look as the card.
+async function drawLanyard(canvas, vid) {
+  const v = S.volunteers[vid]; if (!canvas || !v) return;
+  fontsReady = fontsReady || Promise.all(["700 80px 'Cinzel'", "600 40px 'Cinzel'", "400 28px 'Atkinson Hyperlegible'", "700 28px 'Atkinson Hyperlegible'", "500 20px 'IBM Plex Mono'"].map(f => document.fonts ? document.fonts.load(f).catch(() => {}) : null));
+  await fontsReady; await crestReady;
+  const { cc, rk, lead, lg, bl, acc } = await cardLook(v, vid);
+  const W = 650, H = 1150, ctx = canvas.getContext("2d"), k = canvas.width / W;
+  ctx.setTransform(k, 0, 0, k, 0, 0); ctx.clearRect(0, 0, W, H);
+  const D = "'Cinzel', Georgia, serif", B = "'Atkinson Hyperlegible', system-ui, sans-serif", M = "'IBM Plex Mono', monospace", AR = "'Atkinson Hyperlegible', Tahoma, 'Segoe UI', 'Noto Naskh Arabic', 'Noto Sans Arabic', sans-serif";
+  const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
+  const spaced = (t, x, y, sp, align = "left") => { const w = [...t].reduce((a, c) => a + ctx.measureText(c).width + sp, -sp); let cx = align === "right" ? x - w : align === "center" ? x - w / 2 : x; ctx.textAlign = "left"; for (const c of t) { ctx.fillText(c, cx, y); cx += ctx.measureText(c).width + sp; } return w; };
+  const fit = (t, font, max, size, min) => { while (size > min) { ctx.font = font(size); if (ctx.measureText(t).width <= max) break; size -= 1; } ctx.font = font(size); return size; };
+  ctx.save(); rr(0, 0, W, H, 30); ctx.clip();
+  let g = ctx.createLinearGradient(0, 0, W * .4, H); if (lg) { g.addColorStop(0, "#111111"); g.addColorStop(.55, "#1C1C1C"); g.addColorStop(1, "#030303"); } else if (cc) { g.addColorStop(0, "#22090D"); g.addColorStop(.55, "#3B0F16"); g.addColorStop(1, "#120507"); } else { g.addColorStop(0, "#0E1830"); g.addColorStop(.55, "#15233F"); g.addColorStop(1, "#0A1122"); } ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(W / 2, 110, 10, W / 2, 110, 520); g.addColorStop(0, acc[1] + "55"); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(60, H, 10, 60, H, 520); g.addColorStop(0, lg ? "rgba(255,255,255,.08)" : cc ? "rgba(91,20,27,.55)" : "rgba(102,117,137,.35)"); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(255,255,255,.05)"; ctx.lineWidth = 1;
+  for (let r = 40; r < 1100; r += 14) { ctx.beginPath(); ctx.arc(W / 2, H + 60, r, Math.PI, Math.PI * 2); ctx.stroke(); }
+  ctx.strokeStyle = "rgba(255,255,255,.025)"; for (let x = -H; x < W; x += 9) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke(); }
+  if (lg) { ctx.strokeStyle = "rgba(255,255,255,.035)"; for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); } for (let y = 0; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); } }
+  if (cc) { ctx.fillStyle = "rgba(242,184,191,.07)"; const star = (x, y, r) => { ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * .45 : r; ctx.lineTo(x + q * Math.cos(a), y + q * Math.sin(a)); } ctx.closePath(); ctx.fill(); }; for (let y = 30, row = 0; y < H; y += 90, row++) for (let x = (row % 2) * 70 + 30; x < W; x += 140) star(x, y, 9); }
+  // Large faded crest behind the name
+  if (cc && councilImg?.naturalWidth) { const cw = 600, ch = cw * councilImg.naturalHeight / councilImg.naturalWidth; ctx.globalAlpha = .08; ctx.drawImage(councilImg, W / 2 - cw / 2, 560, cw, ch); ctx.globalAlpha = 1; } else if (crestImg.naturalWidth) { const ch = 520, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.globalAlpha = .07; ctx.drawImage(crestImg, W / 2 - cw / 2, 430, cw, ch); ctx.globalAlpha = 1; }
+  // Header: crest, team name, school, year
+  if (crestImg.naturalWidth) { const ch = 110, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.save(); ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4; ctx.drawImage(crestImg, W / 2 - cw / 2, 52, cw, ch); ctx.restore(); }
+  ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; fit(lg ? "LOGISTICS" : cc ? "STUDENT COUNCIL" : (S.settings.teamName || "Primum Auxilium").toUpperCase(), s => `700 ${s}px ${D}`, W - 70, 36, 22); ctx.fillText(lg ? "LOGISTICS" : cc ? "STUDENT COUNCIL" : (S.settings.teamName || "Primum Auxilium").toUpperCase(), W / 2, 212);
+  const sub = lg ? (S.settings.teamName || "Primum Auxilium").toUpperCase() + "  ·  MEIS" : cc ? "M-EIS LA PASIÓN" : "VOLUNTEERING TEAM";
+  ctx.fillStyle = cc ? "rgba(242,184,191,.8)" : "rgba(201,206,214,.75)"; ctx.font = `700 14px ${B}`; spaced(sub, W / 2, 242, 3, "center");
+  ctx.font = `600 18px ${M}`; const yr = s_year(), yw = ctx.measureText(yr).width + 34;
+  rr(W / 2 - yw / 2, 262, yw, 36, 18); ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.fillText(yr, W / 2, 286);
+  // Monogram or desk emblem tile
+  const ms = 190, mx = W / 2 - ms / 2, my = 336;
+  ctx.save(); ctx.shadowColor = acc[1] + "AA"; ctx.shadowBlur = 34; rr(mx, my, ms, ms, 36); g = ctx.createLinearGradient(mx, my, mx + ms, my + ms); g.addColorStop(0, acc[0]); g.addColorStop(1, acc[1]); ctx.fillStyle = g; ctx.fill(); ctx.restore();
+  rr(mx + 7, my + 7, ms - 14, ms - 14, 30); ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.lineWidth = 1.5; ctx.stroke();
+  const emb = lg ? "logistics" : cc && cc.perm;
+  if (CARD_EMB[emb]) {
+    ctx.save(); ctx.translate(mx + 35, my + 35); ctx.scale(5, 5); ctx.strokeStyle = lg ? "#0A0A0A" : "#3B0F16"; ctx.lineWidth = 1.9; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.stroke(new Path2D(CARD_EMB[emb])); ctx.restore();
+    if (cc) { ctx.fillStyle = "#FFFFFF"; ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 6 : 13; ctx.lineTo(mx + ms - 26 + q * Math.cos(a), my + 26 + q * Math.sin(a)); } ctx.closePath(); ctx.fill(); }
+  } else { ctx.fillStyle = cc ? "#3B0F16" : "#0E1830"; ctx.font = `700 78px ${D}`; ctx.textAlign = "center"; ctx.fillText(initials(v.name), W / 2, my + ms / 2 + 28); }
+  // Name: one to three centred lines, Arabic name under it
+  const maxW = W - 80, words = v.name.trim().split(/\s+/);
+  const split = n => { const out = [], per = words.join(" ").length / n; let cur = []; for (const w of words) { if (cur.length && out.length < n - 1 && (cur.join(" ") + " " + w).length > per + 2) { out.push(cur.join(" ")); cur = []; } cur.push(w); } out.push(cur.join(" ")); return out; };
+  let lines = [], size = 30;
+  for (let n = 1; n <= Math.min(3, words.length); n++) { const L = split(n); let s = n === 1 ? 52 : 46; ctx.font = `700 ${s}px ${D}`; while (L.some(l => ctx.measureText(l).width > maxW) && s > 32) { s -= 1; ctx.font = `700 ${s}px ${D}`; } if (!L.some(l => ctx.measureText(l).width > maxW) || n === Math.min(3, words.length)) { lines = L; size = s; break; } }
+  ctx.font = `700 ${size}px ${D}`; ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center";
+  const nameTop = 604 + (3 - lines.length) * 14; lines.forEach((l, i) => ctx.fillText(l, W / 2, nameTop + i * size * 1.1));
+  const ruleY = nameTop + (lines.length - 1) * size * 1.1 + 24;
+  g = ctx.createLinearGradient(W / 2 - 130, 0, W / 2 + 130, 0); g.addColorStop(0, "transparent"); g.addColorStop(.5, acc[0]); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.fillRect(W / 2 - 130, ruleY, 260, 3);
+  if (v.nameAr) { ctx.save(); ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.fillStyle = "rgba(201,206,214,.85)"; fit(v.nameAr, s => `600 ${s}px ${AR}`, maxW, 26, 16); ctx.fillText(v.nameAr, W / 2, ruleY + 40); ctx.restore(); }
+  // Details: class and rank side by side, role or desk across
+  const fields = cc ? [["CLASS", cls(v) || "—"], ["COUNCIL", s_year()], ["DESK", cc.title]] : [["CLASS", cls(v) || "—"], ["RANK", lead ? "Head" : rk ? rk.label.replace(/ Volunteer$/, "") : "Volunteer"], ["ROLE", v.role || (lg ? "Head of Logistics" : "Volunteer")]];
+  const cell = ([l, val], x, y, w, hi) => { ctx.fillStyle = "rgba(201,206,214,.6)"; ctx.font = `700 13px ${B}`; spaced(l, x, y, 3, "center"); ctx.fillStyle = hi ? acc[0] : "#FFFFFF"; ctx.textAlign = "center"; fit(val, s => `700 ${s}px ${B}`, w, 26, 15); ctx.fillText(val, x, y + 34); };
+  cell(fields[0], W * .3, 846, W * .36); cell(fields[1], W * .7, 846, W * .36, true); cell(fields[2], W / 2, 916, W - 80);
+  ctx.fillStyle = "rgba(255,255,255,.14)"; ctx.fillRect(W / 2 - .5, 830, 1, 52);
+  // Bottom glass band: ID number, validity and the holographic seal
+  const by = 984;
+  ctx.fillStyle = "rgba(255,255,255,.06)"; ctx.fillRect(0, by, W, H - by); ctx.fillStyle = "rgba(255,255,255,.14)"; ctx.fillRect(0, by, W, 1);
+  ctx.fillStyle = "rgba(201,206,214,.6)"; ctx.font = `700 12px ${B}`; spaced("ID NUMBER", 40, by + 36, 3); spaced("VALID UNTIL", 40, by + 98, 3);
+  ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "left"; ctx.font = `600 28px ${M}`; ctx.fillText(idNumber({ ...v, id: vid }), 40, by + 70);
+  ctx.font = `600 22px ${M}`; if (bl) ctx.fillStyle = "#FF6B70"; ctx.fillText(bl ? "Suspended" : fmtDate(S.settings.yearEnd, { month: "short", year: "numeric" }), 40, by + 128); ctx.fillStyle = "#FFFFFF";
+  const sx = W - 96, sy = by + 78, sr = 52;
+  ctx.save(); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.clip();
+  if (ctx.createConicGradient) { g = ctx.createConicGradient(0.6, sx, sy); (lg ? ["#FFFFFF", "#8C8C8C", "#E6E6E6", "#5E5E5E", "#FFFFFF"] : cc ? ["#F2B8BF", "#C25661", "#FFE3C2", "#E6A1A9", "#F2B8BF"] : ["#9BE7FF", "#C7A6F5", "#FFD6A5", "#B5F5C8", "#9BE7FF"]).forEach((c, i) => g.addColorStop(i / 4, c)); } else { g = ctx.createLinearGradient(sx - sr, sy - sr, sx + sr, sy + sr); g.addColorStop(0, "#9BE7FF"); g.addColorStop(.5, "#C7A6F5"); g.addColorStop(1, "#FFD6A5"); }
+  ctx.fillStyle = g; ctx.fillRect(sx - sr, sy - sr, sr * 2, sr * 2);
+  ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1; for (let r = 8; r < sr; r += 6) { ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.stroke(); }
+  if (cc && councilImg?.naturalWidth) { ctx.beginPath(); ctx.arc(sx, sy, 36, 0, Math.PI * 2); ctx.fillStyle = "#4A1219"; ctx.fill(); const cw = 62, ch = cw * councilImg.naturalHeight / councilImg.naturalWidth; ctx.drawImage(councilImg, sx - cw / 2, sy - ch / 2, cw, ch); } else if (crestImg.naturalWidth) { const ch = 60, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight; ctx.globalAlpha = .9; ctx.drawImage(crestImg, sx - cw / 2, sy - ch / 2, cw, ch); ctx.globalAlpha = 1; }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 2; ctx.stroke();
+  g = ctx.createLinearGradient(0, 0, W, 0); g.addColorStop(0, acc[1]); g.addColorStop(.5, acc[0]); g.addColorStop(1, acc[1]); ctx.fillStyle = g; ctx.fillRect(0, H - 10, W, 10);
+  if (bl) {
+    ctx.globalCompositeOperation = "saturation"; ctx.fillStyle = "hsl(0,0%,50%)"; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = "rgba(110,0,12,.32)"; ctx.fillRect(0, 0, W, H);
+    const tape = (y, h) => { ctx.save(); ctx.beginPath(); ctx.rect(0, y, W, h); ctx.clip(); ctx.fillStyle = "#111"; ctx.fillRect(0, y, W, h); ctx.fillStyle = "#E5484D"; for (let x = -h; x < W + h; x += 36) { ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x + 18, y + h); ctx.lineTo(x + 18 + h, y); ctx.lineTo(x + h, y); ctx.closePath(); ctx.fill(); } ctx.restore(); };
+    tape(0, 16); tape(H - 20, 20);
+    ctx.save(); ctx.translate(W / 2, 431); ctx.rotate(-.22);
+    ctx.font = `700 52px ${D}`; const tw = Math.min(W - 40, ctx.measureText("BLACKLISTED").width + 56);
+    ctx.shadowColor = "rgba(229,72,77,.6)"; ctx.shadowBlur = 24; rr(-tw / 2, -56, tw, 104, 16); ctx.strokeStyle = "#E5484D"; ctx.lineWidth = 7; ctx.stroke(); ctx.shadowBlur = 0;
+    rr(-tw / 2 + 10, -46, tw - 20, 84, 9); ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "#E5484D"; ctx.textAlign = "center"; ctx.fillText("BLACKLISTED", 0, 6);
+    ctx.font = `700 15px ${B}`; spaced("ACCESS SUSPENDED", 0, 32, 5, "center");
+    ctx.restore();
+  }
+  ctx.restore();
+  ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 2; rr(1, 1, W - 2, H - 2, 29); ctx.stroke();
+}
 const s_year = () => `${S.settings.yearStart.slice(0, 4)}–${S.settings.yearEnd.slice(2, 4)}`;
 function cardModal() {
   const v = S.volunteers[ui.cardId];
-  return `<div class="modal" role="dialog" aria-label="ID card"><h2>${esc(v ? v.name : "")}'s ID card</h2>
-    <canvas class="certview" id="cardCanvas" width="1012" height="638" style="border-radius:18px;max-width:560px;margin:0 auto"></canvas>
-    <div class="muted" style="font-size:13px;margin-top:12px">Prints at standard card size (85.6 × 54 mm).</div>
-    <div class="actions">${downloads ? `<button class="btn" data-act="card-png">Download image</button><button class="btn primary" data-act="card-pdf">Download PDF</button>` : `<span class="muted" style="font-size:13px;margin-right:auto">Downloads unavailable</span>`}<button class="btn ghost" data-close>Close</button></div></div>`;
+  const dl = (p, what) => downloads ? `<div class="idfig-acts"><button class="btn small" data-act="${p}-png" aria-label="Download ${what} image">Image</button><button class="btn small primary" data-act="${p}-pdf" aria-label="Download ${what} PDF">PDF</button></div>` : "";
+  return `<div class="modal wide idmodal" role="dialog" aria-label="ID card"><h2>${esc(v ? v.name : "")}'s ID card</h2>
+    <div class="idpair">
+      <figure class="idfig"><canvas class="certview" id="cardCanvas" width="1012" height="638" style="border-radius:18px"></canvas><figcaption><b>ID card</b><span class="muted">85.6 × 54 mm</span></figcaption>${dl("card", "ID card")}</figure>
+      <figure class="idfig lan"><canvas class="certview" id="lanCanvas" width="650" height="1150" style="border-radius:12px"></canvas><figcaption><b>Lanyard ID</b><span class="muted">65 × 115 mm</span></figcaption>${dl("lan", "lanyard ID")}</figure>
+    </div>
+    <div class="actions">${downloads ? "" : `<span class="muted" style="font-size:13px;margin-right:auto">Downloads unavailable</span>`}<button class="btn ghost" data-close>Close</button></div></div>`;
 }
-async function cardsPDF(ids, btn) {
+async function cardsPDF(ids, btn, lan) {
   if (!downloads || !ids.length) return; if (btn) btn.disabled = true;
   try {
     const { jsPDF } = await loadJsPDF();
-    const one = ids.length === 1, pdf = new jsPDF(one ? { orientation: "landscape", unit: "mm", format: [85.6, 54] } : { unit: "mm", format: "a4" });
-    const c = document.createElement("canvas"); c.width = 2024; c.height = 1276;
+    const one = ids.length === 1, pdf = new jsPDF(one ? (lan ? { orientation: "portrait", unit: "mm", format: [65, 115] } : { orientation: "landscape", unit: "mm", format: [85.6, 54] }) : { unit: "mm", format: "a4" });
+    const c = document.createElement("canvas"); if (lan) { c.width = one ? 1300 : 975; c.height = one ? 2300 : 1725; } else { c.width = 2024; c.height = 1276; }
     for (let i = 0; i < ids.length; i++) {
-      await drawCard(c, ids[i]); const img = c.toDataURL("image/jpeg", .93);
-      if (one) { pdf.addImage(img, "JPEG", 0, 0, 85.6, 54); break; }
+      await (lan ? drawLanyard : drawCard)(c, ids[i]); const img = c.toDataURL("image/jpeg", .93);
+      if (one) { pdf.addImage(img, "JPEG", 0, 0, lan ? 65 : 85.6, lan ? 115 : 54); break; }
+      if (lan) { const slot = i % 6; if (i && !slot) pdf.addPage(); pdf.addImage(img, "JPEG", 5.5 + (slot % 3) * 67, 31.5 + Math.floor(slot / 3) * 119, 65, 115); continue; }
       const slot = i % 10; if (i && !slot) pdf.addPage();
       const col = slot % 2, row = Math.floor(slot / 2), x = 15 + col * (85.6 + 8), y = 14 + row * (54 + 3.5);
       pdf.addImage(img, "JPEG", x, y, 85.6, 54);
     }
-    const name = one ? `id-card-${S.volunteers[ids[0]].name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf` : `primum-auxilium-id-cards-${todayISO()}.pdf`;
+    const slug = n => n.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const name = one ? `${lan ? "lanyard-id" : "id-card"}-${slug(S.volunteers[ids[0]].name)}.pdf` : `primum-auxilium-${lan ? "lanyard-ids" : "id-cards"}-${todayISO()}.pdf`;
     await downloads.save({ filename: name, data: pdf.output("arraybuffer") });
   } catch (e) { if (!(e && e.code === "declined")) toast("Download failed"); }
   if (btn) btn.disabled = false;
@@ -4124,7 +4227,10 @@ document.addEventListener("click", async e => {
     case "promote": await setRank(id, a.dataset.rank); if (view === "dashboard") refresh(); break;
     case "promo-skip": await put("volunteers", id, { ...S.volunteers[id], promoSkip: a.dataset.rank }); toast("Hidden until next rank"); break;
     case "peek": ui.drawer = null; ui.modal = () => peekModal(id); renderOverlay(); break;
-    case "open-card": ui.drawer = null; ui.cardId = id; ui.modal = cardModal; renderOverlay(); drawCard($("#cardCanvas"), id); break;
+    case "open-card": ui.drawer = null; ui.cardId = id; ui.modal = cardModal; renderOverlay(); drawCard($("#cardCanvas"), id); drawLanyard($("#lanCanvas"), id); break;
+    case "lan-png": { a.disabled = true; const c = document.createElement("canvas"); c.width = 1300; c.height = 2300; await drawLanyard(c, ui.cardId); const blob = await new Promise(r => c.toBlob(r, "image/png")); try { await downloads.save({ filename: `lanyard-id-${S.volunteers[ui.cardId].name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`, data: blob }); } catch (e) { if (!(e && e.code === "declined")) toast("Download failed"); } a.disabled = false; break; }
+    case "lan-pdf": cardsPDF([ui.cardId], a, true); break;
+    case "all-lanyards": { const ids = sortVols(vols().filter(v => statusOf(v.status).rule !== "block")).map(v => v.id); if (!ids.length) { toast("Roster empty"); break; } toast(`Preparing ${ids.length} lanyard ID${ids.length === 1 ? "" : "s"}…`); cardsPDF(ids, a, true); break; }
     case "card-png": { a.disabled = true; const c = document.createElement("canvas"); c.width = 2024; c.height = 1276; await drawCard(c, ui.cardId); const blob = await new Promise(r => c.toBlob(r, "image/png")); try { await downloads.save({ filename: `id-card-${S.volunteers[ui.cardId].name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`, data: blob }); } catch (e) { if (!(e && e.code === "declined")) toast("Download failed"); } a.disabled = false; break; }
     case "card-pdf": cardsPDF([ui.cardId], a); break;
     case "all-cards": { const ids = sortVols(vols().filter(v => statusOf(v.status).rule !== "block")).map(v => v.id); if (!ids.length) { toast("Roster empty"); break; } toast(`Preparing ${ids.length} ID card${ids.length === 1 ? "" : "s"}…`); cardsPDF(ids, a); break; }
@@ -5675,7 +5781,7 @@ function peekModal(id) {
     <dl class="pk-list">${rows.map(([k, x]) => `<div><dt>${k}</dt><dd>${esc(x)}</dd></div>`).join("")}</dl>
     <div class="actions"><button class="btn primary" data-act="open-card" data-id="${id}">${ic("user")}ID card</button><button class="btn ghost" data-close>Close</button></div></div>`;
 }
-Object.assign(AR_UI, { "Not found.": "غير موجود.", "ID card": "بطاقة الهوية", "Rank": "الرتبة", "Role": "الدور", "Class": "الصف", "Student Council": "مجلس الطلبة" });
+Object.assign(AR_UI, { "Lanyard ID": "بطاقة شريط التعليق", "Print lanyard IDs": "طباعة بطاقات شريط التعليق", "Image": "صورة", "Not found.": "غير موجود.", "ID card": "بطاقة الهوية", "Rank": "الرتبة", "Role": "الدور", "Class": "الصف", "Student Council": "مجلس الطلبة" });
 
 boot();
 })();

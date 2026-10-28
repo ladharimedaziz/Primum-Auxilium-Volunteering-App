@@ -1,6 +1,6 @@
 // Network first so updates show at once; the last copy opens the app when offline.
 const C = "pa-shell-v1";
-self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll(["./", "manifest.webmanifest", "icon-192.png", "img/councilLogoInk.webp", "img/crestImg.webp", "img/meisLogo.webp", "img/ataaLogo.webp", "img/councilLogo.webp"]))); });
+self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll(["./", "manifest.webmanifest", "icon-192.png", "img/councilLogoInk.webp", "img/clubsLogo.webp", "img/crestImg.webp", "img/meisLogo.webp", "img/ataaLogo.webp", "img/councilLogo.webp"]))); });
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
 self.addEventListener("push", e => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch {}

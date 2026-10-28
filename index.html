@@ -1110,21 +1110,6 @@ body{background:radial-gradient(900px 620px at 12% 6%,color-mix(in srgb,var(--gl
 :root[data-theme="dark"] .rim{height:1px!important;background:linear-gradient(90deg,transparent,rgba(201,206,214,.55),transparent)!important}
 :root[data-theme="dark"] .credits{border-color:var(--glass-line)}
 .theme-btn .ic{width:15px;height:15px}
-/* radar behind the glass: the Head and the council only */
-.radar{display:none;position:fixed;z-index:-1;pointer-events:none;width:min(118vmin,1100px);aspect-ratio:1;inset-inline-end:-16vmin;top:52%;translate:0 -50%;border-radius:50%;
-  background:repeating-radial-gradient(circle closest-side,transparent 0 calc(12.5% - 1.5px),rgba(var(--radar),.2) calc(12.5% - 1.5px) 12.5%),linear-gradient(transparent calc(50% - .5px),rgba(var(--radar),.16) 0 calc(50% + .5px),transparent 0),linear-gradient(90deg,transparent calc(50% - .5px),rgba(var(--radar),.16) 0 calc(50% + .5px),transparent 0);
-  -webkit-mask:radial-gradient(circle closest-side,#000 98%,transparent 100%);mask:radial-gradient(circle closest-side,#000 98%,transparent 100%)}
-body[data-role="head"]:not(.gated) .radar,body[data-role="council"]:not(.gated) .radar{display:block}
-.radar .sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 72%,rgba(var(--radar),.05) 84%,rgba(var(--radar),.16) 96%,rgba(var(--radar),.3));animation:radarSpin 5s linear infinite}
-.radar .sweep::after{content:"";position:absolute;left:50%;top:0;width:2px;height:50%;margin-left:-1px;background:linear-gradient(rgba(var(--radar),.9),rgba(var(--radar),.2));box-shadow:0 0 14px rgba(var(--radar),.8)}
-.radar b{position:absolute;width:9px;height:9px;margin:-4.5px;border-radius:50%;background:rgb(var(--radar));box-shadow:0 0 14px rgb(var(--radar));opacity:0;animation:radarBlip 5s linear infinite;animation-delay:var(--d)}
-@keyframes radarSpin{to{transform:rotate(360deg)}}
-@keyframes radarBlip{0%{opacity:1;transform:scale(1.5)}8%{opacity:.95;transform:scale(1)}80%,100%{opacity:0;transform:scale(.8)}}
-/* the radar keeps spinning with the device's reduced-motion setting; only the in-app Calm motion switch stops it */
-html.calm:not(.calm-pick) .radar .sweep{animation:radarSpin 5s linear infinite!important}
-html.calm:not(.calm-pick) .radar b{animation:radarBlip 5s linear infinite!important;animation-delay:var(--d)!important}
-html.calm-pick .radar b{opacity:.5}
-@media print{.radar{display:none!important}}
 /* tab icons show in the side menu */
 .tab .ic{display:none}
 @media (min-width:1100px){
@@ -5737,8 +5722,6 @@ function themeBtn() {
   const root = document.documentElement.style;
   root.setProperty("--crest", `url("${crestSrc()}")`);
   root.setProperty("--crest-c", `url("${cLogoInk()}")`);
-  const blips = [[30, 26], [68, 34], [74, 66], [38, 72], [56, 18], [22, 52], [61, 58], [44, 38], [83, 47], [50, 84]].map(([x, y]) => [x, y, ((Math.atan2(x - 50, 50 - y) * 180 / Math.PI + 360) % 360 / 360 * 5).toFixed(2)]);
-  document.body.insertAdjacentHTML("beforeend", `<div class="radar" aria-hidden="true"><i class="sweep"></i>${blips.map(([x, y, d]) => `<b style="left:${x}%;top:${y}%;--d:${d}s"></b>`).join("")}</div>`);
 }
 Object.assign(AR_UI, { "Light mode": "الوضع الفاتح", "Dark mode": "الوضع الداكن" });
 

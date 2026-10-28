@@ -1221,6 +1221,30 @@ body:not(.gated) .tab[aria-selected="true"]{background:linear-gradient(90deg,col
 .gate-card{border-radius:32px!important}
 .bnav{left:10px!important;right:10px!important;bottom:calc(10px + env(safe-area-inset-bottom,0px))!important;border-radius:28px!important;border:1px solid var(--au-edge)!important;padding-bottom:6px!important;box-shadow:0 24px 50px -20px rgba(0,0,0,.7);backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5)}
 [data-realm="council"] .bnav{border-top-width:1px}
+
+/* clubs */
+.cl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.cl-card{display:flex;flex-direction:column;gap:6px}
+.cl-head{display:flex;gap:12px;align-items:center}
+.cl-logo{width:44px;height:44px;border-radius:12px;object-fit:cover;flex:none;background:#1E6B43;color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px}
+.cl-name{display:block;font-size:16px}
+.cl-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;font-size:13.5px}
+.cl-meta small{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.cl-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.cl-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.cl-stat .big-h{font-size:28px}
+.cl-seg{margin-top:4px}
+.cl-sess{margin-bottom:10px}
+.cl-text{white-space:pre-wrap;margin:8px 0 6px;font-size:14.5px}
+.cl-names{display:flex;flex-wrap:wrap;gap:6px}
+.cl-chip{background:var(--sunk);border-radius:999px;padding:4px 10px;font-size:13px}
+.cl-chip small{color:var(--muted)}
+.cl-form{margin-bottom:14px;display:flex;flex-direction:column;gap:10px}
+.cl-att>div,.cl-reg>div{display:grid;grid-template-columns:1fr 80px 80px 80px;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
+.cl-att-h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.cl-reg>div{grid-template-columns:1fr 170px}
+.cl-doc{display:flex;gap:12px;align-items:center;text-decoration:none;color:inherit}
+.cl-rules{margin:0;padding-left:18px;font-size:14px;line-height:1.55}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -1271,8 +1295,8 @@ const RANKS = [
 ];
 const TONES = ["teal", "violet", "rose", "blue", "brass", "grey"];
 const REPORT_KINDS = ["Event report", "Weekly summary", "Incident", "Audit"];
-const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, appeals: {}, cchat: {}, cmutes: {}, cwork: {}, achat: {}, seats: {}, bills: {}, cvotes: {}, cgchat: {}, bans: {}, cachat: {}, settings: { ...DEFAULTS } };
-const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews", "appeals", "cchat", "cmutes", "cwork", "achat", "seats", "bills", "cvotes", "cgchat", "bans", "cachat", "audit"];
+const S = { volunteers: {}, entries: {}, reports: {}, events: {}, accounts: {}, complaints: {}, queries: {}, logs: {}, reviews: {}, appeals: {}, cchat: {}, cmutes: {}, cwork: {}, achat: {}, seats: {}, bills: {}, cvotes: {}, cgchat: {}, bans: {}, cachat: {}, clubs: {}, csess: {}, cinc: {}, settings: { ...DEFAULTS } };
+const COLLS = ["volunteers", "entries", "reports", "events", "accounts", "complaints", "queries", "logs", "reviews", "appeals", "cchat", "cmutes", "cwork", "achat", "seats", "bills", "cvotes", "cgchat", "bans", "cachat", "clubs", "csess", "cinc", "audit"];
 let db = null, downloads = null, mode = "loading";
 const DESKTOP = !!window.PA_DESKTOP;
 let view = "dashboard";
@@ -1368,7 +1392,7 @@ function weeksLeft() { return Math.max(1, daysBetween(todayISO(), S.settings.yea
 
 /* ---------- persistence ---------- */
 const LKEY = "primum-auxilium-v1";
-function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, cchat: S.cchat, cmutes: S.cmutes, cwork: S.cwork, achat: S.achat, seats: S.seats, bills: S.bills, cvotes: S.cvotes, cgchat: S.cgchat, bans: S.bans, cachat: S.cachat, settings: S.settings }); }
+function saveLocal() { store.set(LKEY, { volunteers: S.volunteers, entries: S.entries, reports: S.reports, events: S.events, accounts: S.accounts, complaints: S.complaints, queries: S.queries, logs: S.logs, reviews: S.reviews, appeals: S.appeals, cchat: S.cchat, cmutes: S.cmutes, cwork: S.cwork, achat: S.achat, seats: S.seats, bills: S.bills, cvotes: S.cvotes, cgchat: S.cgchat, bans: S.bans, cachat: S.cachat, clubs: S.clubs, csess: S.csess, cinc: S.cinc, settings: S.settings }); }
 async function put(coll, id, obj) {
   if (!allowed(coll, id)) { toast("View only"); return false; }
   if (mode === "cloud") return cloudPut(coll, id, obj);
@@ -1680,7 +1704,7 @@ async function boot() {
   } else {
     mode = "local";
     const saved = store.get(LKEY);
-    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, appeals: saved.appeals || {}, logs: saved.logs || {}, cchat: saved.cchat || {}, cmutes: saved.cmutes || {}, cwork: saved.cwork || {}, achat: saved.achat || {}, seats: saved.seats || {}, bills: saved.bills || {}, cvotes: saved.cvotes || {}, cgchat: saved.cgchat || {}, bans: saved.bans || {}, cachat: saved.cachat || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
+    if (saved) Object.assign(S, { volunteers: saved.volunteers || {}, entries: saved.entries || {}, reports: saved.reports || {}, events: saved.events || {}, accounts: saved.accounts || {}, complaints: saved.complaints || {}, queries: saved.queries || {}, reviews: saved.reviews || {}, appeals: saved.appeals || {}, logs: saved.logs || {}, cchat: saved.cchat || {}, cmutes: saved.cmutes || {}, cwork: saved.cwork || {}, achat: saved.achat || {}, seats: saved.seats || {}, bills: saved.bills || {}, cvotes: saved.cvotes || {}, cgchat: saved.cgchat || {}, bans: saved.bans || {}, cachat: saved.cachat || {}, clubs: saved.clubs || {}, csess: saved.csess || {}, cinc: saved.cinc || {}, settings: { ...DEFAULTS, ...(saved.settings || {}) } });
     else if (!DESKTOP) seedLocal();
     loadSession(); render(true);
   }
@@ -1742,7 +1766,8 @@ const myVol = () => { const a = me(); if (!a) return null; const id = a.role ===
 const perm = () => me()?.perm || null;
 const held = () => role() === "volunteer" && !!myVol() && statusOf(myVol().status).rule === "block";
 const seated = () => role() === "volunteer" && !held() && !!myVol() && !!S.seats[myVol().id];
-const tabsFor = () => realm() === "council" ? councilTabs() : held() ? [["appeal", "Appeal"]] : role() === "volunteer" && seated() ? [...TABS.volunteer, ["congress", "Congress"], ["cgchat", "Congress chat"]] : role() === "council" ? [...TABS.council, ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ["history", "History"], ...(perm() === "pr" ? [["pr", "Announcements"]] : [])] : TABS[role()] || [];
+const tabsBase = () => realm() === "council" ? councilTabs() : held() ? [["appeal", "Appeal"]] : role() === "volunteer" && seated() ? [...TABS.volunteer, ["congress", "Congress"], ["cgchat", "Congress chat"]] : role() === "council" ? [...TABS.council, ["inbox", "Inbox"], ["review", "Review"], ["appeals", "Appeals"], ["history", "History"], ...(perm() === "pr" ? [["pr", "Announcements"]] : [])] : TABS[role()] || [];
+const tabsFor = () => { const l = tabsBase(); if (!clAccess() || held() || l.some(x => x[0] === "clubs")) return l; const at = l.findIndex(x => ["history", "handbook", "settings"].includes(x[0])); const n = [...l]; n.splice(at < 0 ? n.length : at, 0, ["clubs", "Clubs"]); return n; };
 // Student Council 2026–27. The Head of Volunteers is Dan's own account, so he is not listed.
 const COUNCIL = [["Fayez Sankari", "President", "president"], ["Abel Varghese", "Vice President", "vp"], ["Murad Samarah", "VP's Aide", "aide"], ["Suhaib Mohammad", "Newspaper Manager", "newspaper"],
   ["Waleed Osama", "Head of Academics", "academics"], ["Sameer Haroun", "Head of Finance", "finance"], ["Mohammad Thaer", "Head of Media", "media"], ["Ragheb Haroun", "Head of PR & Communication", "pr"],
@@ -1769,6 +1794,8 @@ function allowed(coll, id) {
   if (coll === "events") return (r === "admin" && (!S.events[id] || S.events[id].status !== "done")) || (r === "council" && (!S.events[id] || canEditEv(S.events[id])));
   if (coll === "accounts") return !!session && id === session.id;
   if (coll === "seats") return false;
+  if (coll === "clubs") return clMgr();
+  if (coll === "csess" || coll === "cinc") { const c = S.clubs[(S[coll][id] || {}).club]; return clMgr() || (r === "volunteer" && (!S[coll][id] ? true : !!c && clMine(c))); }
   if (coll === "bans") return r === "admin" && (!S.bans[id] || (S.bans[id].status === "pending" && S.bans[id].byRole !== "admin"));
   if (coll === "cachat") return ["council", "admin"].includes(r) && (!S.cachat[id] || S.cachat[id].by === session?.id);
   if (coll === "cgchat") return r === "volunteer" && seated() && (!S.cgchat[id] || S.cgchat[id].by === myVol()?.id);
@@ -2055,6 +2082,7 @@ function refresh() {
   else if (view === "cgchat") gchatRefresh();
 
   else if (view === "cachat") xchatRefresh();
+  else if (view === "clubs") { const ae = document.activeElement; if (!CLS().form && !(ae && el.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName))) { el.innerHTML = VIEWS.clubs(); after.clubs(); } }
   else if (view === "cevents" || view === "pr") el.innerHTML = VIEWS[view]();
   else if (view === "team") { const l = $("#teamList"); if (l) l.innerHTML = teamRows(); }
   else if (view.startsWith("c-")) councilRefresh();
@@ -4944,6 +4972,201 @@ document.addEventListener("click", async e => {
   if (await del("cachat", a.dataset.id) !== false) { if (mode === "cloud") await cloudPull(false); xchatRefresh(); }
 });
 
+/* ---------- Clubs (La Pasión student clubs, MEIS - Al Wurud) ---------- */
+const CL_TABS = [["overview", "Overview"], ["clubs", "Clubs"], ["members", "Members"], ["plans", "Session plans"], ["reports", "Session reports"], ["incidents", "Incident reports"], ["attendance", "Attendance"], ["handbooks", "Handbooks"]];
+const CL_GRADES = [9, 10, 11, 12];
+const clMgr = () => role() === "head" || (role() === "council" && perm() === "pr");
+const clMine = c => { const v = myVol(); return !!v && (c.staff || []).includes(v.id); };
+const clCan = c => clMgr() || (role() === "volunteer" && !!c && clMine(c));
+const clAccess = () => ["head", "admin", "council"].includes(role()) || (role() === "volunteer" && !held() && Object.keys(S.clubs).length > 0);
+const clubList = () => Object.entries(S.clubs).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.grade - b.grade) || String(a.name).localeCompare(String(b.name)));
+const CLS = () => (ui.cl = ui.cl || { tab: "overview", grade: "all", club: "", form: null });
+const clShown = () => clubList().filter(c => (CLS().grade === "all" || String(c.grade) === String(CLS().grade)) && (!CLS().club || c.id === CLS().club));
+const clFind = n => { const k = normName(n || ""); return k ? vols().find(v => normName(v.name) === k) : null; };
+const clLogo = c => c.logo ? `<img class="cl-logo" src="${esc(c.logo)}" alt="">` : `<span class="cl-logo">${esc(initials(c.name))}</span>`;
+const clSess = () => Object.entries(S.csess).map(([id, s]) => ({ id, ...s })).sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.at || "").localeCompare(a.at || ""));
+const clInc = () => Object.entries(S.cinc).map(([id, s]) => ({ id, ...s })).sort((a, b) => (a.status === "open" ? 0 : 1) - (b.status === "open" ? 0 : 1) || (b.date || "").localeCompare(a.date || ""));
+const clOk = x => S.clubs[x.club] && (CLS().grade === "all" || String(S.clubs[x.club].grade) === String(CLS().grade)) && (!CLS().club || x.club === CLS().club);
+const clName = id => S.clubs[id]?.name || "Club";
+const clWho = p => p && p.name ? esc(p.name) : "Not assigned";
+const clWritable = () => clubList().filter(clCan);
+function clTabs() {
+  const st = CLS();
+  return `<div class="seg cl-seg" role="group" aria-label="Clubs">${CL_TABS.map(([k, l]) => `<button data-cl="tab" data-k="${k}" aria-pressed="${st.tab === k}">${l}</button>`).join("")}</div>`;
+}
+function clFilters() {
+  const st = CLS();
+  return `<div class="filters" style="margin-top:12px"><div class="seg" role="group" aria-label="Grade"><button data-cl="grade" data-k="all" aria-pressed="${st.grade === "all"}">All</button>${CL_GRADES.map(g => `<button data-cl="grade" data-k="${g}" aria-pressed="${String(st.grade) === String(g)}">G${g}</button>`).join("")}</div>
+    <select id="clPick" aria-label="Club"><option value="">All clubs</option>${clubList().filter(c => st.grade === "all" || String(c.grade) === String(st.grade)).map(c => `<option value="${c.id}" ${st.club === c.id ? "selected" : ""}>${esc(c.name)} · G${c.grade}</option>`).join("")}</select></div>`;
+}
+function clCard(c) {
+  const n = (c.members || []).length, ss = clSess().filter(s => s.club === c.id).length;
+  return `<article class="panel cl-card">
+    <div class="cl-head">${clLogo(c)}<div style="flex:1;min-width:0"><b class="cl-name">${esc(c.name)}</b><div class="muted" style="font-size:13px">Grade ${esc(c.grade)}${c.day || c.time ? " · " + esc([c.day, c.time].filter(Boolean).join(" ")) : ""}${c.room ? " · " + esc(c.room) : ""}</div></div>
+      ${c.status && c.status !== "active" ? `<span class="tag warn">${esc(c.status)}</span>` : ""}</div>
+    ${c.desc ? `<p class="muted" style="font-size:13.5px;margin:8px 0 0">${esc(c.desc)}</p>` : ""}
+    <div class="cl-meta"><span><small>Club Teacher</small>${clWho(c.teacher)}</span><span><small>Proctors</small>${(c.proctors || []).length ? (c.proctors || []).map(clWho).join(", ") : "Not assigned"}</span></div>
+    <div class="cl-foot"><span>${n} member${n === 1 ? "" : "s"} · ${ss} session${ss === 1 ? "" : "s"}</span>${clMgr() ? `<span style="display:flex;gap:6px"><button class="btn small" data-cl="edit-club" data-id="${c.id}">Edit</button><button class="btn small danger" data-cl="del-club" data-id="${c.id}">Delete</button></span>` : ""}</div>
+  </article>`;
+}
+function clOverview() {
+  const all = clubList(), per = CL_GRADES.map(g => ({ g, n: all.filter(c => String(c.grade) === String(g)).length }));
+  const mem = all.reduce((t, c) => t + (c.members || []).length, 0), open = clInc().filter(i => i.status === "open").length;
+  const gaps = all.filter(c => !c.teacher?.name || !(c.proctors || []).length);
+  const recent = clSess().slice(0, 5), inc = clInc().filter(i => i.status === "open").slice(0, 5);
+  return `<div class="grid2 cl-stats">${per.map(x => `<div class="panel cl-stat"><div class="eyebrow">Grade ${x.g}</div><div class="big-h num">${x.n}<span class="muted" style="font-size:16px"> / 8 clubs</span></div></div>`).join("")}
+    <div class="panel cl-stat"><div class="eyebrow">Members</div><div class="big-h num">${mem}</div></div>
+    <div class="panel cl-stat"><div class="eyebrow">Open incidents</div><div class="big-h num">${open}</div></div></div>
+    ${gaps.length ? `<section class="panel" style="margin-top:12px"><div class="panel-head"><h2>Needs a Club Teacher or proctor</h2><span class="muted" style="font-size:13px">${gaps.length}</span></div><div class="muted" style="font-size:14px">${gaps.map(c => `${esc(c.name)} (G${c.grade})`).join(" · ")}</div></section>` : ""}
+    <div class="grid2" style="margin-top:12px;align-items:start">
+      <section class="panel"><div class="panel-head"><h2>Latest sessions</h2></div>${recent.length ? recent.map(s => `<div class="cl-row"><b>${esc(s.title || "Session")}</b><span class="muted">${esc(clName(s.club))} · ${fmtDate(s.date)}</span></div>`).join("") : `<div class="muted">No sessions yet.</div>`}</section>
+      <section class="panel"><div class="panel-head"><h2>Open incidents</h2></div>${inc.length ? inc.map(s => `<div class="cl-row"><b>${esc(clName(s.club))}</b><span class="muted">${fmtDate(s.date)} · ${esc(s.level || "minor")}</span></div>`).join("") : `<div class="muted">None open.</div>`}</section></div>`;
+}
+function clClubs() {
+  const l = clShown();
+  return `<div class="cl-grid st">${l.length ? l.map(clCard).join("") : `<div class="panel empty">No clubs yet.${clMgr() ? " Add the first one." : ""}</div>`}</div>`;
+}
+function clMembers() {
+  const l = clShown();
+  return l.length ? l.map(c => `<section class="panel" style="margin-bottom:12px"><div class="panel-head"><div style="display:flex;gap:10px;align-items:center">${clLogo(c)}<h2>${esc(c.name)}</h2></div><span class="muted" style="font-size:13px">${(c.members || []).length} members</span></div>
+    <div class="muted" style="font-size:13px;margin-bottom:6px">Club Teacher: ${clWho(c.teacher)} · Proctors: ${(c.proctors || []).length ? (c.proctors || []).map(clWho).join(", ") : "Not assigned"}</div>
+    ${(c.members || []).length ? `<div class="cl-names">${c.members.map(m => `<span class="cl-chip">${esc(m.name)}${m.cls ? ` <small>${esc(m.cls)}</small>` : ""}</span>`).join("")}</div>` : `<div class="muted">No members yet.</div>`}</section>`).join("") : `<div class="panel empty">No clubs to show.</div>`;
+}
+function clSessRows(kind) {
+  const l = clSess().filter(clOk).filter(s => kind === "plan" ? s.plan : s.report);
+  return l.length ? l.map(s => `<article class="panel cl-sess"><div class="cl-head"><div style="flex:1;min-width:0"><b>${esc(s.title || "Session")}</b><div class="muted" style="font-size:13px">${esc(clName(s.club))} · ${fmtLong(s.date)} · ${esc(s.byName || "")}</div></div>
+      ${clCan(S.clubs[s.club]) ? `<span style="display:flex;gap:6px"><button class="btn small" data-cl="edit-sess" data-id="${s.id}">Edit</button>${clMgr() ? `<button class="btn small danger" data-cl="del-sess" data-id="${s.id}">Delete</button>` : ""}</span>` : ""}</div>
+    <p class="cl-text">${esc(kind === "plan" ? s.plan : s.report)}</p>
+    ${kind === "report" ? `<div class="muted" style="font-size:13px">${Object.values(s.att || {}).filter(x => x === "p").length} present · ${Object.values(s.att || {}).filter(x => x === "n").length} absent with notice · ${Object.values(s.att || {}).filter(x => x === "a").length} absent</div>` : ""}</article>`).join("") : `<div class="panel empty">${kind === "plan" ? "No session plans yet." : "No session reports yet."}</div>`;
+}
+function clIncRows() {
+  const l = clInc().filter(clOk);
+  return l.length ? l.map(i => `<article class="panel cl-sess"><div class="cl-head"><div style="flex:1;min-width:0"><b>${esc(clName(i.club))}</b> <span class="tag ${i.level === "serious" ? "warn" : ""}">${esc(i.level || "minor")}</span> <span class="tag">${i.status === "open" ? "Open" : "Resolved"}</span>
+      <div class="muted" style="font-size:13px">${fmtLong(i.date)} · reported by ${esc(i.byName || "")}</div></div>
+      <span style="display:flex;gap:6px">${clMgr() ? `<button class="btn small" data-cl="inc-toggle" data-id="${i.id}">${i.status === "open" ? "Mark resolved" : "Reopen"}</button><button class="btn small danger" data-cl="del-inc" data-id="${i.id}">Delete</button>` : ""}</span></div>
+    <p class="cl-text">${esc(i.text)}</p></article>`).join("") : `<div class="panel empty">No incident reports.</div>`;
+}
+function clAttendance() {
+  const l = clShown();
+  return l.length ? l.map(c => {
+    const ss = clSess().filter(s => s.club === c.id && s.att), m = c.members || [];
+    return `<section class="panel" style="margin-bottom:12px"><div class="panel-head"><div style="display:flex;gap:10px;align-items:center">${clLogo(c)}<h2>${esc(c.name)}</h2></div><span class="muted" style="font-size:13px">${ss.length} recorded session${ss.length === 1 ? "" : "s"}</span></div>
+      ${m.length && ss.length ? `<div class="cl-att"><div class="cl-att-h"><span>Member</span><span>Present</span><span>Notified</span><span>Absent</span></div>${m.map(x => { const p = ss.filter(s => s.att[x.name] === "p").length, n = ss.filter(s => s.att[x.name] === "n").length, a = ss.filter(s => s.att[x.name] === "a").length; return `<div><span>${esc(x.name)}</span><span class="num">${p}</span><span class="num">${n}</span><span class="num">${a}</span></div>`; }).join("")}</div>` : `<div class="muted">Attendance appears here once sessions are recorded with a register.</div>`}</section>`;
+  }).join("") : `<div class="panel empty">No clubs to show.</div>`;
+}
+function clHandbooks() {
+  const pdf = [["clubs/Club-Member-Handbook.pdf", "Club Member Handbook", "Rules every member agrees to when joining."], ["clubs/Club-Teacher-Guide.pdf", "Club Teacher Guide", "Planning and running sessions, reporting and escalation."], ["clubs/Club-Proctor-Guide.pdf", "Club Proctor Guide", "How proctors keep sessions safe and follow the Club Teacher."]];
+  return `<div class="grid2 st" style="align-items:start">${pdf.map(([u, t, d]) => `<a class="panel cl-doc" href="${u}" target="_blank" rel="noopener"><span class="file-ic">PDF</span><span><b>${t}</b><span class="muted" style="display:block;font-size:13px">${d}</span></span></a>`).join("")}</div>
+    <section class="panel" style="margin-top:12px"><div class="panel-head"><h2>Who to go to</h2></div>
+      <div class="chain"><span>Club member</span><i>›</i><span>Club Teacher</span><i>›</i><span>Head of PR</span><i>›</i><span>Administration</span></div>
+      <div class="chain" style="margin-top:8px"><span>Proctor</span><i>›</i><span>Head of Volunteers</span><i>›</i><span>Administration</span></div>
+      <p class="muted" style="font-size:14px;margin:10px 0 0">Safety, health, bullying or anything a student cannot share with the council goes straight to a member of the administration or the school nurse.</p></section>
+    <section class="panel" style="margin-top:12px"><div class="panel-head"><h2>Code of conduct</h2></div>
+      <ul class="cl-rules"><li>Follow the Club Teacher and the proctors. They are in charge of the room.</li><li>Treat every member with respect. No insults, mocking, bullying, hazing, fighting or rough play.</li><li>Behave in line with school rules, Islamic values and Saudi law.</li><li>Absence is never punished, but tell the Club Teacher as early as you can.</li><li>Do not photograph or record other students without permission and the Club Teacher's approval. Never post club photos of students online without school approval.</li><li>Phones only when the Club Teacher allows it. Look after the room and equipment.</li><li>Club activities never replace class time.</li></ul></section>`;
+}
+function clForm() {
+  const f = CLS().form; if (!f) return "";
+  const cl = (id, l, inner) => `<label class="field">${l}${inner}</label>`;
+  if (f.type === "club") {
+    const c = f.data || {}, pr = c.proctors || [];
+    return `<form class="panel cl-form" id="clForm" data-t="club"><div class="panel-head"><h2>${f.id ? "Edit club" : "New club"}</h2></div>
+      <div class="grid2">${cl("", "Club name", `<input type="text" id="cfName" required maxlength="60" value="${esc(c.name || "")}">`)}
+        ${cl("", "Grade", `<select id="cfGrade">${CL_GRADES.map(g => `<option value="${g}" ${String(c.grade || 9) === String(g) ? "selected" : ""}>Grade ${g}</option>`).join("")}</select>`)}
+        ${cl("", "Day", `<input type="text" id="cfDay" maxlength="30" placeholder="e.g. Tuesday" value="${esc(c.day || "")}">`)}
+        ${cl("", "Time", `<input type="text" id="cfTime" maxlength="30" placeholder="e.g. 13:30" value="${esc(c.time || "")}">`)}
+        ${cl("", "Room", `<input type="text" id="cfRoom" maxlength="40" value="${esc(c.room || "")}">`)}
+        ${cl("", "Status", `<select id="cfStatus">${["active", "paused", "closed"].map(s => `<option value="${s}" ${(c.status || "active") === s ? "selected" : ""}>${s[0].toUpperCase() + s.slice(1)}</option>`).join("")}</select>`)}
+        ${cl("", "Club Teacher (Grade 12 student)", `<input type="text" id="cfTeacher" list="clRoster" maxlength="80" value="${esc(c.teacher?.name || "")}">`)}
+        ${cl("", "Proctor 1", `<input type="text" id="cfP1" list="clRoster" maxlength="80" value="${esc(pr[0]?.name || "")}">`)}
+        ${cl("", "Proctor 2", `<input type="text" id="cfP2" list="clRoster" maxlength="80" value="${esc(pr[1]?.name || "")}">`)}</div>
+      <datalist id="clRoster">${vols().map(v => `<option value="${esc(v.name)}"></option>`).join("")}</datalist>
+      ${cl("", "Description", `<textarea id="cfDesc" maxlength="500" rows="2">${esc(c.desc || "")}</textarea>`)}
+      ${cl("", "Members (one per line, optional class after a comma)", `<textarea id="cfMembers" rows="6" placeholder="Name, 10B">${esc((c.members || []).map(m => m.name + (m.cls ? ", " + m.cls : "")).join("\n"))}</textarea>`)}
+      <div class="field">Club logo<div style="display:flex;gap:10px;align-items:center">${c.logo ? `<img class="cl-logo" id="cfLogoPrev" src="${esc(c.logo)}" alt="">` : `<span class="cl-logo" id="cfLogoPrev">${esc(initials(c.name || "Club"))}</span>`}<input type="file" id="cfLogo" accept="image/*"><button type="button" class="btn small ghost" data-cl="logo-clear">Remove logo</button></div></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn ghost" data-cl="cancel">Cancel</button><button class="btn primary" type="submit">Save club</button></div></form>`;
+  }
+  const mine = clWritable();
+  if (f.type === "sess") {
+    const s = f.data || {}, cid = f.club || s.club || mine[0]?.id, c = S.clubs[cid], m = (c?.members || []);
+    return `<form class="panel cl-form" id="clForm" data-t="sess"><div class="panel-head"><h2>${f.id ? "Edit session" : "New session"}</h2></div>
+      <div class="grid2">${cl("", "Club", `<select id="sfClub">${mine.map(x => `<option value="${x.id}" ${x.id === cid ? "selected" : ""}>${esc(x.name)} · G${x.grade}</option>`).join("")}</select>`)}
+        ${cl("", "Date", `<input type="date" id="sfDate" required value="${esc(s.date || todayISO())}">`)}</div>
+      ${cl("", "Title", `<input type="text" id="sfTitle" required maxlength="100" value="${esc(s.title || "")}">`)}
+      ${cl("", "Session plan", `<textarea id="sfPlan" rows="4" maxlength="4000" placeholder="What the session will cover, materials, room set-up">${esc(s.plan || "")}</textarea>`)}
+      ${cl("", "Session report (after the session, within 2 school days)", `<textarea id="sfReport" rows="4" maxlength="4000" placeholder="What happened, anything to flag">${esc(s.report || "")}</textarea>`)}
+      ${m.length ? `<div class="field">Attendance<div class="cl-reg">${m.map((x, i) => `<div><span>${esc(x.name)}</span><select data-att="${i}"><option value="" ${!s.att?.[x.name] ? "selected" : ""}>Not recorded</option><option value="p" ${s.att?.[x.name] === "p" ? "selected" : ""}>Present</option><option value="n" ${s.att?.[x.name] === "n" ? "selected" : ""}>Absent, notified</option><option value="a" ${s.att?.[x.name] === "a" ? "selected" : ""}>Absent</option></select></div>`).join("")}</div></div>` : `<div class="muted" style="font-size:13px">Add members to the club to take a register.</div>`}
+      <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn ghost" data-cl="cancel">Cancel</button><button class="btn primary" type="submit">Save session</button></div></form>`;
+  }
+  const s = f.data || {};
+  return `<form class="panel cl-form" id="clForm" data-t="inc"><div class="panel-head"><h2>New incident report</h2></div>
+    <div class="grid2">${cl("", "Club", `<select id="ifClub">${mine.map(x => `<option value="${x.id}">${esc(x.name)} · G${x.grade}</option>`).join("")}</select>`)}
+      ${cl("", "Date", `<input type="date" id="ifDate" required value="${todayISO()}">`)}
+      ${cl("", "Level", `<select id="ifLevel"><option value="minor">Minor</option><option value="serious">Serious, needs the administration</option></select>`)}</div>
+    ${cl("", "What happened", `<textarea id="ifText" rows="5" required maxlength="4000"></textarea>`)}
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn ghost" data-cl="cancel">Cancel</button><button class="btn primary" type="submit">Send report</button></div></form>`;
+}
+VIEWS.clubs = () => {
+  const st = CLS(), k = st.tab, w = clWritable().length > 0;
+  const act = clMgr() && (k === "clubs" || k === "overview") ? `<button class="btn primary" data-cl="new-club">New club</button>` : "";
+  const act2 = w && (k === "plans" || k === "reports" || k === "attendance") ? `<button class="btn primary" data-cl="new-sess">New session</button>` : w && k === "incidents" ? `<button class="btn primary" data-cl="new-inc">New incident report</button>` : "";
+  const body = k === "overview" ? clOverview() : k === "clubs" ? clClubs() : k === "members" ? clMembers() : k === "plans" ? clSessRows("plan") : k === "reports" ? clSessRows("report") : k === "incidents" ? clIncRows() : k === "attendance" ? clAttendance() : clHandbooks();
+  return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">Clubs</h2><div class="muted" style="font-size:14px">${role() === "admin" ? "Read-only view for the administration" : role() === "council" && !clMgr() ? "Read-only view" : "La Pasión student clubs · MEIS - Al Wurud"}</div></div>${act}${act2}</div>
+    ${clTabs()}${["overview", "handbooks"].includes(k) ? "" : clFilters()}
+    <div id="clBody" style="margin-top:14px">${clForm()}${body}</div>`;
+};
+after.clubs = () => { const f = CLS().form; if (f) $("#clForm")?.scrollIntoView({ block: "nearest" }); };
+const clGo = async (coll, id, obj) => { const ok = await put(coll, id, obj); if (ok === false) return false; if (mode === "cloud") await cloudPull(false); return true; };
+const clStamp = () => mode === "cloud" ? {} : { by: session.id, byName: accName(me()), at: new Date().toISOString() };
+const clStaff = c => [...new Set([c.teacher?.vid, ...(c.proctors || []).map(p => p.vid)].filter(Boolean))];
+const clPerson = n => { n = (n || "").trim(); if (!n) return null; const v = clFind(n); return v ? { name: v.name, vid: v.id } : { name: n }; };
+document.addEventListener("click", async e => {
+  const a = e.target.closest("[data-cl]"); if (!a || view !== "clubs") return;
+  const st = CLS(), k = a.dataset.cl, id = a.dataset.id;
+  const draw = () => { render(false); };
+  if (k === "tab") { st.tab = a.dataset.k; st.form = null; draw(); }
+  else if (k === "grade") { st.grade = a.dataset.k; st.club = ""; draw(); }
+  else if (k === "new-club") { if (clMgr()) { st.form = { type: "club" }; draw(); } }
+  else if (k === "edit-club") { if (clMgr()) { st.form = { type: "club", id, data: S.clubs[id] }; draw(); } }
+  else if (k === "new-sess") { st.form = { type: "sess", club: clWritable()[0]?.id }; draw(); }
+  else if (k === "edit-sess") { st.form = { type: "sess", id, data: S.csess[id] }; draw(); }
+  else if (k === "new-inc") { st.form = { type: "inc" }; draw(); }
+  else if (k === "cancel") { st.form = null; draw(); }
+  else if (k === "logo-clear") { if (st.form) { st.form.data = { ...(st.form.data || {}), logo: "" }; st.form.logoCleared = true; const p = $("#cfLogoPrev"); if (p) p.outerHTML = `<span class="cl-logo" id="cfLogoPrev">${esc(initials($("#cfName")?.value || "Club"))}</span>`; } }
+  else if (k === "del-club") { if (clMgr() && confirm(`Delete ${S.clubs[id]?.name}? Its sessions and incident reports stay on record but lose the club.`)) { if (await del("clubs", id) !== false) { if (mode === "cloud") await cloudPull(false); draw(); } } }
+  else if (k === "del-sess") { if (clMgr() && confirm("Delete this session?")) { if (await del("csess", id) !== false) { if (mode === "cloud") await cloudPull(false); draw(); } } }
+  else if (k === "del-inc") { if (clMgr() && confirm("Delete this incident report?")) { if (await del("cinc", id) !== false) { if (mode === "cloud") await cloudPull(false); draw(); } } }
+  else if (k === "inc-toggle") { const i = S.cinc[id]; if (clMgr() && i && await clGo("cinc", id, { ...i, status: i.status === "open" ? "resolved" : "open" })) draw(); }
+});
+document.addEventListener("change", async e => {
+  if (view !== "clubs") return;
+  if (e.target.id === "clPick") { CLS().club = e.target.value; render(false); }
+  else if (e.target.id === "sfClub" && CLS().form) { const f = CLS().form; f.club = e.target.value; f.data = { ...(f.data || {}), title: $("#sfTitle")?.value, plan: $("#sfPlan")?.value, report: $("#sfReport")?.value, date: $("#sfDate")?.value, club: e.target.value, att: {} }; render(false); }
+  else if (e.target.id === "cfLogo" && e.target.files[0]) { try { const u = await shrink(e.target.files[0], 256); const f = CLS().form; if (f) { f.logoNew = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(u.blob); }); const p = $("#cfLogoPrev"); if (p) p.outerHTML = `<img class="cl-logo" id="cfLogoPrev" src="${f.logoNew}" alt="">`; } } catch { toast("Couldn't read that image"); } }
+});
+document.addEventListener("submit", async e => {
+  const form = e.target.closest("#clForm"); if (!form || view !== "clubs") return;
+  e.preventDefault(); const st = CLS(), f = st.form; if (!f) return;
+  let ok = false;
+  if (f.type === "club") {
+    if (!clMgr()) return;
+    const prev = f.data || {}, members = $("#cfMembers").value.split("\n").map(x => x.trim()).filter(Boolean).slice(0, 80).map(x => { const [n, ...r] = x.split(","); return { name: n.trim(), ...(r.join(",").trim() ? { cls: r.join(",").trim() } : {}) }; }).filter(m => m.name);
+    const c = { ...prev, name: $("#cfName").value.trim(), grade: Number($("#cfGrade").value), day: $("#cfDay").value.trim(), time: $("#cfTime").value.trim(), room: $("#cfRoom").value.trim(), status: $("#cfStatus").value, desc: $("#cfDesc").value.trim(),
+      teacher: clPerson($("#cfTeacher").value) || undefined, proctors: [$("#cfP1").value, $("#cfP2").value].map(clPerson).filter(Boolean), members, logo: f.logoNew || (f.logoCleared ? "" : prev.logo || "") };
+    if (!c.teacher) delete c.teacher;
+    c.staff = clStaff(c);
+    ok = await clGo("clubs", f.id || uid(), c);
+  } else if (f.type === "sess") {
+    const cid = $("#sfClub").value, club = S.clubs[cid]; if (!club || !clCan(club)) return;
+    const att = {}; document.querySelectorAll("[data-att]").forEach(s => { const m = (club.members || [])[Number(s.dataset.att)]; if (m && s.value) att[m.name] = s.value; });
+    const prev = f.id ? S.csess[f.id] || {} : {};
+    ok = await clGo("csess", f.id || uid(), { ...prev, ...clStamp(), ...(f.id && mode !== "cloud" ? { by: prev.by, byName: prev.byName, at: prev.at } : {}), club: cid, date: $("#sfDate").value, title: $("#sfTitle").value.trim(), plan: $("#sfPlan").value.trim(), report: $("#sfReport").value.trim(), att });
+  } else {
+    const cid = $("#ifClub").value, club = S.clubs[cid]; if (!club || !clCan(club)) return;
+    ok = await clGo("cinc", uid(), { ...clStamp(), club: cid, date: $("#ifDate").value, level: $("#ifLevel").value, text: $("#ifText").value.trim(), status: "open" });
+  }
+  if (ok) { st.form = null; toast("Saved"); render(false); } else toast("That didn't save. Try again.");
+});
+
 /* ---------- appeals ---------- */
 const apList = () => Object.entries(S.appeals).map(([id, a]) => ({ id, ...a })).sort((a, b) => (a.status === "pending" ? 0 : 1) - (b.status === "pending" ? 0 : 1) || (b.created || "").localeCompare(a.created || ""));
 const bnList = () => Object.entries(S.bans).map(([id, b]) => ({ id, ...b })).sort((a, b) => (a.status === "pending" ? 0 : 1) - (b.status === "pending" ? 0 : 1) || (b.created || "").localeCompare(a.created || ""));
@@ -5571,7 +5794,7 @@ const ICONS = {
   search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4"
 };
 const ic = (n, cls2 = "") => `<svg class="ic ${cls2}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[n] || ICONS.more}"/></svg>`;
-const TAB_IC = { dashboard: "home", roster: "people", team: "people", "c-team": "people", events: "calendar", vevents: "calendar", cevents: "calendar", "c-meet": "calendar", log: "clock", me: "user",
+const TAB_IC = { clubs: "people", dashboard: "home", roster: "people", team: "people", "c-team": "people", events: "calendar", vevents: "calendar", cevents: "calendar", "c-meet": "calendar", log: "clock", me: "user",
   certs: "award", vcerts: "award", ccerts: "award", reports: "doc", pr: "megaphone", inbox: "inbox", review: "shield", appeals: "scale", appeal: "scale", achat: "chat", cachat: "chat", cgchat: "chat", "c-chat": "chat",
   congress: "columns", history: "history", handbook: "book", settings: "sliders", complain: "help", "c-home": "star", "c-tasks": "check", "c-desk": "briefcase" };
 // Short names for the phone bar; the full names stay on the tabs.

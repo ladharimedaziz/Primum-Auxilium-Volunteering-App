@@ -5117,6 +5117,7 @@ function clHandbooks() {
 }
 function clForm() {
   const f = CLS().form; if (!f) return "";
+  if (f.type === "import") return clImportForm(f);
   const cl = (id, l, inner) => `<label class="field">${l}${inner}</label>`;
   if (f.type === "club") {
     const c = f.data || {}, pr = c.proctors || [];
@@ -5159,7 +5160,7 @@ function clForm() {
 const clView = k => () => {
   CLS().tab = k;
   const w = clWritable().length > 0;
-  const act = clMgr() && (k === "clubs" || k === "overview") ? `<button class="btn primary" data-cl="new-club">New club</button>` : "";
+  const act = clMgr() && (k === "clubs" || k === "overview") ? `<button class="btn primary" data-cl="new-club">New club</button>` : clMgr() && k === "members" ? `<button class="btn" data-cl="template">Download template</button><button class="btn primary" data-cl="import">Import from Excel</button><input type="file" id="clFile" accept=".xlsx,.xlsm,.xls,.csv,.ods" multiple hidden>` : "";
   const act2 = w && (k === "plans" || k === "reports" || k === "attendance") ? `<button class="btn primary" data-cl="new-sess">New session</button>` : w && k === "incidents" ? `<button class="btn primary" data-cl="new-inc">New incident report</button>` : "";
   const body = k === "overview" ? clOverview() : k === "clubs" ? clClubs() : k === "members" ? clMembers() : k === "plans" ? clSessRows("plan") : k === "reports" ? clSessRows("report") : k === "incidents" ? clIncRows() : k === "attendance" ? clAttendance() : clHandbooks();
   return `<div class="toolbar"><div style="flex:1;min-width:220px"><h2 style="font-size:22px">${esc(CL_TABS.find(x => x[0] === k)[1])}</h2><div class="muted" style="font-size:14px">${role() === "admin" ? "Read-only view for the administration" : role() === "council" && !clMgr() ? "Read-only view" : "La Pasión clubs · MEIS - Al Wurud"}</div></div>${act}${act2}</div>
@@ -5168,6 +5169,91 @@ const clView = k => () => {
 };
 CL_TABS.forEach(([k]) => { VIEWS["k-" + k] = clView(k); after["k-" + k] = () => { if (CLS().form) $("#clForm")?.scrollIntoView({ block: "nearest" }); }; });
 const clGo = async (coll, id, obj) => { const ok = await put(coll, id, obj); if (ok === false) return false; if (mode === "cloud") await cloudPull(false); return true; };
+// Excel template and importer for club members: recognises a Club column, sheets named after a club, or a file named after one.
+const CL_CLASS_RE = /(?:^|[^0-9])(9|10|11|12)\s*[-_ ]?\s*([A-Za-z])(?![A-Za-z])/;
+const clClassOf = t => { const m = String(t || "").match(CL_CLASS_RE); return m ? m[1] + m[2].toUpperCase() : ""; };
+const clNorm = t => normName(t).replace(/\b(club|the|society|team)\b/g, " ").replace(/\s+/g, " ").trim();
+function clMatch(txt, cls) {
+  const k = clNorm(txt); if (!k) return "";
+  let c = clubList().filter(x => clNorm(x.name) === k);
+  if (!c.length && k.length >= 3) c = clubList().filter(x => { const n = clNorm(x.name); return n && (n.includes(k) || k.includes(n)); });
+  if (c.length > 1 && cls) { const g = parseInt(cls), f = c.filter(x => Number(x.grade) === g); if (f.length) c = f; }
+  return c.length === 1 ? c[0].id : "";
+}
+function clParseRows(rows) {
+  rows = rows.filter(r => Array.isArray(r) && r.some(c => String(c ?? "").trim()));
+  let hi = -1, nC = -1, cC = -1, kC = -1;
+  for (let i = 0; i < Math.min(6, rows.length) && hi < 0; i++) {
+    const h = rows[i].map(c => String(c ?? "").trim().toLowerCase());
+    const n = h.findIndex(c => /name|student/.test(c) && !/arabic|club|parent|teacher|school/.test(c)), k = h.findIndex(c => /^club/.test(c));
+    if (n >= 0 || k >= 0) { hi = i; nC = n; kC = k; cC = h.findIndex(c => /^(class|grade|section)/.test(c)); }
+  }
+  const body = rows.slice(hi + 1);
+  if (nC < 0) {
+    const w = Math.max(0, ...rows.map(r => r.length)); let sc = 0;
+    for (let c = 0; c < w; c++) { if (c === kC) continue; const n = body.filter(r => looksName(r[c]) && !HEAD_RE.test(String(r[c]).trim())).length; if (n > sc) { sc = n; nC = c; } }
+    if (nC < 0) return [];
+  }
+  const out = [], seen = new Set();
+  for (const r of body) {
+    const name = tidyName(r[nC]);
+    if (!looksName(name) || HEAD_RE.test(name) || LABEL_RE.test(name)) continue;
+    const club = kC >= 0 ? String(r[kC] ?? "").trim() : "";
+    const cls = (cC >= 0 ? clClassOf(r[cC]) || String(r[cC] ?? "").trim().slice(0, 8) : "") || r.map(clClassOf).find(Boolean) || "";
+    const key = normName(club) + "|" + normName(name); if (seen.has(key)) continue; seen.add(key);
+    out.push({ name, cls, club });
+  }
+  return out;
+}
+const clDup = (clubId, name) => !!clubId && (S.clubs[clubId]?.members || []).some(m => normName(m.name) === normName(name));
+async function clImport(files) {
+  files = [...files].filter(f => /\.(xlsx|xlsm|xls|csv|ods)$/i.test(f.name));
+  if (!files.length) return toast("Excel or CSV files only.");
+  let X; try { X = await loadXLSX(); } catch { return toast("Spreadsheet reader unavailable. Check the connection."); }
+  const groups = new Map();
+  for (const f of files) {
+    let wb; try { wb = X.read(await f.arrayBuffer(), { type: "array" }); } catch { toast(`${f.name}: unreadable`); continue; }
+    const fname = f.name.replace(/\.[^.]+$/, "");
+    for (const sn of wb.SheetNames) {
+      if (/^(clubs?|how to use|help|read ?me|instructions)$/i.test(sn.trim())) continue;
+      const rows = clParseRows(X.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, blankrows: false, defval: "" }));
+      for (const r of rows) {
+        const label = r.club || (wb.SheetNames.length > 1 ? sn : fname);
+        const id = clMatch(r.club || sn, r.cls) || (!r.club ? clMatch(fname, r.cls) : "");
+        const key = id || "?" + normName(label) + "|" + f.name;
+        if (!groups.has(key)) groups.set(key, { src: label, file: f.name, club: id, rows: [] });
+        groups.get(key).rows.push({ name: r.name, cls: r.cls, on: true });
+      }
+    }
+  }
+  const batches = [...groups.values()]; batches.forEach(b => b.rows.forEach(r => { r.dup = clDup(b.club, r.name); if (r.dup) r.on = false; }));
+  if (!batches.length) return toast("No names found.");
+  CLS().form = { type: "import", batches }; render(false);
+}
+function clImportForm(f) {
+  const clubs = clubList(), tot = f.batches.reduce((t, b) => t + (b.club ? b.rows.filter(r => r.on && !r.dup).length : 0), 0);
+  const miss = f.batches.filter(b => !b.club && b.rows.some(r => r.on)).length;
+  return `<form class="panel cl-form" id="clForm" data-t="imp"><div class="panel-head"><h2>Import members</h2></div>
+    <div class="muted" style="font-size:13px">Sheets and Club columns that match a club are placed automatically. Pick a club for the rest.</div>
+    ${f.batches.map((b, bi) => `<section class="impb"><div class="impb-head"><div style="min-width:0"><b class="fname">${esc(b.src)}</b><div class="muted" style="font-size:12.5px">${b.rows.length} name${b.rows.length === 1 ? "" : "s"} · ${esc(b.file)}${b.club ? "" : " · club not recognised"}</div></div>
+      <label class="inline-field">Club <select data-impclub="${bi}">${b.club ? "" : `<option value="">Choose…</option>`}${clubs.map(c => `<option value="${c.id}" ${b.club === c.id ? "selected" : ""}>${esc(c.name)} · G${c.grade}</option>`).join("")}</select></label></div>
+      <div class="impnames">${b.rows.map((r, ri) => `<label class="${r.dup ? "dup" : ""}"><input type="checkbox" data-impr="${bi}:${ri}" ${r.on && !r.dup ? "checked" : ""} ${r.dup ? "disabled" : ""}><span>${esc(r.name)}</span>${r.cls ? `<span class="tag">${esc(r.cls)}</span>` : ""}${r.dup ? `<span class="tag">Already a member</span>` : ""}</label>`).join("")}</div></section>`).join("")}
+    <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center"><span class="muted" style="margin-right:auto;font-size:13px">${miss ? `Pick a club for ${miss} list${miss === 1 ? "" : "s"}` : `${tot} to add`}</span><button type="button" class="btn ghost" data-cl="cancel">Cancel</button><button class="btn primary" type="submit" ${tot ? "" : "disabled"}>Add ${tot} member${tot === 1 ? "" : "s"}</button></div></form>`;
+}
+async function clTemplate() {
+  const X = await loadXLSX(), wb = X.utils.book_new(), rows = [];
+  clubList().forEach(c => (c.members || []).forEach(m => rows.push({ Club: c.name, Name: m.name, Class: m.cls || "" })));
+  if (!rows.length) rows.push({ Club: clubList()[0]?.name || "Chess Club", Name: "Example Student", Class: "10B" });
+  const ws = X.utils.json_to_sheet(rows, { header: ["Club", "Name", "Class"] }); ws["!cols"] = [{ wch: 28 }, { wch: 36 }, { wch: 10 }];
+  X.utils.book_append_sheet(wb, ws, "Members");
+  const cs = X.utils.json_to_sheet(clubList().map(c => ({ Club: c.name, Grade: c.grade, "Club Teacher": c.teacher?.name || "" })), { header: ["Club", "Grade", "Club Teacher"] }); cs["!cols"] = [{ wch: 28 }, { wch: 8 }, { wch: 30 }];
+  X.utils.book_append_sheet(wb, cs, "Clubs");
+  const how = ["How to add members with this file", "", "1. Put one student per row on the Members sheet: Club, Name, Class (for example 10B).", "2. Write the Club exactly as it appears on the Clubs sheet. Capitals and the word Club do not matter.",
+    "3. You can also name a sheet after a club (or name the file after it) and list only Name and Class, with no Club column.", "4. In the app open Members, press Import from Excel and choose this file.", "5. Check the preview, pick a club for anything not recognised, and press Add."];
+  X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(how.map(x => [x])), "How to use");
+  await downloads.save({ filename: "club-members-template.xlsx", data: X.write(wb, { bookType: "xlsx", type: "array" }) });
+  toast("Template saved");
+}
 const clStamp = () => mode === "cloud" ? {} : { by: session.id, byName: accName(me()), at: new Date().toISOString() };
 const clStaff = c => [...new Set([c.teacher?.vid, ...(c.proctors || []).map(p => p.vid)].filter(Boolean))];
 const clPerson = n => { n = (n || "").trim(); if (!n) return null; const v = clFind(n); return v ? { name: v.name, vid: v.id } : { name: n }; };
@@ -5176,6 +5262,8 @@ document.addEventListener("click", async e => {
   const st = CLS(), k = a.dataset.cl, id = a.dataset.id;
   const draw = () => { render(false); };
   if (k === "grade") { st.grade = a.dataset.k; st.club = ""; draw(); }
+  else if (k === "template") { if (clMgr()) clTemplate().catch(() => toast("Couldn't build the template")); }
+  else if (k === "import") { if (clMgr()) $("#clFile")?.click(); }
   else if (k === "new-club") { if (clMgr()) { st.form = { type: "club" }; draw(); } }
   else if (k === "edit-club") { if (clMgr()) { st.form = { type: "club", id, data: S.clubs[id] }; draw(); } }
   else if (k === "new-sess") { st.form = { type: "sess", club: clWritable()[0]?.id }; draw(); }
@@ -5192,12 +5280,26 @@ document.addEventListener("change", async e => {
   if (!view.startsWith("k-")) return;
   if (e.target.id === "clPick") { CLS().club = e.target.value; render(false); }
   else if (e.target.id === "sfClub" && CLS().form) { const f = CLS().form; f.club = e.target.value; f.data = { ...(f.data || {}), title: $("#sfTitle")?.value, plan: $("#sfPlan")?.value, report: $("#sfReport")?.value, date: $("#sfDate")?.value, club: e.target.value, att: {} }; render(false); }
+  else if (e.target.id === "clFile") { const fl = [...e.target.files]; e.target.value = ""; if (clMgr() && fl.length) await clImport(fl); }
+  else if (e.target.dataset.impclub !== undefined && CLS().form?.type === "import") { const b = CLS().form.batches[Number(e.target.dataset.impclub)]; b.club = e.target.value; b.rows.forEach(r => { r.dup = clDup(b.club, r.name); r.on = !r.dup; }); render(false); }
+  else if (e.target.dataset.impr !== undefined && CLS().form?.type === "import") { const [bi, ri] = e.target.dataset.impr.split(":").map(Number); CLS().form.batches[bi].rows[ri].on = e.target.checked; const ok = CLS().form.batches.reduce((n, b) => n + (b.club ? b.rows.filter(r => r.on && !r.dup).length : 0), 0), sb = $("#clForm button[type=submit]"); if (sb) { sb.disabled = !ok; sb.textContent = `Add ${ok} member${ok === 1 ? "" : "s"}`; } }
   else if (e.target.id === "cfLogo" && e.target.files[0]) { try { const u = await shrink(e.target.files[0], 256); const f = CLS().form; if (f) { f.logoNew = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(u.blob); }); const p = $("#cfLogoPrev"); if (p) p.outerHTML = `<img class="cl-logo" id="cfLogoPrev" src="${f.logoNew}" alt="">`; } } catch { toast("Couldn't read that image"); } }
 });
 document.addEventListener("submit", async e => {
   const form = e.target.closest("#clForm"); if (!form || !view.startsWith("k-")) return;
   e.preventDefault(); const st = CLS(), f = st.form; if (!f) return;
   let ok = false;
+  if (f.type === "import") {
+    if (!clMgr()) return; let n = 0; ok = true;
+    for (const b of f.batches) {
+      const c = S.clubs[b.club]; if (!c) continue;
+      const add = b.rows.filter(r => r.on && !clDup(b.club, r.name)).map(r => ({ name: r.name, ...(r.cls ? { cls: r.cls } : {}) }));
+      if (!add.length) continue;
+      if (!(await clGo("clubs", b.club, { ...c, members: [...(c.members || []), ...add].slice(0, 200) }))) { ok = false; break; } n += add.length;
+    }
+    if (ok) { st.form = null; toast(n ? `Added ${n} member${n === 1 ? "" : "s"}` : "Nothing new to add"); render(false); } else toast("That didn't save. Try again.");
+    return;
+  }
   if (f.type === "club") {
     if (!clMgr()) return;
     const prev = f.data || {}, members = $("#cfMembers").value.split("\n").map(x => x.trim()).filter(Boolean).slice(0, 80).map(x => { const [n, ...r] = x.split(","); return { name: n.trim(), ...(r.join(",").trim() ? { cls: r.join(",").trim() } : {}) }; }).filter(m => m.name);

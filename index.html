@@ -1268,6 +1268,8 @@ body:not(.gated) .tab[aria-selected="true"]{background:linear-gradient(90deg,col
   body:not(.gated) header.band .clubs-logo{display:none!important}
 }
 .cl-logo.shield{width:auto;height:52px;border-radius:0;background:none;object-fit:contain}
+.cl-grades{display:flex;flex-wrap:wrap;gap:14px;padding:4px 0}
+.cl-grades label{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;color:var(--ink)}
 .cl-presets{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 6px}
 .cl-presets label{cursor:pointer;border:2px solid transparent;border-radius:10px;padding:3px;line-height:0}
 .cl-presets input{position:absolute;opacity:0;pointer-events:none}
@@ -5034,26 +5036,30 @@ const clMgr = () => role() === "head" || (role() === "council" && perm() === "pr
 const clMine = c => { const v = myVol(); return !!v && (c.staff || []).includes(v.id); };
 const clCan = c => clMgr() || (role() === "volunteer" && !!c && clMine(c));
 const clAccess = () => ["head", "admin", "council"].includes(role()) || (role() === "volunteer" && !held() && Object.keys(S.clubs).length > 0);
-const clubList = () => Object.entries(S.clubs).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.grade - b.grade) || String(a.name).localeCompare(String(b.name)));
+const clGrades = c => (Array.isArray(c.grades) && c.grades.length ? c.grades : [c.grade]).map(Number).filter(Boolean).sort((a, b) => a - b);
+const clHas = (c, g) => g === "all" || clGrades(c).includes(Number(g));
+const clGLabel = c => { const g = clGrades(c); return g.length > 1 ? `Grades ${g.join(", ")}` : `Grade ${g[0] ?? ""}`; };
+const clGShort = c => "G" + clGrades(c).join("/");
+const clubList = () => Object.entries(S.clubs).map(([id, c]) => ({ id, ...c })).sort((a, b) => (clGrades(a)[0] - clGrades(b)[0]) || String(a.name).localeCompare(String(b.name)));
 const CLS = () => (ui.cl = ui.cl || { tab: "overview", grade: "all", club: "", form: null });
-const clShown = () => clubList().filter(c => (CLS().grade === "all" || String(c.grade) === String(CLS().grade)) && (!CLS().club || c.id === CLS().club));
+const clShown = () => clubList().filter(c => clHas(c, CLS().grade) && (!CLS().club || c.id === CLS().club));
 const clFind = n => { const k = normName(n || ""); return k ? vols().find(v => normName(v.name) === k) : null; };
 const clLogo = c => c.logo ? `<img class="cl-logo" src="${esc(c.logo)}" alt="">` : CLUB_LOGOS[c.logoKey] ? `<img class="cl-logo shield" src="${CLUB_LOGOS[c.logoKey]}" alt="">` : `<span class="cl-logo">${esc(initials(c.name))}</span>`;
 const clSess = () => Object.entries(S.csess).map(([id, s]) => ({ id, ...s })).sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.at || "").localeCompare(a.at || ""));
 const clInc = () => Object.entries(S.cinc).map(([id, s]) => ({ id, ...s })).sort((a, b) => (a.status === "open" ? 0 : 1) - (b.status === "open" ? 0 : 1) || (b.date || "").localeCompare(a.date || ""));
-const clOk = x => S.clubs[x.club] && (CLS().grade === "all" || String(S.clubs[x.club].grade) === String(CLS().grade)) && (!CLS().club || x.club === CLS().club);
+const clOk = x => S.clubs[x.club] && clHas(S.clubs[x.club], CLS().grade) && (!CLS().club || x.club === CLS().club);
 const clName = id => S.clubs[id]?.name || "Club";
 const clWho = p => p && p.name ? esc(p.name) : "Not assigned";
 const clWritable = () => clubList().filter(clCan);
 function clFilters() {
   const st = CLS();
   return `<div class="filters" style="margin-top:12px"><div class="seg" role="group" aria-label="Grade"><button data-cl="grade" data-k="all" aria-pressed="${st.grade === "all"}">All</button>${CL_GRADES.map(g => `<button data-cl="grade" data-k="${g}" aria-pressed="${String(st.grade) === String(g)}">G${g}</button>`).join("")}</div>
-    <select id="clPick" aria-label="Club"><option value="">All clubs</option>${clubList().filter(c => st.grade === "all" || String(c.grade) === String(st.grade)).map(c => `<option value="${c.id}" ${st.club === c.id ? "selected" : ""}>${esc(c.name)} · G${c.grade}</option>`).join("")}</select></div>`;
+    <select id="clPick" aria-label="Club"><option value="">All clubs</option>${clubList().filter(c => clHas(c, st.grade)).map(c => `<option value="${c.id}" ${st.club === c.id ? "selected" : ""}>${esc(c.name)} · ${clGShort(c)}</option>`).join("")}</select></div>`;
 }
 function clCard(c) {
   const n = (c.members || []).length, ss = clSess().filter(s => s.club === c.id).length;
   return `<article class="panel cl-card">
-    <div class="cl-head">${clLogo(c)}<div style="flex:1;min-width:0"><b class="cl-name">${esc(c.name)}</b><div class="muted" style="font-size:13px">Grade ${esc(c.grade)}${c.day || c.time ? " · " + esc([c.day, c.time].filter(Boolean).join(" ")) : ""}${c.room ? " · " + esc(c.room) : ""}</div></div>
+    <div class="cl-head">${clLogo(c)}<div style="flex:1;min-width:0"><b class="cl-name">${esc(c.name)}</b><div class="muted" style="font-size:13px">${clGLabel(c)}${c.day || c.time ? " · " + esc([c.day, c.time].filter(Boolean).join(" ")) : ""}${c.room ? " · " + esc(c.room) : ""}</div></div>
       ${c.status && c.status !== "active" ? `<span class="tag warn">${esc(c.status)}</span>` : ""}</div>
     ${c.desc ? `<p class="muted" style="font-size:13.5px;margin:8px 0 0">${esc(c.desc)}</p>` : ""}
     <div class="cl-meta"><span><small>Club Teacher</small>${clWho(c.teacher)}</span><span><small>Proctors</small>${(c.proctors || []).length ? (c.proctors || []).map(clWho).join(", ") : "Not assigned"}</span></div>
@@ -5061,14 +5067,14 @@ function clCard(c) {
   </article>`;
 }
 function clOverview() {
-  const all = clubList(), per = CL_GRADES.map(g => ({ g, n: all.filter(c => String(c.grade) === String(g)).length }));
+  const all = clubList(), per = CL_GRADES.map(g => ({ g, n: all.filter(c => clHas(c, g)).length }));
   const mem = all.reduce((t, c) => t + (c.members || []).length, 0), open = clInc().filter(i => i.status === "open").length;
   const gaps = all.filter(c => !c.teacher?.name || !(c.proctors || []).length);
   const recent = clSess().slice(0, 5), inc = clInc().filter(i => i.status === "open").slice(0, 5);
   return `<div class="grid2 cl-stats">${per.map(x => `<div class="panel cl-stat"><div class="eyebrow">Grade ${x.g}</div><div class="big-h num">${x.n}<span class="muted" style="font-size:16px"> / 8 clubs</span></div></div>`).join("")}
     <div class="panel cl-stat"><div class="eyebrow">Members</div><div class="big-h num">${mem}</div></div>
     <div class="panel cl-stat"><div class="eyebrow">Open incidents</div><div class="big-h num">${open}</div></div></div>
-    ${gaps.length ? `<section class="panel" style="margin-top:12px"><div class="panel-head"><h2>Needs a Club Teacher or proctor</h2><span class="muted" style="font-size:13px">${gaps.length}</span></div><div class="muted" style="font-size:14px">${gaps.map(c => `${esc(c.name)} (G${c.grade})`).join(" · ")}</div></section>` : ""}
+    ${gaps.length ? `<section class="panel" style="margin-top:12px"><div class="panel-head"><h2>Needs a Club Teacher or proctor</h2><span class="muted" style="font-size:13px">${gaps.length}</span></div><div class="muted" style="font-size:14px">${gaps.map(c => `${esc(c.name)} (${clGShort(c)})`).join(" · ")}</div></section>` : ""}
     <div class="grid2" style="margin-top:12px;align-items:start">
       <section class="panel"><div class="panel-head"><h2>Latest sessions</h2></div>${recent.length ? recent.map(s => `<div class="cl-row"><b>${esc(s.title || "Session")}</b><span class="muted">${esc(clName(s.club))} · ${fmtDate(s.date)}</span></div>`).join("") : `<div class="muted">No sessions yet.</div>`}</section>
       <section class="panel"><div class="panel-head"><h2>Open incidents</h2></div>${inc.length ? inc.map(s => `<div class="cl-row"><b>${esc(clName(s.club))}</b><span class="muted">${fmtDate(s.date)} · ${esc(s.level || "minor")}</span></div>`).join("") : `<div class="muted">None open.</div>`}</section></div>`;
@@ -5123,7 +5129,7 @@ function clForm() {
     const c = f.data || {}, pr = c.proctors || [];
     return `<form class="panel cl-form" id="clForm" data-t="club"><div class="panel-head"><h2>${f.id ? "Edit club" : "New club"}</h2></div>
       <div class="grid2">${cl("", "Club name", `<input type="text" id="cfName" required maxlength="60" value="${esc(c.name || "")}">`)}
-        ${cl("", "Grade", `<select id="cfGrade">${CL_GRADES.map(g => `<option value="${g}" ${String(c.grade || 9) === String(g) ? "selected" : ""}>Grade ${g}</option>`).join("")}</select>`)}
+        <div class="field">Grades<div class="cl-grades">${CL_GRADES.map(g => `<label><input type="checkbox" name="cfG" value="${g}" ${(c.name ? clGrades(c) : [9]).includes(g) ? "checked" : ""}>Grade ${g}</label>`).join("")}</div></div>
         ${cl("", "Day", `<input type="text" id="cfDay" maxlength="30" placeholder="e.g. Tuesday" value="${esc(c.day || "")}">`)}
         ${cl("", "Time", `<input type="text" id="cfTime" maxlength="30" placeholder="e.g. 13:30" value="${esc(c.time || "")}">`)}
         ${cl("", "Room", `<input type="text" id="cfRoom" maxlength="40" value="${esc(c.room || "")}">`)}
@@ -5141,7 +5147,7 @@ function clForm() {
   if (f.type === "sess") {
     const s = f.data || {}, cid = f.club || s.club || mine[0]?.id, c = S.clubs[cid], m = (c?.members || []);
     return `<form class="panel cl-form" id="clForm" data-t="sess"><div class="panel-head"><h2>${f.id ? "Edit session" : "New session"}</h2></div>
-      <div class="grid2">${cl("", "Club", `<select id="sfClub">${mine.map(x => `<option value="${x.id}" ${x.id === cid ? "selected" : ""}>${esc(x.name)} · G${x.grade}</option>`).join("")}</select>`)}
+      <div class="grid2">${cl("", "Club", `<select id="sfClub">${mine.map(x => `<option value="${x.id}" ${x.id === cid ? "selected" : ""}>${esc(x.name)} · ${clGShort(x)}</option>`).join("")}</select>`)}
         ${cl("", "Date", `<input type="date" id="sfDate" required value="${esc(s.date || todayISO())}">`)}</div>
       ${cl("", "Title", `<input type="text" id="sfTitle" required maxlength="100" value="${esc(s.title || "")}">`)}
       ${cl("", "Session plan", `<textarea id="sfPlan" rows="4" maxlength="4000" placeholder="What the session will cover, materials, room set-up">${esc(s.plan || "")}</textarea>`)}
@@ -5151,7 +5157,7 @@ function clForm() {
   }
   const s = f.data || {};
   return `<form class="panel cl-form" id="clForm" data-t="inc"><div class="panel-head"><h2>New incident report</h2></div>
-    <div class="grid2">${cl("", "Club", `<select id="ifClub">${mine.map(x => `<option value="${x.id}">${esc(x.name)} · G${x.grade}</option>`).join("")}</select>`)}
+    <div class="grid2">${cl("", "Club", `<select id="ifClub">${mine.map(x => `<option value="${x.id}">${esc(x.name)} · ${clGShort(x)}</option>`).join("")}</select>`)}
       ${cl("", "Date", `<input type="date" id="ifDate" required value="${todayISO()}">`)}
       ${cl("", "Level", `<select id="ifLevel"><option value="minor">Minor</option><option value="serious">Serious, needs the administration</option></select>`)}</div>
     ${cl("", "What happened", `<textarea id="ifText" rows="5" required maxlength="4000"></textarea>`)}
@@ -5177,7 +5183,7 @@ function clMatch(txt, cls) {
   const k = clNorm(txt); if (!k) return "";
   let c = clubList().filter(x => clNorm(x.name) === k);
   if (!c.length && k.length >= 3) c = clubList().filter(x => { const n = clNorm(x.name); return n && (n.includes(k) || k.includes(n)); });
-  if (c.length > 1 && cls) { const g = parseInt(cls), f = c.filter(x => Number(x.grade) === g); if (f.length) c = f; }
+  if (c.length > 1 && cls) { const g = parseInt(cls), f = c.filter(x => clGrades(x).includes(g)); if (f.length) c = f; }
   return c.length === 1 ? c[0].id : "";
 }
 function clParseRows(rows) {
@@ -5236,7 +5242,7 @@ function clImportForm(f) {
   return `<form class="panel cl-form" id="clForm" data-t="imp"><div class="panel-head"><h2>Import members</h2></div>
     <div class="muted" style="font-size:13px">Sheets and Club columns that match a club are placed automatically. Pick a club for the rest.</div>
     ${f.batches.map((b, bi) => `<section class="impb"><div class="impb-head"><div style="min-width:0"><b class="fname">${esc(b.src)}</b><div class="muted" style="font-size:12.5px">${b.rows.length} name${b.rows.length === 1 ? "" : "s"} · ${esc(b.file)}${b.club ? "" : " · club not recognised"}</div></div>
-      <label class="inline-field">Club <select data-impclub="${bi}">${b.club ? "" : `<option value="">Choose…</option>`}${clubs.map(c => `<option value="${c.id}" ${b.club === c.id ? "selected" : ""}>${esc(c.name)} · G${c.grade}</option>`).join("")}</select></label></div>
+      <label class="inline-field">Club <select data-impclub="${bi}">${b.club ? "" : `<option value="">Choose…</option>`}${clubs.map(c => `<option value="${c.id}" ${b.club === c.id ? "selected" : ""}>${esc(c.name)} · ${clGShort(c)}</option>`).join("")}</select></label></div>
       <div class="impnames">${b.rows.map((r, ri) => `<label class="${r.dup ? "dup" : ""}"><input type="checkbox" data-impr="${bi}:${ri}" ${r.on && !r.dup ? "checked" : ""} ${r.dup ? "disabled" : ""}><span>${esc(r.name)}</span>${r.cls ? `<span class="tag">${esc(r.cls)}</span>` : ""}${r.dup ? `<span class="tag">Already a member</span>` : ""}</label>`).join("")}</div></section>`).join("")}
     <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center"><span class="muted" style="margin-right:auto;font-size:13px">${miss ? `Pick a club for ${miss} list${miss === 1 ? "" : "s"}` : `${tot} to add`}</span><button type="button" class="btn ghost" data-cl="cancel">Cancel</button><button class="btn primary" type="submit" ${tot ? "" : "disabled"}>Add ${tot} member${tot === 1 ? "" : "s"}</button></div></form>`;
 }
@@ -5246,7 +5252,7 @@ async function clTemplate() {
   if (!rows.length) rows.push({ Club: clubList()[0]?.name || "Chess Club", Name: "Example Student", Class: "10B" });
   const ws = X.utils.json_to_sheet(rows, { header: ["Club", "Name", "Class"] }); ws["!cols"] = [{ wch: 28 }, { wch: 36 }, { wch: 10 }];
   X.utils.book_append_sheet(wb, ws, "Members");
-  const cs = X.utils.json_to_sheet(clubList().map(c => ({ Club: c.name, Grade: c.grade, "Club Teacher": c.teacher?.name || "" })), { header: ["Club", "Grade", "Club Teacher"] }); cs["!cols"] = [{ wch: 28 }, { wch: 8 }, { wch: 30 }];
+  const cs = X.utils.json_to_sheet(clubList().map(c => ({ Club: c.name, Grades: clGrades(c).join(", "), "Club Teacher": c.teacher?.name || "" })), { header: ["Club", "Grades", "Club Teacher"] }); cs["!cols"] = [{ wch: 28 }, { wch: 8 }, { wch: 30 }];
   X.utils.book_append_sheet(wb, cs, "Clubs");
   const how = ["How to add members with this file", "", "1. Put one student per row on the Members sheet: Club, Name, Class (for example 10B).", "2. Write the Club exactly as it appears on the Clubs sheet. Capitals and the word Club do not matter.",
     "3. You can also name a sheet after a club (or name the file after it) and list only Name and Class, with no Club column.", "4. In the app open Members, press Import from Excel and choose this file.", "5. Check the preview, pick a club for anything not recognised, and press Add."];
@@ -5303,8 +5309,10 @@ document.addEventListener("submit", async e => {
   if (f.type === "club") {
     if (!clMgr()) return;
     const prev = f.data || {}, members = $("#cfMembers").value.split("\n").map(x => x.trim()).filter(Boolean).slice(0, 80).map(x => { const [n, ...r] = x.split(","); return { name: n.trim(), ...(r.join(",").trim() ? { cls: r.join(",").trim() } : {}) }; }).filter(m => m.name);
-    const c = { ...prev, name: $("#cfName").value.trim(), grade: Number($("#cfGrade").value), day: $("#cfDay").value.trim(), time: $("#cfTime").value.trim(), room: $("#cfRoom").value.trim(), status: $("#cfStatus").value, desc: $("#cfDesc").value.trim(),
+    const c = { ...prev, name: $("#cfName").value.trim(), grades: [...document.querySelectorAll("[name=cfG]:checked")].map(x => Number(x.value)), day: $("#cfDay").value.trim(), time: $("#cfTime").value.trim(), room: $("#cfRoom").value.trim(), status: $("#cfStatus").value, desc: $("#cfDesc").value.trim(),
       teacher: clPerson($("#cfTeacher").value) || undefined, proctors: [$("#cfP1").value, $("#cfP2").value].map(clPerson).filter(Boolean), members, logo: f.logoNew || (f.logoCleared ? "" : prev.logo || ""), logoKey: f.logoNew ? "" : (document.querySelector("[name=cfKey]:checked")?.value || (f.logoCleared ? "" : prev.logoKey || "")) };
+    if (!c.grades.length) { toast("Pick at least one grade"); return; }
+    c.grade = c.grades[0];
     if (!c.teacher) delete c.teacher;
     c.staff = clStaff(c);
     ok = await clGo("clubs", f.id || uid(), c);

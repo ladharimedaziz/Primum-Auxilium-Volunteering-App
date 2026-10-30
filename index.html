@@ -4,6 +4,8 @@
 <meta name="description" content="Primum Auxilium volunteering team, Middle East International School - Al Wurud.">
 <meta name="theme-color" content="#233253">
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' data: blob: https://ygzshcrssyayfegeegsw.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -1598,6 +1600,7 @@ async function cloudPut(coll, id, obj) {
     }
   } catch (e) {
     if (coll === "accounts" && e.code === "denied") { toast("Current password incorrect."); return false; }
+    if (coll === "events" && e.code === "gov") { toast("Absher and Nafath must be confirmed first."); await cloudPull(false); return false; }
     if (e.code === "offline" && coll !== "accounts") { queueOp({ op: "put", coll, id, data: obj }); if (coll === "config") S.settings = obj; else S[coll][id] = obj; refresh(); return; }
     return cloudErr(e);
   }
@@ -3259,7 +3262,7 @@ const CLASSES = ["12C", "12B", "12A", "11C", "11B", "11A"];
 let xlsxLoad = null;
 function loadXLSX() {
   if (window.XLSX) return Promise.resolve(window.XLSX);
-  return xlsxLoad = xlsxLoad || new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; sc.onload = () => res(window.XLSX); sc.onerror = () => { xlsxLoad = null; rej(new Error("xlsx")); }; document.head.appendChild(sc); });
+  return xlsxLoad = xlsxLoad || new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "xlsx.full.min.js"; sc.onload = () => res(window.XLSX); sc.onerror = () => { xlsxLoad = null; rej(new Error("xlsx")); }; document.head.appendChild(sc); });
 }
 function classFrom(t) { const m = String(t || "").match(/(?:^|[^0-9])(1[12])\s*[-_ ]?\s*([abc])(?![a-z])/i); return m ? m[1] + m[2].toUpperCase() : ""; }
 const normName = t => String(t || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z\u0600-\u06ff]+/g, " ").trim();
@@ -4278,7 +4281,7 @@ async function drawCert(canvas, vid) {
 let jspdfLoad = null;
 function loadJsPDF() {
   if (window.jspdf) return Promise.resolve(window.jspdf);
-  return jspdfLoad = jspdfLoad || new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"; sc.onload = () => res(window.jspdf); sc.onerror = () => { jspdfLoad = null; rej(new Error("load")); }; document.head.appendChild(sc); });
+  return jspdfLoad = jspdfLoad || new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "jspdf.umd.min.js"; sc.onload = () => res(window.jspdf); sc.onerror = () => { jspdfLoad = null; rej(new Error("load")); }; document.head.appendChild(sc); });
 }
 async function certDownload(vid, kind, btn) {
   const v = S.volunteers[vid]; if (!v || !downloads) return;

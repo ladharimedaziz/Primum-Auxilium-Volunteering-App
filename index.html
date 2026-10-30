@@ -1394,14 +1394,17 @@ const pill = id => { const s = statusOf(id); return `<span class="pill t-${s.ton
 const vols = () => Object.entries(S.volunteers).map(([id, v]) => ({ id, ...v }));
 const entries = () => Object.entries(S.entries).map(([id, e]) => ({ id, ...e }));
 function inYear(e) { const s = S.settings; return e.date >= s.yearStart && e.date <= s.yearEnd; }
+// Hours from one event never count for more than HCAP, however long the shift ran.
+const HCAP = 5;
+const eH = x => { const h = Number(x.hours) || 0; return x.eventId ? Math.min(HCAP, h) : h; };
 const counts = e => inYear(e) && (!S.settings.verifiedOnly || !!e.verifiedBy);
-function hoursFor(vid) { let t = 0; for (const e of Object.values(S.entries)) if (e.volunteerId === vid && counts(e)) t += Number(e.hours) || 0; return t; }
+function hoursFor(vid) { let t = 0; for (const e of Object.values(S.entries)) if (e.volunteerId === vid && counts(e)) t += eH(e); return t; }
 // Every volunteer's total in one pass over the entries, for views that list everyone.
-function hoursMap() { const m = new Map(); for (const e of Object.values(S.entries)) if (counts(e)) m.set(e.volunteerId, (m.get(e.volunteerId) || 0) + (Number(e.hours) || 0)); return id => m.get(id) || 0; }
+function hoursMap() { const m = new Map(); for (const e of Object.values(S.entries)) if (counts(e)) m.set(e.volunteerId, (m.get(e.volunteerId) || 0) + eH(e)); return id => m.get(id) || 0; }
 // Date the running total first reached the goal: the certificate's award date.
 function earnedOn(vid) {
   let t = 0; const g = S.settings.goal;
-  for (const e of entries().filter(e => e.volunteerId === vid && counts(e)).sort((a, b) => a.date.localeCompare(b.date))) { t += Number(e.hours) || 0; if (t >= g) return e.date; }
+  for (const e of entries().filter(e => e.volunteerId === vid && counts(e)).sort((a, b) => a.date.localeCompare(b.date))) { t += eH(e); if (t >= g) return e.date; }
   return null;
 }
 const rankOf = v => RANKS.find(x => x.id === v.rank);
@@ -2186,7 +2189,7 @@ VIEWS.dashboard = () => {
   const counted = all.filter(v => statusOf(v.status).rule !== "block");
   const hf = hoursMap(), withH = all.map(v => ({ ...v, h: hf(v.id) }));
   const done = withH.filter(v => statusOf(v.status).rule !== "block" && isDone(v, v.h));
-  const totalH = entries().filter(inYear).reduce((t, e) => t + (Number(e.hours) || 0), 0);
+  const totalH = entries().filter(inYear).reduce((t, e) => t + eH(e), 0);
   const pct = counted.length ? Math.round(done.length / counted.length * 100) : 0;
   const owing12 = sortVols(withH.filter(v => v.grade === 12 && ["owes"].includes(statusOf(v.status).rule) && !isDone(v, v.h))).sort((a, b) => a.h - b.h);
   const C = 2 * Math.PI * 42, off = C * (1 - pct / 100);
@@ -2258,7 +2261,7 @@ VIEWS.dashboard = () => {
 function upcomingPanel() {
   const t = todayISO(), ev = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => e.status !== "done" && e.date >= t).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
   return `<section class="panel" style="--i:6"><div class="panel-head"><h2>Coming up</h2><button class="btn small" data-go="events">All events</button></div>
-    ${ev.length ? `<div class="feed">${ev.map(e => { const { confirmed } = eventRoster(e); return `<div class="it"><div class="date">${fmtDate(e.date, { month: "short" })}<br><b style="font-size:16px;color:var(--ink)">${parse(e.date).getDate()}</b></div><div class="what"><b>${esc(e.title)}</b><span>${esc([e.start, e.location].filter(Boolean).join(" · ") || fmtH(e.hours) + " h")}</span></div><div class="hrs">${confirmed.length}${Number(e.spots) ? "/" + e.spots : ""}</div></div>`; }).join("")}</div>` : `<div class="muted" style="font-size:14px">No events scheduled. <button class="btn small ghost" data-act="new-event">Plan one</button></div>`}</section>`;
+    ${ev.length ? `<div class="feed">${ev.map(e => { const { confirmed } = eventRoster(e); return `<div class="it"><div class="date">${fmtDate(e.date, { month: "short" })}<br><b style="font-size:16px;color:var(--ink)">${parse(e.date).getDate()}</b></div><div class="what"><b>${esc(e.title)}</b><span>${esc([e.start, e.location].filter(Boolean).join(" · ") || fmtH(Math.min(HCAP, e.hours)) + " h")}</span></div><div class="hrs">${confirmed.length}${Number(e.spots) ? "/" + e.spots : ""}</div></div>`; }).join("")}</div>` : `<div class="muted" style="font-size:14px">No events scheduled. <button class="btn small ghost" data-act="new-event">Plan one</button></div>`}</section>`;
 }
 function recentList(n) {
   const list = entries().sort((a, b) => b.date.localeCompare(a.date) || 0).slice(0, n);
@@ -2267,7 +2270,7 @@ function recentList(n) {
     const v = S.volunteers[e.volunteerId];
     return `<div class="it"><div class="date">${fmtDate(e.date, { month: "short" })}<br><b style="font-size:16px;color:var(--ink)">${parse(e.date).getDate()}</b></div>
       <div class="what"><b>${esc(v ? v.name : "Removed volunteer")}</b><span>${esc(e.activity || "Volunteering")}</span></div>
-      <div class="hrs">${fmtH(e.hours)} h</div></div>`;
+      <div class="hrs">${fmtH(Math.min(HCAP, e.hours))} h</div></div>`;
   }).join("");
 }
 
@@ -2590,7 +2593,7 @@ VIEWS.me = () => {
     ${v.grade === 11 && g11Locked() ? `<div class="notice" style="--i:2"><div><b>Grade 11 opens ${fmtLong(S.settings.sem2)}.</b> Hours and events start in semester 2.</div></div>` : ""}
     ${statusOf(v.status).rule === "block" ? `<div class="notice" style="--i:2"><div><b>Account on hold.</b> Contact the Head of Volunteers.</div></div>` : ""}
     <section class="panel" style="--i:3"><div class="panel-head"><h2>Logged hours</h2><span class="muted" style="font-size:13px">${list.length} entr${list.length === 1 ? "y" : "ies"}</span></div>
-      <div class="entries">${list.length ? list.map(e => `<div class="e"><span class="num muted" style="font-size:12.5px">${fmtDate(e.date)}</span><span class="a">${esc(e.activity || "Volunteering")}</span><b class="num">${fmtH(e.hours)} h</b>${e.verifiedBy ? `<span class="vbadge">✓ Signed off</span>` : `<span class="muted" style="font-size:12px">Pending</span>`}</div>`).join("") : `<div class="empty sm" data-ic="clock">No hours yet. They show here once your supervisor logs them.</div>`}</div></section>
+      <div class="entries">${list.length ? list.map(e => `<div class="e"><span class="num muted" style="font-size:12.5px">${fmtDate(e.date)}</span><span class="a">${esc(e.activity || "Volunteering")}</span><b class="num">${fmtH(eH(e))} h</b>${e.verifiedBy ? `<span class="vbadge">✓ Signed off</span>` : `<span class="muted" style="font-size:12px">Pending</span>`}</div>`).join("") : `<div class="empty sm" data-ic="clock">No hours yet. They show here once your supervisor logs them.</div>`}</div></section>
     <section class="panel" style="--i:4"><div class="panel-head"><h2>Coming up</h2><button class="btn small ghost" data-go="vevents">All events</button></div>
       ${next.length ? `<div class="mini-events">${next.map(e => mineEventRow(e, v)).join("")}</div>` : `<div class="empty sm" data-ic="calendar">No events scheduled yet.</div>`}</section>
     ${pr ? `<section class="panel" style="--i:5"><div class="panel-head"><h2>Next rank</h2></div><div class="muted" style="font-size:14px">Eligible for <b style="color:var(--ink)">${esc(pr.label)}</b>. The Head of Volunteers decides promotions.</div></section>` : ""}
@@ -2970,7 +2973,7 @@ function drawerStats() {
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn" data-act="open-card" data-id="${id}">ID card</button>${earnedOn(id) ? `<button class="btn" data-act="open-cert" data-id="${id}">View certificate</button>` : ""}</div>
     ${(v.prior || []).length ? `<div style="margin-top:16px"><div class="eyebrow" style="margin-bottom:4px">Earlier certificates · 0 h counted</div>${v.prior.map(x => `<div class="e"><span class="a">${esc(x.title || "Certificate")}<span class="muted" style="font-size:12.5px;display:block">${esc(x.org || "")}${x.org ? " · " : ""}before school sponsorship</span></span><span class="num muted" style="font-size:12.5px">0 h</span></div>`).join("")}</div>` : ""}
     <div style="margin-top:16px"><div class="eyebrow" style="margin-bottom:4px">Logged hours (${list.length})</div>
-    <div class="entries">${list.length ? list.map(e => `<div class="e"><span class="num muted" style="font-size:12.5px">${fmtDate(e.date)}</span><span class="a" title="${esc(e.notes || "")}">${esc(e.activity || "Volunteering")}</span><b class="num">${fmtH(e.hours)} h</b>${e.verifiedBy ? `<span class="vbadge" title="Signed off by ${esc(e.verifiedBy)} on ${fmtLong(e.verifiedAt)}">✓ ${esc(e.verifiedBy)}</span>` : `<button class="btn small" data-act="verify-entry" data-id="${e.id}">Sign off</button>`}<button class="iconbtn" data-act="del-entry" data-id="${e.id}" aria-label="Delete entry">✕</button>${ui.verifying === e.id ? `<div style="grid-column:1/-1;display:flex;gap:8px"><input type="text" id="verifyName" list="supList" placeholder="Supervisor name" value="${esc(headVol()?.name || "")}" aria-label="Supervisor name"><button class="btn small primary" data-act="verify-save" data-id="${e.id}">Confirm</button><button class="btn small ghost" data-act="verify-cancel">Cancel</button></div>` : ""}</div>`).join("") : `<div class="muted" style="font-size:14px;padding:8px 0">No hours yet.</div>`}</div></div>`;
+    <div class="entries">${list.length ? list.map(e => `<div class="e"><span class="num muted" style="font-size:12.5px">${fmtDate(e.date)}</span><span class="a" title="${esc(e.notes || "")}">${esc(e.activity || "Volunteering")}</span><b class="num">${fmtH(eH(e))} h</b>${e.verifiedBy ? `<span class="vbadge" title="Signed off by ${esc(e.verifiedBy)} on ${fmtLong(e.verifiedAt)}">✓ ${esc(e.verifiedBy)}</span>` : `<button class="btn small" data-act="verify-entry" data-id="${e.id}">Sign off</button>`}<button class="iconbtn" data-act="del-entry" data-id="${e.id}" aria-label="Delete entry">✕</button>${ui.verifying === e.id ? `<div style="grid-column:1/-1;display:flex;gap:8px"><input type="text" id="verifyName" list="supList" placeholder="Supervisor name" value="${esc(headVol()?.name || "")}" aria-label="Supervisor name"><button class="btn small primary" data-act="verify-save" data-id="${e.id}">Confirm</button><button class="btn small ghost" data-act="verify-cancel">Cancel</button></div>` : ""}</div>`).join("") : `<div class="muted" style="font-size:14px;padding:8px 0">No hours yet.</div>`}</div></div>`;
 }
 
 function volModal() {
@@ -3058,7 +3061,7 @@ function bindOverlay() {
     ef.addEventListener("submit", e => {
       e.preventDefault(); const title = $("#eTitle").value.trim(); if (!title) return $("#eTitle").focus();
       const id = ui.eventId || uid(), prev = S.events[id] || { signups: [], status: "open" };
-      put("events", id, { ...prev, title, date: $("#eDate").value || todayISO(), start: $("#eStart").value, end: $("#eEnd").value, hours: r1(Number($("#eHours").value) || hoursFromTimes($("#eStart").value, $("#eEnd").value)), location: $("#eLoc").value.trim(), spots: Math.max(0, Number($("#eSpots").value) || 0), supervisor: $("#eSup").value.trim(), notes: $("#eNotes").value.trim(), external: $("#eExt").checked, organizer: $("#eOrg").value.trim() });
+      put("events", id, { ...prev, title, date: $("#eDate").value || todayISO(), start: $("#eStart").value, end: $("#eEnd").value, hours: Math.min(HCAP, r1(Number($("#eHours").value) || hoursFromTimes($("#eStart").value, $("#eEnd").value))), location: $("#eLoc").value.trim(), spots: Math.max(0, Number($("#eSpots").value) || 0), supervisor: $("#eSup").value.trim(), notes: $("#eNotes").value.trim(), external: $("#eExt").checked, organizer: $("#eOrg").value.trim() });
       closeOverlay(); toast(ui.eventId ? "Event updated" : "Event posted");
     });
   }
@@ -3107,7 +3110,7 @@ function bindOverlay() {
     closeOverlay();
     let crossed = [];
     for (const row of rows) {
-      const vid = row.dataset.att, hours = r1(Number(row.querySelector("input[type=number]").value) || 0);
+      const vid = row.dataset.att, hours = Math.min(HCAP, r1(Number(row.querySelector("input[type=number]").value) || 0));
       if (!(hours > 0) || !S.volunteers[vid]) continue;
       const before = hoursFor(vid);
       await put("entries", uid(), { volunteerId: vid, date: ev.date, hours, activity: ev.title, eventId: evId, notes: ev.location || "", created: new Date().toISOString(), ...(by ? { verifiedBy: by, verifiedAt: todayISO() } : {}) });
@@ -3651,7 +3654,7 @@ async function pdfDownload(evId, pid, btn) {
 /* ---------- event certificates ---------- */
 function eventAttendees(evId) {
   const m = new Map();
-  entries().filter(e => e.eventId === evId && S.volunteers[e.volunteerId]).forEach(e => m.set(e.volunteerId, (m.get(e.volunteerId) || 0) + (Number(e.hours) || 0)));
+  entries().filter(e => e.eventId === evId && S.volunteers[e.volunteerId]).forEach(e => m.set(e.volunteerId, (m.get(e.volunteerId) || 0) + eH(e)));
   return sortVols([...m.keys()].map(vid => ({ ...S.volunteers[vid], id: vid }))).map(v => ({ vid: v.id, h: m.get(v.id) }));
 }
 // Shrink the photo so it fits comfortably inside the event's saved record.
@@ -3756,7 +3759,7 @@ function weeklyText(o) {
   const in14 = new Date(+parse(t) + 14 * 864e5), end = `${in14.getFullYear()}-${pad(in14.getMonth() + 1)}-${pad(in14.getDate())}`;
   const g = S.settings.goal, L = [`${S.settings.teamName || "Primum Auxilium"} · week of ${fmtDate(wk, { month: "long", day: "numeric" })}`, ""];
   const recent = entries().filter(e => e.date >= wk && e.date <= t);
-  if (o.total) { const hrs = recent.reduce((a, e) => a + Number(e.hours || 0), 0), ppl = new Set(recent.map(e => e.volunteerId)).size; L.push(hrs ? `This week the team gave ${fmtH(hrs)} hours across ${ppl} volunteer${ppl === 1 ? "" : "s"}. Thank you, everyone.` : `A quiet week. Plenty of chances to help below.`, ""); }
+  if (o.total) { const hrs = recent.reduce((a, e) => a + eH(e), 0), ppl = new Set(recent.map(e => e.volunteerId)).size; L.push(hrs ? `This week the team gave ${fmtH(hrs)} hours across ${ppl} volunteer${ppl === 1 ? "" : "s"}. Thank you, everyone.` : `A quiet week. Plenty of chances to help below.`, ""); }
   if (o.shout) { const done = vols().filter(v => { const d = earnedOn(v.id); return d && d >= wk && d <= t; }); if (done.length) L.push(`🎉 Congratulations to ${done.map(v => v.name).join(", ")} for reaching ${g} hours!`, ""); }
   if (o.events) {
     const ev = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => e.status !== "done" && e.date >= t && e.date <= end).sort((a, b) => a.date.localeCompare(b.date));
@@ -3862,10 +3865,10 @@ function eventCards() {
     const att = isDone ? entries().filter(x => x.eventId === e.id) : [];
     return `<article class="panel ecard ${isDone ? "done" : ""}" style="--i:${i}">
       <div class="ehead"><div class="edate"><span>${fmtDate(e.date, { month: "short" })}</span><b>${parse(e.date).getDate()}</b></div>
-        <div style="flex:1;min-width:0"><h3>${esc(e.title)}${e.external ? ` <span class="tag ext" style="vertical-align:3px">External</span>` : ""}${e.council ? ` <span class="tag sc" style="vertical-align:3px">Student Council</span>` : ""}</h3><div class="muted" style="font-size:13.5px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location, e.hours ? fmtH(e.hours) + " h" : ""].filter(Boolean).join(" · "))}</div></div>
+        <div style="flex:1;min-width:0"><h3>${esc(e.title)}${e.external ? ` <span class="tag ext" style="vertical-align:3px">External</span>` : ""}${e.council ? ` <span class="tag sc" style="vertical-align:3px">Student Council</span>` : ""}</h3><div class="muted" style="font-size:13.5px">${esc([e.start && e.end ? `${e.start}–${e.end}` : e.start, e.location, e.hours ? fmtH(Math.min(HCAP, e.hours)) + " h" : ""].filter(Boolean).join(" · "))}</div></div>
         <button class="btn small ghost" data-act="edit-event" data-id="${e.id}">Edit</button></div>
       ${logBlock(e)}
-      ${isDone ? `<div class="muted" style="font-size:14px">Attendance recorded: <b style="color:var(--ink)">${att.length} volunteer${att.length === 1 ? "" : "s"}, ${fmtH(att.reduce((t, x) => t + Number(x.hours || 0), 0))} h</b>${e.supervisor ? `, signed off by ${esc(e.supervisor)}` : ""}.</div>
+      ${isDone ? `<div class="muted" style="font-size:14px">Attendance recorded: <b style="color:var(--ink)">${att.length} volunteer${att.length === 1 ? "" : "s"}, ${fmtH(att.reduce((t, x) => t + Math.min(HCAP, Number(x.hours || 0)), 0))} h</b>${e.supervisor ? `, signed off by ${esc(e.supervisor)}` : ""}.</div>
         <div class="chips">${leadsOf(e).map(id => leadChip(e.id, id, true)).join("")}${att.filter(x => S.volunteers[x.volunteerId] && !leadsOf(e).includes(x.volunteerId)).map(x => vchip(e.id, x.volunteerId, false, true)).join("")}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">${e.external ? `<span class="tag ext">External${e.organizer ? " · " + esc(e.organizer) : ""}</span>` : e.photo ? `<img src="${e.photo}" alt="" style="height:40px;width:auto;max-width:120px;border-radius:6px;object-fit:contain">` : `<span class="muted" style="font-size:13px">Photo needed for certificates</span>`}<button class="btn primary" data-act="goto-thread" data-id="${e.id}">Certificates thread</button></div>` : `
       <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px" class="muted"><span>${spots ? `${confirmed.length} of ${spots} spots filled` : `${confirmed.length} signed up · no limit`}</span>${waitlist.length ? `<span>${waitlist.length} on waitlist</span>` : ""}</div>
@@ -3898,9 +3901,9 @@ function hoursFromTimes(a, b) {
   if (!a || !b) return 0;
   const [h1, m1] = a.split(":").map(Number), [h2, m2] = b.split(":").map(Number);
   let d = h2 * 60 + m2 - h1 * 60 - m1; if (d <= 0) d += 1440;
-  return r1(d / 60);
+  return Math.min(HCAP, r1(d / 60));
 }
-const evHours = e => Number(e.hours) || hoursFromTimes(e.start, e.end);
+const evHours = e => Math.min(HCAP, Number(e.hours) || hoursFromTimes(e.start, e.end));
 function eventModal(id) {
   const e = id ? S.events[id] : { title: "", date: todayISO(), start: "", end: "", hours: 2, location: "", spots: 6, supervisor: headVol()?.name || "", notes: "" };
   return `<div class="modal" role="dialog" aria-label="Event"><h2>${id ? "Edit event" : "New event"}</h2>
@@ -3973,11 +3976,11 @@ function annText(e) {
     ].filter(Boolean).concat("", e.council ? "Student Council × Primum Auxilium" : "Primum Auxilium · MEIS").join("\n");
 }
 function recapText(e) {
-  const es = entries().filter(x => x.eventId === e.id), h = es.reduce((t, x) => t + Number(x.hours || 0), 0), n = (e.attended || []).length || es.length;
+  const es = entries().filter(x => x.eventId === e.id), h = es.reduce((t, x) => t + eH(x), 0), n = (e.attended || []).length || es.length;
   return [`💙 Thank you to the ${n} Primum Auxilium volunteer${n === 1 ? "" : "s"} who helped at ${e.title} on ${longDay(e.date)}${h ? `, giving ${fmtH(h)} hours of service` : ""}.`, "", e.council ? "Student Council × Primum Auxilium" : "Primum Auxilium · MEIS"].join("\n");
 }
 function statsText() {
-  const es = entries().filter(inYear), h = es.reduce((t, x) => t + Number(x.hours || 0), 0), done = Object.values(S.events).filter(e => e.status === "done").length;
+  const es = entries().filter(inYear), h = es.reduce((t, x) => t + eH(x), 0), done = Object.values(S.events).filter(e => e.status === "done").length;
   return [`📊 Primum Auxilium this school year`, `• ${fmtH(h)} hours of service`, `• ${done} event${done === 1 ? "" : "s"} staffed`, `• ${vols().length} volunteers on the team`, "", "Sponsored by Middle East International School - Al Wurud · school owned by Ataa Educational"].join("\n");
 }
 VIEWS.pr = () => {
@@ -4651,8 +4654,8 @@ async function monthPDF(ym) {
   pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.setTextColor(35, 50, 83); pdf.text("Primum Auxilium", M + 24, 20);
   pdf.setFont("helvetica", "normal"); pdf.setFontSize(10.5); pdf.setTextColor(90, 100, 120); pdf.text(A(SCHOOL), M + 24, 26); pdf.text(`Monthly report - ${A(label)}`, M + 24, 31.5);
   y = 42;
-  const ents = entries().filter(x => (x.date || "").startsWith(ym) && S.volunteers[x.volunteerId]), tot = ents.reduce((t, x) => t + (Number(x.hours) || 0), 0);
-  const by = {}; ents.forEach(x => { by[x.volunteerId] = (by[x.volunteerId] || 0) + (Number(x.hours) || 0); });
+  const ents = entries().filter(x => (x.date || "").startsWith(ym) && S.volunteers[x.volunteerId]), tot = ents.reduce((t, x) => t + eH(x), 0);
+  const by = {}; ents.forEach(x => { by[x.volunteerId] = (by[x.volunteerId] || 0) + eH(x); });
   const evs = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => (e.date || "").startsWith(ym)).sort((a, b) => a.date.localeCompare(b.date));
   const all = vols().filter(v => !v.head), met = all.filter(v => isDone(v)).length;
   T("Summary", 13, true, 7); 
@@ -4661,7 +4664,7 @@ async function monthPDF(ym) {
   y += 4; T("Events", 13, true, 7);
   if (!evs.length) T("No events this month.", 10.5, false, 6);
   evs.forEach(e => {
-    const att = ents.filter(x => x.eventId === e.id), h = att.reduce((t, x) => t + (Number(x.hours) || 0), 0);
+    const att = ents.filter(x => x.eventId === e.id), h = att.reduce((t, x) => t + eH(x), 0);
     T(`${fmtDate(e.date, { day: "numeric", month: "short" })}  ${e.title}${e.external ? " (external)" : ""}`, 10.5, true, 5.5);
     T(`${att.length ? `${att.length} volunteers, ${fmtH(h)} h` : e.status === "done" ? "Attendance not recorded" : `${eventRoster(e).confirmed.length} signed up`}${e.location ? ` - ${e.location}` : ""}`, 10, false, 5, M + 4, [90, 100, 120]);
     const l = S.logs[e.id]; if (l && l.summary) T(`Lead log (${l.byName || "shift lead"}): ${l.summary.slice(0, 400)}`, 9.5, false, 4.8, M + 4, [60, 70, 90]);

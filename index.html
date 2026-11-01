@@ -4,7 +4,7 @@
 <meta name="description" content="Primum Auxilium volunteering team, Middle East International School - Al Wurud.">
 <meta name="theme-color" content="#233253">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' data: blob: https://ygzshcrssyayfegeegsw.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' data: blob: https://ygzshcrssyayfegeegsw.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -16,9 +16,7 @@
 <style>body{margin:0}[hidden]{display:none!important}</style>
 <script>window.PA_CLOUD = {"url": "https://ygzshcrssyayfegeegsw.supabase.co", "key": "sb_publishable_84cH_gE_7x7F0QVGtQpQRg_a7ojlpik", "vapid": "BP72eMUBGb-9A6MtnLwki2EzARQoz2pInRomziZNSebuqY6OO_hL_c_b-4QfgIraFyyqKLNPNN-1G6v1INMsPHY"};
 if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
-</head><body><link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+</head><body><link rel="preload" href="fonts/cinzel-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/atkinson-hyperlegible-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: navy crest band (shield navy over slate, silver rim) with tab rail beneath, then one working view at a time; summary tiles above detail panels. */
 :root{
@@ -607,6 +605,7 @@ html.calm .rv.below{opacity:1;transform:none}
 .gate-partners img{height:44px;width:auto;opacity:.92}
 .gate-partners img.moe{height:38px}
 .gate-partners img.side{height:26px;opacity:.7}
+[data-theme="dark"] .gate-partners img.side{height:30px;opacity:1;box-sizing:content-box;padding:5px 9px;border-radius:9px;background:rgba(236,240,248,.92)}
 .hb-credit{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:14px;font-size:12.5px;line-height:1.4}
 .hb-credit img{height:48px;width:auto}
 .hb-credit img.moe{height:40px}
@@ -1939,7 +1938,7 @@ async function adminSignIn(code) {
 const crestSrc = () => $("#crestImg").src;
 function gateHTML() {
   const h = headAcc(), hv = headVol();
-  const card = (title, sub, body) => `<div class="gate"><div class="gate-card panel"><img class="gate-crest" src="${crestSrc()}" alt=""><div class="motto" style="color:var(--slate)">${esc(S.settings.teamName || "Primum Auxilium")}</div><h2>${title}</h2>${sub ? `<p class="muted gate-sub">${sub}</p>` : ""}${body}<div class="gate-partners"><img src="${$("#meisLogo").src}" alt="Middle East International School - Al Wurud"><img class="side" src="${$("#ataaLogo").src}" alt="Ataa Educational"><img class="moe side" src="${$("#moeLogo").src}" alt="Ministry of Education"></div></div></div>`;
+  const card = (title, sub, body) => `<div class="gate"><div class="gate-card panel"><img class="gate-crest" src="${crestSrc()}" alt=""><div class="motto">${esc(S.settings.teamName || "Primum Auxilium")}</div><h2>${title}</h2>${sub ? `<p class="muted gate-sub">${sub}</p>` : ""}${body}<div class="gate-partners"><img src="${$("#meisLogo").src}" alt="Middle East International School - Al Wurud"><img class="side" src="${$("#ataaLogo").src}" alt="Ataa Educational"><img class="moe side" src="${$("#moeLogo").src}" alt="Ministry of Education"></div></div></div>`;
   if (ui.gate === "key") return card("Recovery key", "Resets the Head password if it is lost. Shown once.", `<div class="keybox num" id="keyText">${esc(ui.newKey)}</div>
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn" data-act="key-copy">Copy</button>${downloads ? `<button class="btn" data-act="key-save">Download</button>` : ""}</div>
     <label class="checkrow" style="margin-top:6px"><input type="checkbox" id="keyOk"><span><b>Key stored safely</b></span></label>

@@ -16,9 +16,13 @@ Windows may show "Windows protected your PC" the first time. Click **More info**
 
 Open **Settings › App updates › Check for updates**. Updates install in place and keep all data. Only updates signed by the team are accepted.
 
-## Phone app
+## Phone and web app
 
-Coming soon. Volunteers and administration will sign in from their phones with the name and password given by the Head of Volunteers.
+Open **https://ladharimedaziz.github.io/Primum-Auxilium-Volunteering-App/** and sign in with the name and password given by the Head of Volunteers.
+
+- **iPhone:** open it in Safari, tap Share, then **Add to Home Screen**. Notifications only work from the home-screen app.
+- **Android:** open it in Chrome and tap **Install app** (or menu › Add to Home screen).
+- **Computer:** open it in Edge or Chrome and use the install icon in the address bar.
 
 ---
 

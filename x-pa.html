@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>X-PA · Primum Auxilium</title>
+<meta name="description" content="X-PA, an experimental look at Primum Auxilium, the Clubs and the Student Council.">
+<meta name="theme-color" content="#0b0f19">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* X-PA: an experimental page. It stands on its own and shares nothing with the app but pictures and fonts. */
+:root{
+  --ink:#1d1d1f;--ink2:#6e6e73;--paper:#fbfbfd;--paper2:#f5f5f7;--line:rgba(0,0,0,.08);
+  --night:#05070d;--navy:#233253;--navy2:#2f4470;--slate:#667589;--silver:#c9ced6;
+  --green:#163f2d;--green2:#1f5a40;--sage:#84a892;--mint:#e9f1ec;
+  --maroon:#7a1d26;--maroon2:#a62a37;--wine:#1a0a0d;
+  --blue:#0071e3;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI Variable Display","Segoe UI",system-ui,"Atkinson Hyperlegible",sans-serif;
+  --serif:"Cinzel",Georgia,serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --spring:var(--ease);--spring-t:.9s;
+  --gutter:max(22px,env(safe-area-inset-left));
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:60px}
+body{margin:0;background:var(--night);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+img{display:block;max-width:100%}
+a{color:inherit}
+h1,h2,h3,p{margin:0}
+.skip{position:fixed;left:12px;top:-60px;z-index:50;background:#fff;color:#000;padding:10px 14px;border-radius:12px;font-weight:600;text-decoration:none}
+.skip:focus{top:12px}
+:focus-visible{outline:3px solid #4aa3ff;outline-offset:3px;border-radius:10px}
+.wrap{width:min(1040px,100% - 2*var(--gutter));margin-inline:auto}
+.eyebrow{font-size:clamp(17px,1.6vw,21px);font-weight:600;letter-spacing:-.01em;margin-bottom:12px}
+.display{font-size:clamp(44px,8.4vw,96px);line-height:1.04;font-weight:700;letter-spacing:-.045em}
+.headline{font-size:clamp(34px,5.6vw,64px);line-height:1.06;font-weight:700;letter-spacing:-.04em}
+.lede{font-size:clamp(19px,2.1vw,26px);line-height:1.35;font-weight:500;letter-spacing:-.02em;max-width:34ch}
+.muted{color:var(--ink2)}
+.num{font-variant-numeric:tabular-nums}
+
+/* Local nav: thin, frosted, out of the way. */
+.lnav{position:fixed;inset:0 0 auto;z-index:20;height:52px;padding-top:env(safe-area-inset-top);box-sizing:content-box;color:#f5f5f7;
+  background:rgba(12,14,20,.62);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.08);transition:background .5s var(--ease),color .5s var(--ease),border-color .5s var(--ease)}
+.lnav.light{background:rgba(251,251,253,.72);color:var(--ink);border-color:rgba(0,0,0,.08)}
+.lnav .wrap{height:52px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:19px;letter-spacing:-.02em;text-decoration:none;margin-inline-end:auto}
+.brand img{width:22px;height:auto}
+.pill{font-size:11px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:999px;border:1px solid currentColor;opacity:.75}
+.links{display:flex;gap:4px;position:relative}
+.links a{font-size:13px;text-decoration:none;padding:7px 12px;border-radius:999px;opacity:.78;transition:opacity .3s;position:relative;z-index:1}
+.links a:hover,.links a[aria-current="true"]{opacity:1}
+.links .blob{position:absolute;top:0;left:0;height:100%;border-radius:999px;background:currentColor;opacity:.12;pointer-events:none;will-change:transform,width}
+.open{font-size:12px;font-weight:600;text-decoration:none;background:var(--blue);color:#fff;padding:6px 13px;border-radius:999px;white-space:nowrap}
+@media (max-width:640px){.links{display:none}.lnav .wrap{gap:12px}}
+
+/* Reveal on scroll: spring-timed. */
+.rv{opacity:0;transform:translate3d(0,40px,0) scale(.985);transition:opacity calc(var(--spring-t)*.8) var(--ease),transform var(--spring-t) var(--spring);transition-delay:calc(var(--d,0)*70ms)}
+.rv.in{opacity:1;transform:none}
+
+/* ---------- Hero ---------- */
+.hero{height:210vh;height:210svh;position:relative;background:radial-gradient(90% 60% at 50% 38%,#1b2747 0%,#0b0f19 55%,var(--night) 100%);color:#f5f5f7}
+.hero .stage{position:sticky;top:0;height:100vh;height:100svh;display:grid;place-items:center;overflow:hidden;text-align:center}
+.hero .glow{position:absolute;width:80vmin;height:80vmin;border-radius:50%;background:radial-gradient(circle,rgba(110,140,210,.38),rgba(35,50,83,0) 62%);filter:blur(10px);
+  transform:translate3d(calc(var(--mx,0)*24px),calc(var(--my,0)*24px),0) scale(calc(1 + var(--p,0)*.6));opacity:calc(1 - var(--p,0)*.7)}
+.hero .inner{position:relative;display:grid;justify-items:center;gap:clamp(14px,2.4vh,28px);padding:72px var(--gutter) 40px;
+  transform:translate3d(0,calc(var(--p,0)*-12vh),0) scale(calc(1 - var(--p,0)*.12));opacity:calc(1 - var(--p,0)*1.6)}
+.crest3d{width:clamp(104px,min(24vmin,26vh),230px);perspective:900px}
+.crest3d .card{transform:rotateX(calc(var(--ty,0)*-14deg)) rotateY(calc(var(--tx,0)*18deg)) translateZ(0);transform-style:preserve-3d;position:relative;will-change:transform}
+.crest3d img{filter:drop-shadow(0 30px 40px rgba(0,0,0,.55)) drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+.crest3d .sheen{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
+  -webkit-mask:url(img/crestImg.webp) center/contain no-repeat;mask:url(img/crestImg.webp) center/contain no-repeat;
+  background:radial-gradient(60% 45% at calc(50% + var(--tx,0)*40%) calc(30% + var(--ty,0)*40%),rgba(255,255,255,.45),rgba(255,255,255,0) 70%)}
+.hero h1{font-size:clamp(50px,min(12vw,13vh),140px);line-height:.95;font-weight:700;letter-spacing:-.055em;
+  background:linear-gradient(180deg,#fff 30%,#aab3c5 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{font-size:clamp(19px,2.4vw,28px);font-weight:500;color:#a1a1a6;letter-spacing:-.02em;max-width:26ch}
+.hero .sub b{color:#f5f5f7;font-weight:600}
+.hero .chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.hero .chips a{font-size:15px;text-decoration:none;color:#f5f5f7;padding:10px 18px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);transition:background .3s}
+.hero .chips a:hover{background:rgba(255,255,255,.16)}
+.hero .cue{position:absolute;z-index:-1;bottom:max(26px,env(safe-area-inset-bottom));left:50%;translate:-50% 0;font-size:12px;color:#86868b;letter-spacing:.02em;opacity:calc(1 - var(--p,0)*5)}
+.hero .cue i{display:block;width:1px;height:34px;margin:8px auto 0;background:linear-gradient(#86868b,transparent);animation:cue 2.4s var(--ease) infinite}
+@keyframes cue{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+.hero .statement{position:absolute;inset:auto var(--gutter) 0;top:50%;translate:0 -50%;font-size:clamp(30px,5.2vw,60px);line-height:1.1;font-weight:700;letter-spacing:-.04em;
+  opacity:clamp(0,(var(--p,0) - .45)*3.2,1);transform:translate3d(0,calc((1 - clamp(0,(var(--p,0) - .45)*3.2,1))*40px),0);pointer-events:none}
+.hero .statement span{color:#86868b}
+
+/* ---------- PA ---------- */
+.pa{background:var(--paper);color:var(--ink);position:relative;z-index:1;border-radius:clamp(0px,3vw,36px) clamp(0px,3vw,36px) 0 0;margin-top:-1px}
+.pa .intro{padding:clamp(90px,14vw,160px) 0 clamp(40px,6vw,70px)}
+.pa .eyebrow{color:var(--navy2)}
+.ringpin{height:300vh;height:300svh;position:relative}
+.ringpin .stage{position:sticky;top:0;height:100vh;height:100svh;display:grid;align-items:center}
+.ringgrid{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(24px,5vw,80px);align-items:center}
+.ring{position:relative;width:min(100%,440px);aspect-ratio:1;justify-self:center}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+.ring .track{stroke:#e8e8ed}
+.ring .fill{stroke:url(#paGrad);stroke-linecap:round;filter:drop-shadow(0 8px 18px rgba(35,50,83,.25))}
+.ring .tick{fill:#d2d2d7;transition:fill .4s var(--ease),r .5s var(--spring)}
+.ring .tick.on{fill:var(--navy)}
+.ring .center{position:absolute;inset:0;display:grid;place-content:center;text-align:center;transform:none}
+.ring .big{font-size:clamp(72px,11vw,132px);font-weight:700;letter-spacing:-.06em;line-height:1}
+.ring .unit{font-size:clamp(15px,1.6vw,19px);font-weight:600;color:var(--ink2);margin-top:6px}
+.steps{position:relative;min-height:12em}
+.step{position:absolute;inset:0 auto auto 0;opacity:0;transform:translate3d(0,24px,0);transition:opacity .6s var(--ease),transform .9s var(--spring)}
+.step.on{opacity:1;transform:none}
+.step .k{font-size:14px;font-weight:600;color:var(--navy2);margin-bottom:10px}
+.step h3{font-size:clamp(30px,4vw,48px);line-height:1.08;font-weight:700;letter-spacing:-.04em;margin-bottom:14px}
+.step p{font-size:clamp(17px,1.6vw,20px);color:var(--ink2);max-width:30ch}
+.dots{display:flex;gap:8px;margin-top:22px;position:absolute;bottom:-56px;left:0}
+.dots i{width:8px;height:8px;border-radius:99px;background:#d2d2d7;transition:width .6s var(--spring),background .4s}
+.dots i.on{width:26px;background:var(--navy)}
+@media (max-width:760px){
+  .ringgrid{grid-template-columns:1fr;gap:18px;padding-top:70px}
+  .ring{width:min(70vw,320px)}
+  .steps{min-height:11em;text-align:center}.step{inset:0 0 auto}.step p{margin-inline:auto}
+  .dots{position:static;justify-content:center;margin-top:0}
+}
+
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:clamp(12px,1.6vw,20px);padding:clamp(40px,6vw,80px) 0 clamp(90px,12vw,150px)}
+.tile{background:#fff;border-radius:28px;padding:clamp(26px,3.2vw,40px);box-shadow:0 1px 0 rgba(0,0,0,.04),0 12px 40px -18px rgba(0,0,0,.12);overflow:hidden;position:relative;min-height:260px;display:flex;flex-direction:column}
+.tile .k{font-size:14px;font-weight:600;color:var(--ink2);margin-bottom:8px}
+.tile h3{font-size:clamp(26px,2.8vw,34px);line-height:1.1;font-weight:700;letter-spacing:-.035em}
+.tile p{color:var(--ink2);margin-top:12px;max-width:34ch}
+.t-a{grid-column:span 4}.t-b{grid-column:span 2}.t-c{grid-column:span 2}.t-d{grid-column:span 4}
+.t-dark{background:linear-gradient(160deg,#16203a,#0b0f19);color:#f5f5f7}.t-dark p,.t-dark .k{color:#a1a1a6}
+@media (max-width:760px){.bento{grid-template-columns:1fr}.t-a,.t-b,.t-c,.t-d{grid-column:auto}}
+.ranks{display:flex;gap:10px;align-items:flex-end;margin-top:auto;padding-top:28px}
+.rank{flex:1;min-width:0;border-radius:16px;padding:12px 10px 14px;font-size:13px;font-weight:600;color:#fff;display:flex;align-items:flex-end;min-height:var(--h);transform-origin:bottom;transform:scaleY(.2);opacity:0;transition:transform 1s var(--spring),opacity .5s var(--ease);transition-delay:calc(var(--i)*90ms + 150ms)}
+.in .rank{transform:none;opacity:1}
+.rank span{display:block}
+.r1{--h:70px;background:#8e9aab}.r2{--h:100px;background:var(--slate)}.r3{--h:132px;background:var(--navy2)}.r4{--h:166px;background:#0d0d0f}
+@media (max-width:760px){.ranks{flex-direction:column;align-items:flex-start;gap:6px}.rank{flex:none;min-height:0;width:var(--w);padding:10px 12px;border-radius:12px;transform-origin:left;transform:scaleX(.2)}.r1{--w:46%}.r2{--w:62%}.r3{--w:80%}.r4{--w:100%}}
+.cert{margin-top:auto;padding-top:26px;display:grid;place-items:center}
+.cert .paper{width:min(100%,280px);aspect-ratio:1.414;background:linear-gradient(180deg,#fff,#f7f7f9);border-radius:10px;box-shadow:0 24px 50px -20px rgba(0,0,0,.5);color:var(--ink);display:grid;place-content:center;text-align:center;gap:6px;
+  transform:perspective(800px) rotateX(18deg) translateY(30px);opacity:.0;transition:transform 1.2s var(--spring),opacity .6s var(--ease);transition-delay:.2s}
+.in .cert .paper{transform:perspective(800px) rotateX(0) translateY(0);opacity:1}
+.cert .paper img{width:34px;margin:0 auto}
+.cert .paper b{font-family:var(--serif);font-size:14px;letter-spacing:.06em}
+.cert .paper small{font-size:10px;color:var(--ink2);letter-spacing:.02em}
+.queue{margin-top:auto;padding-top:24px;display:grid;gap:8px}
+.queue div{display:flex;justify-content:space-between;align-items:center;background:var(--paper2);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:500;opacity:0;transform:translate3d(-16px,0,0);transition:opacity .5s var(--ease),transform .9s var(--spring);transition-delay:calc(var(--i)*110ms + 200ms)}
+.in .queue div{opacity:1;transform:none}
+.queue em{font-style:normal;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--navy);color:#fff}
+.queue .w em{background:#e8e8ed;color:var(--ink2)}
+.sign{margin-top:auto;padding-top:24px;display:flex;align-items:center;gap:14px}
+.sign svg{width:56px;height:56px;flex:none}
+.sign path{stroke-dasharray:60;stroke-dashoffset:60;transition:stroke-dashoffset 1s var(--ease) .4s}
+.in .sign path{stroke-dashoffset:0}
+
+/* ---------- Clubs ---------- */
+.clubs{background:var(--mint);color:var(--green);padding:clamp(100px,14vw,170px) 0 clamp(90px,12vw,150px);overflow:hidden}
+.clubs .eyebrow{color:var(--green2)}
+.clubs .lede{color:#3d5f4e}
+.seg{display:inline-flex;position:relative;background:rgba(22,63,45,.08);border-radius:999px;padding:4px;margin:clamp(30px,4vw,48px) 0 26px}
+.seg button{position:relative;z-index:1;font:inherit;font-size:15px;font-weight:500;letter-spacing:-.01em;border:0;background:none;color:var(--green);padding:9px 18px;border-radius:999px;cursor:pointer;transition:color .3s}
+.seg button[aria-pressed="true"]{color:#fff}
+.seg .knob{position:absolute;top:4px;left:0;height:calc(100% - 8px);border-radius:999px;background:var(--green);box-shadow:0 4px 14px rgba(22,63,45,.3);will-change:transform,width}
+.rail{display:flex;gap:clamp(14px,1.8vw,22px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:6px var(--gutter) 30px;margin:0 calc(50% - 50vw);scroll-padding-inline:var(--gutter);overscroll-behavior-x:contain}
+.rail::-webkit-scrollbar{display:none}
+@media (min-width:1084px){.rail{padding-inline:calc(50vw - 520px);scroll-padding-inline:calc(50vw - 520px)}}
+.club{flex:0 0 clamp(240px,27vw,300px);scroll-snap-align:start;background:#fff;border-radius:28px;padding:28px 26px 26px;display:flex;flex-direction:column;gap:6px;box-shadow:0 18px 40px -26px rgba(22,63,45,.45);
+  transition:transform .8s var(--spring),opacity .5s var(--ease),box-shadow .5s var(--ease)}
+.club:hover{transform:translateY(-6px);box-shadow:0 28px 50px -26px rgba(22,63,45,.55)}
+.club.off{opacity:.28;transform:scale(.94)}
+.club img{width:108px;height:auto;margin:0 0 18px;filter:drop-shadow(0 10px 14px rgba(22,63,45,.25))}
+.club .cat{font-size:12px;font-weight:600;color:var(--green2);opacity:.75}
+.club h3{font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--green)}
+.club p{font-size:15px;color:#4d6b5b;line-height:1.42}
+.railnav{display:flex;justify-content:flex-end;gap:12px}
+.railnav button{width:40px;height:40px;border-radius:50%;border:0;background:rgba(22,63,45,.1);color:var(--green);cursor:pointer;display:grid;place-items:center;transition:background .3s,opacity .3s}
+.railnav button:hover{background:rgba(22,63,45,.18)}
+.railnav button:disabled{opacity:.35;cursor:default}
+.railnav svg{width:18px;height:18px}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px);margin-top:clamp(70px,9vw,110px)}
+.trio .tile{min-height:0;background:#fff;color:var(--green)}
+.trio .big{font-size:clamp(60px,7vw,88px);font-weight:700;letter-spacing:-.06em;line-height:1;color:var(--green)}
+.trio p{color:#4d6b5b}
+@media (max-width:760px){.trio{grid-template-columns:1fr}}
+
+/* ---------- Council ---------- */
+.council{background:radial-gradient(120% 70% at 50% 0%,#3a0d13 0%,var(--wine) 45%,#070304 100%);color:#f5f5f7;position:relative;overflow:hidden;padding-bottom:clamp(90px,12vw,150px)}
+.stars{position:absolute;inset:0;pointer-events:none;transform:translate3d(0,calc(var(--p,0)*-120px),0)}
+.stars i{position:absolute;width:var(--s);height:var(--s);background:#fff;opacity:var(--o);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);animation:tw var(--t) ease-in-out infinite alternate}
+@keyframes tw{to{opacity:calc(var(--o)*.25);transform:scale(.6)}}
+.council .top{padding-top:clamp(110px,15vw,180px);text-align:center;display:grid;justify-items:center;gap:22px;position:relative}
+.council .logo{width:min(80vw,440px);transform:translate3d(0,calc((1 - var(--p,0))*40px),0) scale(calc(.9 + var(--p,0)*.1));opacity:clamp(0,var(--p,0)*2.2,1)}
+.council .eyebrow{color:#e5a2a9;margin:0}
+.council .lede{color:#c7b3b6;max-width:30ch;margin:0 auto}
+.words{font-size:clamp(30px,4.8vw,56px);line-height:1.16;font-weight:700;letter-spacing:-.04em;max-width:20ch;margin:clamp(80px,11vw,140px) auto 0;text-align:center;position:relative}
+.words span{opacity:.16;transition:opacity .35s linear}
+.words span.lit{opacity:1}
+.desks{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,1.4vw,16px);margin-top:clamp(80px,11vw,140px);position:relative}
+.desk{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);border-radius:24px;padding:24px 22px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:background .4s var(--ease),transform .8s var(--spring)}
+.desk:hover{background:rgba(255,255,255,.09);transform:translateY(-4px)}
+.desk .ic{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(160deg,var(--maroon2),var(--maroon));margin-bottom:16px;box-shadow:0 8px 18px -8px rgba(166,42,55,.8)}
+.desk .ic svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.desk h3{font-size:19px;font-weight:600;letter-spacing:-.02em}
+.desk p{font-size:15px;color:#b9a6a9;margin-top:4px;line-height:1.4}
+.desk.lead{grid-column:span 3;display:flex;gap:22px;align-items:center;background:linear-gradient(120deg,rgba(166,42,55,.35),rgba(255,255,255,.05))}
+.desk.lead .ic{margin:0;width:52px;height:52px;border-radius:16px;flex:none}
+.desk.lead .ic svg{width:24px;height:24px}
+.desk.lead h3{font-size:24px}
+@media (max-width:760px){.desks{grid-template-columns:1fr 1fr}.desk.lead{grid-column:span 2}}
+@media (max-width:420px){.desks{grid-template-columns:1fr}.desk.lead{grid-column:auto;flex-direction:column;align-items:flex-start;gap:14px}}
+
+/* ---------- Footer ---------- */
+.foot{background:var(--paper2);color:var(--ink2);font-size:12px;line-height:1.5;padding:30px 0 calc(30px + env(safe-area-inset-bottom))}
+.foot .row{display:flex;flex-wrap:wrap;gap:18px 34px;align-items:center;justify-content:space-between;border-bottom:1px solid #d2d2d7;padding-bottom:18px;margin-bottom:16px}
+.partners{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.partner{display:flex;gap:10px;align-items:center}
+.partner img{height:34px;width:auto}
+.partner b{display:block;color:var(--ink);font-weight:600;font-size:13px}
+.foot .end{display:flex;flex-wrap:wrap;gap:10px 22px;justify-content:space-between;align-items:center}
+.foot a{color:var(--ink);text-decoration:none}.foot a:hover{text-decoration:underline}
+.switch{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:12px;color:var(--ink);background:#fff;border:1px solid #d2d2d7;border-radius:999px;padding:5px 12px 5px 6px;cursor:pointer}
+.switch i{width:28px;height:16px;border-radius:99px;background:#34c759;position:relative;transition:background .3s}
+.switch i::after{content:"";position:absolute;top:2px;left:14px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:left .45s var(--spring)}
+html.calm .switch i{background:#d2d2d7}html.calm .switch i::after{left:2px}
+
+/* Calm: everything stands still and is shown at once. */
+html.calm *,html.calm *::before,html.calm *::after{animation:none!important;transition-duration:.01ms!important;transition-delay:0s!important}
+html.calm .rv,html.calm .rank,html.calm .queue div,html.calm .cert .paper{opacity:1!important;transform:none!important}
+html.calm .sign path{stroke-dashoffset:0}
+html.calm .hero{height:auto}html.calm .hero .stage{position:relative;min-height:100vh;min-height:100svh}
+html.calm .hero .inner{transform:none;opacity:1}html.calm .hero .statement{display:none}
+html.calm .ringpin{height:auto}html.calm .ringpin .stage{position:relative;height:auto;padding:30px 0 0}
+html.calm .steps{min-height:0}html.calm .step{position:static;opacity:1;transform:none;margin-bottom:26px}html.calm .dots{display:none}
+html.calm .words span{opacity:1}
+html.calm .council .logo{opacity:1;transform:none}
+@media (max-height:760px) and (max-width:640px){.hero .chips,.hero .cue{display:none}}
+@media print{.lnav,.hero .cue,.railnav,.seg{display:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#pa">Skip to content</a>
+
+<nav class="lnav" id="lnav" aria-label="X-PA">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/crestImg.webp" alt="" width="22" height="28">X-PA <span class="pill">Experimental</span></a>
+    <div class="links" id="links"><span class="blob" id="blob"></span><a href="#pa">Volunteering</a><a href="#clubs">Clubs</a><a href="#council">Council</a></div>
+    <a class="open" href="./">Open app</a>
+  </div>
+</nav>
+
+<header class="hero" id="top" data-pin>
+  <div class="stage">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="inner">
+      <div class="crest3d" id="crest" aria-hidden="true"><div class="card"><img src="img/crestImg.webp" alt="" width="409" height="520"><span class="sheen"></span></div></div>
+      <h1>Primum<br>Auxilium.</h1>
+      <p class="sub"><b>First to help.</b> Volunteering, Clubs and the Student Council of MEIS Al Wurud, in one place.</p>
+      <div class="chips"><a href="#pa">Volunteering</a><a href="#clubs">Clubs</a><a href="#council">Council</a></div>
+    </div>
+    <p class="statement" aria-hidden="true">One school. Three ways<br>to show up. <span>Pick yours.</span></p>
+    <div class="cue" aria-hidden="true">Scroll<i></i></div>
+  </div>
+</header>
+
+<main>
+<!-- ============ PA ============ -->
+<section class="pa" id="pa" aria-labelledby="pa-h">
+  <div class="wrap intro">
+    <p class="eyebrow rv">Primum Auxilium</p>
+    <h2 class="display rv" style="--d:1" id="pa-h">Forty hours.<br>Every one counts.</h2>
+    <p class="lede muted rv" style="--d:2;margin-top:22px">Every volunteer works toward forty hours a school year, and the team is there for each one of them.</p>
+  </div>
+
+  <div class="ringpin" id="ringpin" data-pin>
+    <div class="stage">
+      <div class="wrap ringgrid">
+        <div class="ring" aria-hidden="true">
+          <svg viewBox="0 0 200 200">
+            <defs><linearGradient id="paGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b74a8"/><stop offset="1" stop-color="#233253"/></linearGradient></defs>
+            <circle class="track" cx="100" cy="100" r="84" fill="none" stroke-width="16"/>
+            <circle class="fill" id="ringFill" cx="100" cy="100" r="84" fill="none" stroke-width="16" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+            <g id="ticks"></g>
+          </svg>
+          <div class="center"><div class="big num" id="ringNum">0</div><div class="unit">of 40 hours</div></div>
+        </div>
+        <div style="position:relative">
+          <div class="steps" id="steps">
+            <div class="step on"><p class="k">Start</p><h3>Sign up.<br>Show up.</h3><p>Pick an event, log the hours and a supervisor signs them off.</p></div>
+            <div class="step"><p class="k">10 hours</p><h3>The first<br>milestone.</h3><p>A quarter of the way there. The app marks it so you can see the progress.</p></div>
+            <div class="step"><p class="k">20 to 30 hours</p><h3>Momentum<br>builds.</h3><p>Halfway, then three quarters. Each one is counted toward the next rank.</p></div>
+            <div class="step"><p class="k">40 hours</p><h3>Goal reached.<br>Certificate ready.</h3><p>The certificate is made the moment the hours reach the goal. No forms, no waiting.</p></div>
+          </div>
+          <div class="dots" id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap bento">
+    <article class="tile t-a rv">
+      <p class="k">Ranks</p>
+      <h3>Grow from Probationary<br>to Logistics.</h3>
+      <p>Hours and good work move volunteers up through four ranks. Logistics is held by one person at a time.</p>
+      <div class="ranks"><div class="rank r1" style="--i:0"><span>Probationary</span></div><div class="rank r2" style="--i:1"><span>Elected</span></div><div class="rank r3" style="--i:2"><span>Supervisory</span></div><div class="rank r4" style="--i:3"><span>Logistics</span></div></div>
+    </article>
+    <article class="tile t-b rv" style="--d:1">
+      <p class="k">Sign-off</p>
+      <h3>Hours you can trust.</h3>
+      <p>Every entry can be checked and signed off by a supervisor.</p>
+      <div class="sign"><svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="26" fill="#eef1f7"/><path d="M17 29l7 7 15-16" fill="none" stroke="#233253" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="muted">Verified</span></div>
+    </article>
+    <article class="tile t-c rv">
+      <p class="k">Events</p>
+      <h3>Grade 12 goes first.</h3>
+      <p>Seniors get priority on sign-ups. Everyone else joins the waitlist in order.</p>
+      <div class="queue" aria-hidden="true"><div style="--i:0">Grade 12 <em>Priority</em></div><div style="--i:1">Grade 11 <em>Going</em></div><div class="w" style="--i:2">Grade 10 <em>Waitlist</em></div></div>
+    </article>
+    <article class="tile t-d t-dark rv" style="--d:1">
+      <p class="k">Certificates</p>
+      <h3>Earned, then issued<br>automatically.</h3>
+      <p>Reach the goal and the certificate is ready as a PDF, with the school and the team on it.</p>
+      <div class="cert" aria-hidden="true"><div class="paper"><img src="img/crestImg.webp" alt=""><b>CERTIFICATE</b><small>40 hours of service · 2026–27</small></div></div>
+    </article>
+  </div>
+</section>
+
+<!-- ============ CLUBS ============ -->
+<section class="clubs" id="clubs" aria-labelledby="clubs-h">
+  <div class="wrap">
+    <p class="eyebrow rv">La Pasión Clubs</p>
+    <h2 class="display rv" style="--d:1" id="clubs-h">Find your<br>people.</h2>
+    <p class="lede rv" style="--d:2;margin-top:22px">Eight clubs across academics and everything after the bell. Grades 9 to 12.</p>
+    <div class="seg rv" style="--d:3" role="group" aria-label="Filter clubs" id="seg"><span class="knob" id="knob"></span><button type="button" aria-pressed="true" data-f="all">All</button><button type="button" aria-pressed="false" data-f="academic">Academic</button><button type="button" aria-pressed="false" data-f="extra">Extracurricular</button></div>
+  </div>
+  <div class="rail" id="rail" tabindex="0" aria-label="Clubs">
+    <article class="club" data-c="academic"><img src="xpa/club-ap.webp" alt="AP Club crest" width="260" height="360" loading="lazy"><span class="cat">Academic</span><h3>AP</h3><p>Study together for Advanced Placement courses and exams.</p></article>
+    <article class="club" data-c="academic"><img src="xpa/club-sat.webp" alt="SAT Club crest" width="260" height="360" loading="lazy"><span class="cat">Academic</span><h3>SAT</h3><p>Practice, timing and strategy for test day.</p></article>
+    <article class="club" data-c="academic"><img src="xpa/club-gec.webp" alt="General Education Club crest" width="260" height="360" loading="lazy"><span class="cat">Academic</span><h3>General Education</h3><p>Curiosity across subjects, beyond the syllabus.</p></article>
+    <article class="club" data-c="extra"><img src="xpa/club-athletics.webp" alt="Athletics Club crest" width="260" height="360" loading="lazy"><span class="cat">Extracurricular</span><h3>Athletics</h3><p>Train, compete and keep each other moving.</p></article>
+    <article class="club" data-c="extra"><img src="xpa/club-tech.webp" alt="Technology Club crest" width="260" height="360" loading="lazy"><span class="cat">Extracurricular</span><h3>Technology</h3><p>Build things with code, hardware and ideas.</p></article>
+    <article class="club" data-c="extra"><img src="xpa/club-debate.webp" alt="Debate Club crest" width="260" height="360" loading="lazy"><span class="cat">Social</span><h3>Debate</h3><p>Argue well, listen better, think on your feet.</p></article>
+    <article class="club" data-c="extra"><img src="xpa/club-drama.webp" alt="Drama Club crest" width="260" height="360" loading="lazy"><span class="cat">Social</span><h3>Drama</h3><p>Rehearse, perform and take the stage.</p></article>
+    <article class="club" data-c="extra"><img src="xpa/club-book.webp" alt="Book Club crest" width="260" height="360" loading="lazy"><span class="cat">Social</span><h3>Book Club</h3><p>One book at a time, and a lot to talk about.</p></article>
+  </div>
+  <div class="wrap">
+    <div class="railnav"><button type="button" id="prev" aria-label="Previous clubs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><button type="button" id="next" aria-label="Next clubs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div>
+    <div class="trio">
+      <div class="tile rv"><div class="big num">1</div><h3 style="margin-top:14px">Club Teacher</h3><p>A Grade 12 student, chosen to lead each club and run every session.</p></div>
+      <div class="tile rv" style="--d:1"><div class="big num">2</div><h3 style="margin-top:14px">Volunteer proctors</h3><p>From Primum Auxilium, there to support the Club Teacher.</p></div>
+      <div class="tile rv" style="--d:2"><div class="big num">1</div><h3 style="margin-top:14px">Head of PR</h3><p>Opens new clubs and oversees them for the council.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COUNCIL ============ -->
+<section class="council" id="council" aria-labelledby="council-h" data-scroll>
+  <div class="stars" id="stars" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="top">
+      <img class="logo" src="img/councilLogoInk.webp" alt="La Pasión Student Council" width="520" height="236" loading="lazy">
+      <p class="eyebrow">Student Council · 2026–27</p>
+      <h2 class="headline" id="council-h">La Pasión.</h2>
+      <p class="lede">The students who speak for the school, and the desks that keep it running.</p>
+    </div>
+    <p class="words" id="words">Every desk has a job. Every member has a voice. Together, the council plans the year, tells its story and looks after every student.</p>
+    <div class="desks">
+      <article class="desk lead rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg></div><div><h3>President</h3><p>Leads the council and can step in on every desk.</p></div></article>
+      <article class="desk rv"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></div><h3>Vice President</h3><p>Runs meetings and keeps the agenda moving.</p></article>
+      <article class="desk rv" style="--d:1"><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div><h3>Aide</h3><p>Supports meetings and the media desk.</p></article>
+      <article class="desk rv" style="--d:2"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 5h13v14H6a2 2 0 01-2-2zM17 9h3v8a2 2 0 01-2 2"/><path d="M8 9h5M8 13h5"/></svg></div><h3>Newspaper</h3><p>Writes the stories the school reads.</p></article>
+      <article class="desk rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11v5c3 2 7 2 10 0v-5"/></svg></div><h3>Academics</h3><p>Plans study support and academic events.</p></article>
+      <article class="desk rv" style="--d:1"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></div><h3>Finance</h3><p>Keeps the ledger honest and up to date.</p></article>
+      <article class="desk rv" style="--d:2"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l2-3h4l2 3"/></svg></div><h3>Media</h3><p>Photos, video and posts from every event.</p></article>
+      <article class="desk rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 001 1h3l6 4V6L7 10H4a1 1 0 00-1 1zM17 9a4 4 0 010 6"/></svg></div><h3>Public Relations</h3><p>Outreach, partners and the clubs.</p></article>
+      <article class="desk rv" style="--d:1"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg></div><h3>Events</h3><p>Plans the days the school remembers.</p></article>
+      <article class="desk rv" style="--d:2"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.6-7 10-7 10z"/></svg></div><h3>Volunteers</h3><p>Primum Auxilium, the team that helps first.</p></article>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="row">
+      <div class="partners">
+        <div class="partner"><img src="img/meisLogo.webp" alt="" width="34" height="34" loading="lazy"><span>Sponsor<b>Middle East International School - Al Wurud</b></span></div>
+        <div class="partner"><img src="moe.webp" alt="" width="45" height="34" loading="lazy"><span>Supervisory body<b>Ministry of Education</b></span></div>
+      </div>
+      <button type="button" class="switch" id="motion" aria-pressed="true"><i></i><span>Motion</span></button>
+    </div>
+    <div class="end"><span>X-PA is an experimental preview. Things here may change or go away.</span><a href="./">Back to Primum Auxilium</a></div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  let calm = false;
+  try { calm = localStorage.getItem("pa-motion") === "calm"; } catch {}
+  const setCalm = on => {
+    calm = on; root.classList.toggle("calm", on);
+    document.getElementById("motion").setAttribute("aria-pressed", String(!on));
+    try { localStorage.setItem("pa-motion", on ? "calm" : "full"); } catch {}
+    if (on) document.querySelectorAll(".rv,.tile").forEach(e => e.classList.add("in"));
+    tick(true);
+  };
+
+  /* A damped spring: the one motion model behind everything on the page. */
+  class Spring {
+    constructor(v = 0, k = 170, c = 26) { this.x = v; this.v = 0; this.to = v; this.k = k; this.c = c; }
+    step(dt) { const a = -this.k * (this.x - this.to) - this.c * this.v; this.v += a * dt; this.x += this.v * dt; return Math.abs(this.v) > 1e-4 || Math.abs(this.x - this.to) > 1e-4; }
+    snap(v) { this.x = this.to = v; this.v = 0; }
+  }
+  // Turn the same spring into a CSS easing curve, so CSS transitions move with the same physics.
+  {
+    const s = new Spring(0, 190, 21); s.to = 1; const pts = []; let t = 0; const dt = 1 / 60;
+    while (t < 2 && (t < .2 || s.step(dt) || pts.length < 10)) { s.step(dt); pts.push(+s.x.toFixed(3)); t += dt; }
+    if (CSS.supports("transition-timing-function", "linear(0, 1)")) {
+      root.style.setProperty("--spring", "linear(0, " + pts.join(", ") + ", 1)");
+      root.style.setProperty("--spring-t", t.toFixed(2) + "s");
+    }
+  }
+
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const vh = () => window.innerHeight;
+  const springs = new Set(); let raf = 0;
+  const wake = () => { if (!raf) raf = requestAnimationFrame(loop); };
+  let last = 0;
+  function loop(now) {
+    const dt = Math.min(.032, last ? (now - last) / 1000 : 1 / 60); last = now; raf = 0;
+    loop.dt = dt; let busy = false;
+    springs.forEach(f => { if (f()) busy = true; });
+    if (busy) raf = requestAnimationFrame(loop); else last = 0;
+  }
+  const track = (spring, apply) => { springs.add(() => { const m = calm ? (spring.snap(spring.to), false) : spring.step(loop.dt || 1 / 60); apply(spring.x); return m; }); };
+
+  /* Pinned scenes: progress through a tall section, smoothed by a spring. */
+  const hero = document.querySelector(".hero"), heroStage = hero.querySelector(".stage");
+  const pin = document.getElementById("ringpin");
+  const council = document.getElementById("council");
+  const sHero = new Spring(0, 120, 22), sRing = new Spring(0, 90, 20), sCouncil = new Spring(0, 80, 18);
+  track(sHero, p => heroStage.style.setProperty("--p", p.toFixed(4)));
+  track(sCouncil, p => council.style.setProperty("--p", p.toFixed(4)));
+
+  const fill = document.getElementById("ringFill"), num = document.getElementById("ringNum");
+  const steps = [...document.querySelectorAll(".step")], dots = [...document.querySelectorAll("#dots i")];
+  const ticks = document.getElementById("ticks");
+  [10, 20, 30, 40].forEach(h => {
+    const a = (h / 40) * Math.PI * 2, c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", 100 + 84 * Math.cos(a)); c.setAttribute("cy", 100 + 84 * Math.sin(a)); c.setAttribute("r", 4.5); c.classList.add("tick"); c.dataset.h = h; ticks.appendChild(c);
+  });
+  const tickEls = [...ticks.children];
+  let lastStage = -1;
+  track(sRing, p => {
+    const hrs = p * 40;
+    fill.setAttribute("stroke-dashoffset", (100 - p * 100).toFixed(2));
+    num.textContent = Math.round(hrs);
+    tickEls.forEach(t => t.classList.toggle("on", hrs >= +t.dataset.h - .2));
+    const st = hrs < 8 ? 0 : hrs < 18 ? 1 : hrs < 38.5 ? 2 : 3;
+    if (st !== lastStage) { lastStage = st; steps.forEach((s, i) => s.classList.toggle("on", i === st)); dots.forEach((d, i) => d.classList.toggle("on", i === st)); }
+  });
+
+  /* Words light up one by one as the paragraph scrolls past. */
+  const words = document.getElementById("words");
+  words.innerHTML = words.textContent.trim().split(/\s+/).map(w => `<span>${w}</span> `).join("");
+  const wordEls = [...words.children];
+
+  /* The crest tilts toward the pointer with a little weight to it. */
+  const crest = document.querySelector("#crest .card"), glow = document.querySelector(".hero .glow");
+  const tx = new Spring(0, 60, 11), ty = new Spring(0, 60, 11);
+  track(tx, x => { crest.style.setProperty("--tx", x.toFixed(4)); glow.style.setProperty("--mx", x.toFixed(4)); });
+  track(ty, y => { crest.style.setProperty("--ty", y.toFixed(4)); glow.style.setProperty("--my", y.toFixed(4)); });
+  hero.addEventListener("pointermove", e => { if (e.pointerType !== "mouse") return; tx.to = (e.clientX / innerWidth - .5) * 2; ty.to = (e.clientY / innerHeight - .5) * 2; wake(); });
+  hero.addEventListener("pointerleave", () => { tx.to = ty.to = 0; wake(); });
+  // On phones, a slow idle drift stands in for the pointer.
+  if (matchMedia("(hover: none)").matches) {
+    const drift = () => { if (!calm && window.scrollY < vh()) { const t = performance.now() / 1000; tx.to = Math.sin(t * .6) * .45; ty.to = Math.cos(t * .45) * .3; wake(); } setTimeout(drift, 120); };
+    drift();
+  }
+
+  /* Nav: the highlight glides between sections on a spring; light bar over light sections. */
+  const nav = document.getElementById("lnav"), links = [...document.querySelectorAll("#links a")], blob = document.getElementById("blob");
+  const bx = new Spring(0, 260, 28), bw = new Spring(0, 260, 28), bo = new Spring(0, 200, 26);
+  track(bx, x => blob.style.transform = `translateX(${x}px)`); track(bw, w => blob.style.width = w + "px"); track(bo, o => blob.style.opacity = (o * .12).toFixed(3));
+  const secs = ["pa", "clubs", "council"].map(id => document.getElementById(id));
+  let curSec = -2;
+
+  function tick(force) {
+    const h = vh();
+    const hr = hero.getBoundingClientRect();
+    sHero.to = clamp(-hr.top / (hr.height - h));
+    const pr = pin.getBoundingClientRect();
+    sRing.to = clamp((-pr.top) / (pr.height - h) * 1.08);
+    const cr = council.getBoundingClientRect();
+    sCouncil.to = clamp((h - cr.top) / (h * 1.1));
+    const wr = words.getBoundingClientRect();
+    const wp = clamp((h * .82 - wr.top) / (wr.height + h * .35));
+    const lit = Math.round(wp * wordEls.length);
+    wordEls.forEach((w, i) => w.classList.toggle("lit", i < lit));
+    // Which section is under the nav bar.
+    let s = -1; secs.forEach((el, i) => { if (el.getBoundingClientRect().top <= 60) s = i; });
+    const onLight = s === 0 || s === 1;
+    nav.classList.toggle("light", onLight && secs[s].getBoundingClientRect().bottom > 60);
+    if (s !== curSec || force) {
+      curSec = s; links.forEach((a, i) => a.setAttribute("aria-current", String(i === s)));
+      if (s >= 0) { const a = links[s]; bx.to = a.offsetLeft; bw.to = a.offsetWidth; bo.to = 1; if (bw.x === 0) { bx.snap(bx.to); bw.snap(bw.to); } }
+      else bo.to = 0;
+    }
+    if (calm) { [sHero, sRing, sCouncil].forEach(x => x.snap(x.to)); }
+    wake();
+  }
+  addEventListener("scroll", () => tick(), { passive: true });
+  addEventListener("resize", () => tick(true));
+
+  /* Reveal on scroll. */
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -12% 0px", threshold: .08 });
+  document.querySelectorAll(".rv").forEach(e => io.observe(e));
+
+  /* Council stars. */
+  const stars = document.getElementById("stars"); let html = "";
+  for (let i = 0; i < 46; i++) { const s = 4 + Math.random() * 9; html += `<i style="left:${(Math.random() * 100).toFixed(1)}%;top:${(Math.random() * 100).toFixed(1)}%;--s:${s.toFixed(1)}px;--o:${(.15 + Math.random() * .5).toFixed(2)};--t:${(2 + Math.random() * 4).toFixed(1)}s;animation-delay:-${(Math.random() * 4).toFixed(1)}s"></i>`; }
+  stars.innerHTML = html;
+
+  /* Clubs: filter with a sliding knob, rail buttons. */
+  const seg = document.getElementById("seg"), knob = document.getElementById("knob"), btns = [...seg.querySelectorAll("button")];
+  const kx = new Spring(4, 320, 30), kw = new Spring(0, 320, 30);
+  track(kx, x => knob.style.transform = `translateX(${x}px)`); track(kw, w => knob.style.width = w + "px");
+  const placeKnob = (b, snap) => { kx.to = b.offsetLeft; kw.to = b.offsetWidth; if (snap) { kx.snap(kx.to); kw.snap(kw.to); } wake(); };
+  const rail = document.getElementById("rail"), clubs = [...rail.children];
+  btns.forEach(b => b.addEventListener("click", () => {
+    btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); placeKnob(b);
+    const f = b.dataset.f; let first = null;
+    clubs.forEach(c => { const on = f === "all" || c.dataset.c === f; c.classList.toggle("off", !on); if (on && !first) first = c; });
+    if (first) rail.scrollTo({ left: first.offsetLeft - parseFloat(getComputedStyle(rail).scrollPaddingInlineStart || 0), behavior: calm ? "auto" : "smooth" });
+  }));
+  const prev = document.getElementById("prev"), next = document.getElementById("next");
+  const page = d => rail.scrollBy({ left: d * Math.max(260, rail.clientWidth * .8), behavior: calm ? "auto" : "smooth" });
+  prev.onclick = () => page(-1); next.onclick = () => page(1);
+  const railState = () => { prev.disabled = rail.scrollLeft < 4; next.disabled = rail.scrollLeft + rail.clientWidth > rail.scrollWidth - 4; };
+  rail.addEventListener("scroll", railState, { passive: true });
+  rail.addEventListener("keydown", e => { if (e.key === "ArrowRight") { e.preventDefault(); page(1); } if (e.key === "ArrowLeft") { e.preventDefault(); page(-1); } });
+
+  document.getElementById("motion").addEventListener("click", () => setCalm(!calm));
+  const start = () => { placeKnob(btns[0], true); railState(); setCalm(calm); };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+  addEventListener("resize", () => placeKnob(btns.find(b => b.getAttribute("aria-pressed") === "true"), true));
+})();
+</script>
+</body>
+</html>

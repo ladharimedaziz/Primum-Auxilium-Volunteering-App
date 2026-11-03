@@ -12,6 +12,16 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="fonts/fonts.css">
+<style>html.lock body{visibility:hidden}</style>
+<script>
+// Head of Volunteers only: the app leaves this mark for the signed-in Head and clears it for anyone else.
+(() => {
+  document.documentElement.classList.add("lock");
+  let ok = false;
+  try { const s = JSON.parse(localStorage.getItem("pa-session") || "null"); ok = !!(s && s.id && localStorage.getItem("pa-xpa") === s.id); } catch {}
+  if (ok) document.documentElement.classList.remove("lock"); else location.replace("./");
+})();
+</script>
 <style>
 /* X-PA: an experimental page. It stands on its own and shares nothing with the app but pictures and fonts. */
 :root{

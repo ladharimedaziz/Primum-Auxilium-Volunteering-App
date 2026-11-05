@@ -1313,93 +1313,6 @@ body:not(.gated) .tab[aria-selected="true"]{background:linear-gradient(90deg,col
 .consent-scroll{max-height:42vh;overflow:auto;border:1px solid var(--line,#ccc);border-radius:10px;padding:4px 14px;margin:8px 0 12px;text-align:left;font-size:14px}
 .consent-form .chk{display:flex;gap:10px;align-items:flex-start;text-align:left;font-size:14px;margin:6px 0;cursor:pointer}
 .consent-form .chk input{margin-top:3px;width:18px;height:18px;flex:none}
-/* ---------- X-PA: experimental look for the Head of Volunteers ---------- */
-/* One layer over the real app. It is on only when html[data-xpa="1"], which the app sets for the Head and nobody else. */
-:root:root:root[data-xpa="1"]{
-  --xe:cubic-bezier(.22,1,.36,1);--xs:cubic-bezier(.22,1,.36,1);--xst:.9s;
-  --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",system-ui,"Atkinson Hyperlegible",sans-serif;
-  --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,"Atkinson Hyperlegible",sans-serif;
-  --r:26px;--xp-edge:color-mix(in srgb,var(--ink) 9%,transparent);
-  --xp-card:color-mix(in srgb,var(--surface) 58%,transparent);
-  --xp-shadow:0 1px 0 color-mix(in srgb,#fff 7%,transparent) inset,0 24px 60px -34px rgba(0,0,0,.7),0 2px 6px -2px rgba(0,0,0,.25);
-}
-:root:root:root[data-xpa="1"][data-theme="light"]{--xp-edge:rgba(0,0,0,.07);--xp-card:rgba(255,255,255,.72);--xp-shadow:0 1px 0 #fff inset,0 24px 56px -34px rgba(20,30,50,.35),0 2px 6px -2px rgba(20,30,50,.08)}
-
-/* Clarity: one system typeface, sentence case, big and quiet headings. */
-:root:root:root[data-xpa="1"] body{font-size:17px;line-height:1.47;letter-spacing:-.011em;font-feature-settings:"ss01","cv11";-webkit-font-smoothing:antialiased}
-:root:root:root[data-xpa="1"] :is(h1,h2,h3,.big-h,.kpi .v,.eyebrow,.motto,.tab,.btn,.chip,.tag,.tab-group,.cl-att-h,.hb-doc h3){font-family:var(--f-display);text-transform:none;font-variant:normal}
-:root:root:root[data-xpa="1"] h1{font-size:clamp(34px,6.4vw,64px);font-weight:700;letter-spacing:-.045em;line-height:1.04}
-:root:root:root[data-xpa="1"] h2{font-size:clamp(22px,2.6vw,30px);font-weight:700;letter-spacing:-.03em;line-height:1.12;margin-bottom:6px}
-:root:root:root[data-xpa="1"] h3{font-weight:650;letter-spacing:-.02em}
-:root:root:root[data-xpa="1"] .eyebrow,:root:root:root[data-xpa="1"] .motto{font-size:15px;letter-spacing:-.005em;font-weight:600;color:var(--muted)}
-:root:root:root[data-xpa="1"] .motto::after{content:" · X-PA";color:var(--accent)}
-:root:root:root[data-xpa="1"] .sub{font-size:17px;color:var(--muted)}
-:root:root:root[data-xpa="1"] .kpi .v,:root:root:root[data-xpa="1"] .big-h{font-size:clamp(40px,5vw,60px);font-weight:700;letter-spacing:-.05em;font-family:var(--f-display)}
-:root:root:root[data-xpa="1"] .kpi .l,:root:root:root[data-xpa="1"] .kpi small{font-size:15px;letter-spacing:-.005em;text-transform:none;font-weight:500}
-:root:root:root[data-xpa="1"] .muted{color:var(--muted)}
-
-/* Deference: the interface steps back. No stars, no radar, no rim, no heavy header. */
-:root:root:root[data-xpa="1"] body::after,:root:root:root[data-xpa="1"] .radar,:root:root:root[data-xpa="1"] header.band .cstars,:root:root:root[data-xpa="1"] .rim{display:none!important}
-:root:root:root[data-xpa="1"] header.band{background:transparent!important;color:var(--ink);overflow:visible;padding-block:clamp(26px,5vw,56px) clamp(10px,2vw,22px);border:0}
-:root:root:root[data-xpa="1"] header.band .brand{align-items:flex-end}
-:root:root:root[data-xpa="1"] header.band .wrap{transform:translate3d(0,calc(var(--xsc,0)*-26px),0) scale(calc(1 - var(--xsc,0)*.04));transform-origin:left top;opacity:calc(1 - var(--xsc,0)*.55);will-change:transform,opacity}
-:root:root:root[data-xpa="1"] header.band .crest{width:clamp(48px,6vw,72px);height:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.35))}
-:root:root:root[data-xpa="1"] .brand-meta{margin-top:14px;gap:8px}
-:root:root:root[data-xpa="1"] .chip,:root:root:root[data-xpa="1"] .pill,:root:root:root[data-xpa="1"] .tag{font-size:13px;font-weight:600;letter-spacing:-.005em;padding:6px 12px;background:color-mix(in srgb,var(--ink) 7%,transparent);border:0;color:var(--ink);backdrop-filter:blur(14px)}
-:root:root:root[data-xpa="1"] .chip.out{background:color-mix(in srgb,var(--ink) 7%,transparent)}
-:root:root:root[data-xpa="1"] .chip[aria-pressed="true"].xp-chip{background:var(--accent);color:var(--accent-ink)}
-
-/* Depth: layered frosted surfaces, soft light edges, room to breathe. */
-:root:root:root[data-xpa="1"] #view{padding-block:clamp(14px,3vw,36px) clamp(60px,9vw,120px)}
-:root:root:root[data-xpa="1"] :is(.panel,.kpi){background:var(--xp-card)!important;border:1px solid var(--xp-edge)!important;border-top-width:1px!important;border-radius:var(--r);box-shadow:var(--xp-shadow);backdrop-filter:blur(28px) saturate(1.7);-webkit-backdrop-filter:blur(28px) saturate(1.7);padding:clamp(20px,2.6vw,34px)}
-:root:root:root[data-xpa="1"] .kpi{padding:clamp(18px,2.2vw,28px)}
-:root:root:root[data-xpa="1"] .kpi.hero{background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 80%,#000),color-mix(in srgb,var(--navy) 90%,#000))!important;color:#fff}
-:root:root:root[data-xpa="1"] :is(.modal,.drawer,.gate-card){border-radius:32px!important;background:color-mix(in srgb,var(--surface) 80%,transparent)!important;backdrop-filter:blur(40px) saturate(1.8);-webkit-backdrop-filter:blur(40px) saturate(1.8);border:1px solid var(--xp-edge)!important;box-shadow:0 40px 100px -30px rgba(0,0,0,.75)}
-:root:root:root[data-xpa="1"] hr,:root:root:root[data-xpa="1"] .cl-row,:root:root:root[data-xpa="1"] .cl-foot{border-color:var(--xp-edge)}
-
-:root:root:root[data-xpa="1"] :is(.c-stat,.c-member,.rsec,.post,.tcard,.vrow,.bcard,.c-card,.c-col,.bcol,.attach,.fileatt,.ecard,.cg-hemi){background:var(--xp-card)!important;border:1px solid var(--xp-edge)!important;border-radius:22px;box-shadow:var(--xp-shadow);backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6)}
-:root:root:root[data-xpa="1"] .c-stat b{font-size:clamp(36px,4.4vw,52px);letter-spacing:-.045em;font-weight:700}
-:root:root:root[data-xpa="1"] .c-stat span{font-size:15px;letter-spacing:-.005em;text-transform:none;font-weight:500}
-:root:root:root[data-xpa="1"] :is(.kpis,.grid2,.c-grid,.c-stats){gap:clamp(14px,1.8vw,24px)}
-:root:root:root[data-xpa="1"] :is(.kpis,.c-stats){margin-bottom:clamp(14px,1.8vw,24px)}
-:root:root:root[data-xpa="1"] .brand-meta{margin-left:0;width:100%}
-/* Navigation: a quiet, frosted side menu and bar; the chosen item is a soft pill. */
-:root:root:root[data-xpa="1"] .tabbar{background:color-mix(in srgb,var(--bg) 62%,transparent)!important;backdrop-filter:blur(30px) saturate(1.8)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;border-bottom:1px solid var(--xp-edge)}
-:root:root:root[data-xpa="1"] .tab{font-weight:600;font-size:15px;letter-spacing:-.01em;border-radius:14px;transition:background .35s var(--xe),color .35s var(--xe),transform .6s var(--xs)}
-:root:root:root[data-xpa="1"] .tab-ink{height:100%!important;top:0!important;border-radius:14px;opacity:.14;transition-timing-function:var(--xs)!important;transition-duration:var(--xst)!important}
-@media (min-width:1100px){
-  :root:root:root[data-xpa="1"] body:not(.gated) .tabbar{border:0;border-inline-end:1px solid var(--xp-edge)}
-  :root:root:root[data-xpa="1"] body:not(.gated) .tab[aria-selected="true"]{box-shadow:none;background:color-mix(in srgb,var(--accent) 22%,transparent)}
-  :root:root:root[data-xpa="1"] body:not(.gated) .tab{padding:11px 16px;border-radius:14px}
-  :root:root:root[data-xpa="1"] body:not(.gated) header.band{padding-block:clamp(30px,5vw,60px) 12px}
-}
-:root:root:root[data-xpa="1"] .bnav{background:color-mix(in srgb,var(--bg) 66%,transparent)!important;backdrop-filter:blur(30px) saturate(1.8)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;border:1px solid var(--xp-edge)!important}
-
-/* Controls: pills, big touch targets, a press you can feel. */
-:root:root:root[data-xpa="1"] .btn{border-radius:999px;padding:11px 20px;font-size:15px;font-weight:600;letter-spacing:-.01em;background:color-mix(in srgb,var(--ink) 8%,transparent);border:0;transition:transform .5s var(--xs),background .3s var(--xe),filter .3s}
-:root:root:root[data-xpa="1"] .btn.primary{background:var(--accent);color:var(--accent-ink)}
-:root:root:root[data-xpa="1"] .btn:active,:root:root:root[data-xpa="1"] .chip:active,:root:root:root[data-xpa="1"] .tab:active{transform:scale(.96);transition-duration:.12s}
-:root:root:root[data-xpa="1"] :is(input,select,textarea):not([type=checkbox]):not([type=radio]){border-radius:16px;font-size:17px;padding:12px 16px;border:1px solid var(--xp-edge);background:color-mix(in srgb,var(--ink) 5%,transparent);transition:box-shadow .3s var(--xe),border-color .3s}
-:root:root:root[data-xpa="1"] :is(input,select,textarea):focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 28%,transparent)}
-:root:root:root[data-xpa="1"] a{text-underline-offset:3px}
-
-/* Motion: springs for movement, short eases for colour; things lift toward you. */
-@media (hover:hover){
-  :root:root:root[data-xpa="1"] :is(.panel,.kpi):not(.xr){transition:transform var(--xst) var(--xs),box-shadow .5s var(--xe)}
-  :root:root:root[data-xpa="1"] :is(.panel,.kpi):not(.xr):hover{transform:translate3d(0,-4px,0)}
-}
-:root:root:root[data-xpa="1"] .xr{opacity:0;transform:translate3d(0,36px,0) scale(.985);will-change:transform,opacity}
-:root:root:root[data-xpa="1"] .xr.xr-in{opacity:1;transform:none;transition:opacity .8s var(--xe),transform var(--xst) var(--xs);transition-delay:calc(var(--xd,0)*70ms)}
-:root:root:root[data-xpa="1"] .modal,:root:root:root[data-xpa="1"] .drawer{animation:xpIn var(--xst) var(--xs) both}
-@keyframes xpIn{from{opacity:0;transform:translate3d(0,28px,0) scale(.96)}to{opacity:1;transform:none}}
-
-/* Calm and the device's own reduced-motion setting both stop all of it. */
-@media (prefers-reduced-motion:reduce){:root:root:root[data-xpa="1"] *,:root:root:root[data-xpa="1"] *::before,:root:root:root[data-xpa="1"] *::after{animation:none!important;transition-duration:.01ms!important;transition-delay:0s!important}:root:root:root[data-xpa="1"] .xr{opacity:1;transform:none}:root:root:root[data-xpa="1"] header.band .wrap{transform:none;opacity:1}}
-:root:root:root[data-xpa="1"].calm *,:root:root:root[data-xpa="1"].calm *::before,:root:root:root[data-xpa="1"].calm *::after{animation:none!important;transition-duration:.01ms!important;transition-delay:0s!important}
-:root:root:root[data-xpa="1"].calm .xr{opacity:1;transform:none}
-:root:root:root[data-xpa="1"].calm header.band .wrap{transform:none;opacity:1}
-:root:root:root[data-xpa="1"] .big-h .muted{letter-spacing:-.01em;font-weight:500;font-size:17px!important}
-:root:root:root[data-xpa="1"] .kpi .v small{font-size:17px;letter-spacing:-.01em;font-weight:500;margin-inline-start:6px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="pa-cross" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="2.2" fill="currentColor"/><rect x="2" y="8" width="20" height="8" rx="2.2" fill="currentColor"/><path class="arrow" d="M12 19.5V5.5M8.8 8.7 12 5.5l3.2 3.2" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -1900,7 +1813,7 @@ function renderBrandMeta() {
   const saveChip = mode === "cloud" && outbox().length ? `<span class="chip t-warn" title="Saved on this device. Sends when the connection is back."><span class="dot"></span>${outbox().length} to send</span>` : mode === "db" || mode === "cloud" ? `<span class="chip t-ok"><span class="dot"></span>Synced</span>`
     : mode === "local" ? `<span class="chip t-warn" title="Data is kept on this device only"><span class="dot"></span>${DESKTOP ? "Saved on this computer" : "Saved in this browser"}</span>` : "";
   const a = me(), r = role();
-  $("#brandMeta").innerHTML = `${r === "volunteer" || !a ? "" : saveChip}<span class="chip num">${left >= 0 ? `${left} days left` : "Year closed"}</span>${a ? `<span class="chip who"><span class="dot"></span>${esc(accName(a))} · ${(r === "council" ? a.title || "Student Council" : { head: "Head", admin: "Administration", volunteer: "Volunteer" }[r])}</span>${xpaChip()}<button class="chip out motion-btn" data-act="motion" title="${reduced() ? "Turn animations on" : "Calm motion"}" aria-label="${reduced() ? "Turn animations on" : "Calm motion"}">${reduced() ? "◌" : "✦"}</button>${themeBtn()}<button class="chip out" data-act="sign-out">Sign out</button>` : themeBtn()}`;
+  $("#brandMeta").innerHTML = `${r === "volunteer" || !a ? "" : saveChip}<span class="chip num">${left >= 0 ? `${left} days left` : "Year closed"}</span>${a ? `<span class="chip who"><span class="dot"></span>${esc(accName(a))} · ${(r === "council" ? a.title || "Student Council" : { head: "Head", admin: "Administration", volunteer: "Volunteer" }[r])}</span><button class="chip out motion-btn" data-act="motion" title="${reduced() ? "Turn animations on" : "Calm motion"}" aria-label="${reduced() ? "Turn animations on" : "Calm motion"}">${reduced() ? "◌" : "✦"}</button>${themeBtn()}<button class="chip out" data-act="sign-out">Sign out</button>` : themeBtn()}`;
   realmMeta();
 }
 function moveInk() {
@@ -2265,7 +2178,6 @@ function render(animate) {
   applyRealm();
   renderBrandMeta();
   if (session && !ui.gate && consentDue()) { ui.gate = "consent"; consentCheck(); }
-  xpaApply();
   if (!session || ui.gate) return renderGate();
   consentFlush();
   document.body.classList.remove("gated"); document.body.classList.toggle("ro", role() !== "head" && role() !== "admin"); document.body.classList.toggle("ra", role() === "admin"); document.body.dataset.role = role();
@@ -4561,7 +4473,6 @@ case "ann-copy": { const t = ui.ann && ui.ann[a.dataset.k]; if (!t) break; try {
     case "new-event-go": go("events"); ui.eventId = null; ui.confirm = null; ui.modal = () => eventModal(null); renderOverlay(); break;
     case "import-go": go("roster"); setTimeout(() => $("#impFile")?.click(), 50); break;
     case "theme": { const d = document.documentElement, dark = d.dataset.theme !== "dark", r = a.getBoundingClientRect(); const flip = () => { d.dataset.theme = dark ? "dark" : "light"; try { localStorage.setItem("pa-theme", d.dataset.theme); } catch {} applyRealm(); renderBrandMeta(); }; d.style.setProperty("--tx", (r.left + r.width / 2) + "px"); d.style.setProperty("--ty", (r.top + r.height / 2) + "px"); if (document.startViewTransition && !reduced()) document.startViewTransition(flip); else flip(); toast(dark ? "Dark mode" : "Light mode"); break; }
-    case "xpa": xpaToggle(); break;
     case "motion": { const on = !document.documentElement.classList.toggle("calm"); document.documentElement.classList.toggle("calm-pick", !on); try { localStorage.setItem("pa-motion", on ? "full" : "calm"); } catch {} renderBrandMeta(); toast(on ? "Animations on" : "Calm motion"); break; }
     case "notice-ok": { const p = a.closest(".notice-panel"); ackNotices(); if (p && !reduced()) { p.classList.add("bye"); setTimeout(() => { p.remove(); renderTabs(true); }, 380); } else { p && p.remove(); renderTabs(true); } break; }
     case "callup-copy": { const t = callupText(S.events[id]); try { await navigator.clipboard.writeText(t); toast("Call-up copied · paste it in the group chat"); } catch { toast("Copy blocked by the browser"); } break; }
@@ -6308,62 +6219,6 @@ function themeBtn() {
   root.setProperty("--crest-k", `url("${CLUB_LOGOS.main}")`);
 }
 Object.assign(AR_UI, { "Light mode": "الوضع الفاتح", "Dark mode": "الوضع الداكن" });
-
-/* ---------- X-PA: experimental look, Head of Volunteers only ---------- */
-// The look itself is the CSS block at the end of the style sheet; this turns it on, adds the springs and the scroll reveals.
-const XPA = { key: "", seen: new WeakSet(), started: false, io: null, cur: 0, tgt: 0, raf: 0, scan: 0 };
-const XPA_TARGETS = ".panel,.kpi,.c-stat,.c-member,.post,.tcard,.ecard,.bcard,.c-card";
-const xpaOn = () => { try { return localStorage.getItem("pa-xpa-on") === "1"; } catch { return false; } };
-const xpaCalm = () => reduced() || matchMedia("(prefers-reduced-motion: reduce)").matches;
-function xpaApply() {
-  const d = document.documentElement, want = !!(session && role() === "head" && xpaOn());
-  if (want) { d.dataset.xpa = "1"; xpaStart(); } else delete d.dataset.xpa;
-}
-function xpaChip() {
-  if (!session || role() !== "head") return "";
-  const on = xpaOn();
-  return `<button class="chip out xp-chip" data-act="xpa" data-notr="1" aria-pressed="${on}" title="Experimental look: ${on ? "on" : "off"}">X-PA</button>`;
-}
-function xpaToggle() {
-  try { localStorage.setItem("pa-xpa-on", xpaOn() ? "0" : "1"); } catch {}
-  xpaApply(); renderBrandMeta(); toast(xpaOn() ? "X-PA look on" : "X-PA look off");
-}
-function xpaStart() {
-  if (XPA.started) return; XPA.started = true;
-  // The same damped spring drives CSS movement everywhere in this mode.
-  try {
-    let x = 0, v = 0, t = 0; const pts = [], dt = 1 / 60;
-    while (t < 2) { v += (-190 * (x - 1) - 21 * v) * dt; x += v * dt; t += dt; pts.push(+x.toFixed(3)); if (t > .3 && Math.abs(v) < .002 && Math.abs(x - 1) < .002) break; }
-    if (CSS.supports("transition-timing-function", "linear(0, 1)")) { const r = document.documentElement.style; r.setProperty("--xs", "linear(0, " + pts.join(", ") + ", 1)"); r.setProperty("--xst", t.toFixed(2) + "s"); }
-  } catch {}
-  // Large title eases away as you scroll.
-  const step = () => {
-    XPA.raf = 0; const d = document.documentElement;
-    if (!d.dataset.xpa || xpaCalm()) { d.style.setProperty("--xsc", "0"); return; }
-    XPA.cur += (XPA.tgt - XPA.cur) * .16;
-    d.style.setProperty("--xsc", XPA.cur.toFixed(3));
-    if (Math.abs(XPA.tgt - XPA.cur) > .002) XPA.raf = requestAnimationFrame(step);
-  };
-  addEventListener("scroll", () => { XPA.tgt = Math.min(1, scrollY / 220); if (!XPA.raf) XPA.raf = requestAnimationFrame(step); }, { passive: true });
-  // Cards below the fold rise in as they scroll into view. Only when a screen is opened, never on the 15 s refresh.
-  XPA.io = new IntersectionObserver(es => es.forEach(e => {
-    if (!e.isIntersecting) return; const el = e.target; XPA.io.unobserve(el); el.classList.add("xr-in");
-    setTimeout(() => el.classList.remove("xr", "xr-in"), 1600);
-  }), { rootMargin: "0px 0px -8% 0px", threshold: .05 });
-  new MutationObserver(() => { if (!XPA.scan) XPA.scan = requestAnimationFrame(xpaScan); }).observe($("#view"), { childList: true, subtree: true });
-}
-function xpaScan() {
-  XPA.scan = 0;
-  const d = document.documentElement; if (!d.dataset.xpa) return;
-  const key = (d.dataset.realm || "main") + "/" + (document.querySelector('.tab[aria-selected="true"]')?.dataset.view || ""), fresh = key !== XPA.key; XPA.key = key;
-  let n = 0;
-  $("#view").querySelectorAll(XPA_TARGETS).forEach(el => {
-    if (XPA.seen.has(el)) return; XPA.seen.add(el);
-    if (!fresh || xpaCalm() || el.getBoundingClientRect().top < innerHeight * .92) return;
-    el.style.setProperty("--xd", n++ % 4); el.classList.add("xr"); XPA.io.observe(el);
-    setTimeout(() => { if (el.classList.contains("xr") && !el.classList.contains("xr-in")) el.classList.add("xr-in"); }, 4000);
-  });
-}
 
 /* ---------- @mentions in the chats ---------- */
 const MENTION_BOX = { cText: "council", achText: "admin", gText: "congress", xText: "cadmin" };

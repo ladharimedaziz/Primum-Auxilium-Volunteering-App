@@ -13,6 +13,7 @@ const save = (r, res) => { if (res && res.ok) { const copy = res.clone(); caches
 self.addEventListener("fetch", e => {
   const r = e.request, u = new URL(r.url);
   if (r.method !== "GET" || u.origin !== location.origin) return;
+  if (u.pathname.includes("/media/")) return;
   if (u.pathname.includes("/fonts/")) { e.respondWith(caches.match(r).then(m => m || fetch(r).then(res => save(r, res)))); return; }
   const net = fetch(r).then(res => save(r, res));
   e.waitUntil(net.catch(() => {}));

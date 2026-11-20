@@ -1,0 +1,2 @@
+importScripts("xlsx.full.min.js");
+onmessage = e => { try { const wb = XLSX.read(e.data, { type: "array" }), rows = {}; for (const sn of wb.SheetNames) rows[sn] = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, blankrows: false, defval: "" }); postMessage({ ok: true, SheetNames: wb.SheetNames, rows: JSON.parse(JSON.stringify(rows)) }); } catch (err) { postMessage({ ok: false }); } };
